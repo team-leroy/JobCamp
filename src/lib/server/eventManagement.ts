@@ -1,0 +1,365 @@
+import { prisma } from './prisma.js';
+
+export interface EventData {
+  name?: string;
+  date: Date;
+  displayLotteryResults?: boolean;
+}
+
+export interface EventWithStats {
+  id: string;
+  name: string | null;
+  date: Date;
+  isActive: boolean;
+  isArchived: boolean;
+  displayLotteryResults: boolean;
+  schoolId: string;
+  stats?: {
+    totalPositions: number;
+    totalSlots: number;
+    studentsWithChoices: number;
+  };
+}
+
+/**
+ * Get all events for a school, optionally including archived events
+ */
+export async function getSchoolEvents(
+  schoolId: string, 
+  includeArchived = false
+): Promise<EventWithStats[]> {
+  const events = await prisma.event.findMany({
+    where: {
+      schoolId,
+      ...(includeArchived ? {} : { isArchived: false })
+    },
+    orderBy: { date: 'desc' },
+    include: {
+      positions: {
+        select: {
+          id: true,
+          slots: true,
+          students: {
+            select: { studentId: true }
+          }
+        }
+      }
+    }
+  });
+
+  return events.map(event => ({
+    id: event.id,
+    name: event.name,
+    date: event.date,
+    isActive: event.isActive,
+    isArchived: event.isArchived,
+    displayLotteryResults: event.displayLotteryResults,
+    schoolId: event.schoolId,
+    stats: {
+      totalPositions: event.positions.length,
+      totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
+      studentsWithChoices: new Set(
+        event.positions.flatMap(pos => 
+          pos.students.map(s => s.studentId)
+        )
+      ).size
+    }
+  }));
+}
+
+/**
+ * Get the active event for a school
+ */
+export async function getActiveEvent(schoolId: string): Promise<EventWithStats | null> {
+  const event = await prisma.event.findFirst({
+    where: {
+      schoolId,
+      isActive: true
+    },
+    include: {
+      positions: {
+        select: {
+          id: true,
+          slots: true,
+          students: {
+            select: { studentId: true }
+          }
+        }
+      }
+    }
+  });
+
+  if (!event) return null;
+
+  return {
+    id: event.id,
+    name: event.name,
+    date: event.date,
+    isActive: event.isActive,
+    isArchived: event.isArchived,
+    displayLotteryResults: event.displayLotteryResults,
+    schoolId: event.schoolId,
+    stats: {
+      totalPositions: event.positions.length,
+      totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
+      studentsWithChoices: new Set(
+        event.positions.flatMap(pos => 
+          pos.students.map(s => s.studentId)
+        )
+      ).size
+    }
+  };
+}
+
+/**
+ * Create a new event for a school
+ */
+export async function createEvent(
+  schoolId: string, 
+  eventData: EventData
+): Promise<EventWithStats> {
+  const event = await prisma.event.create({
+    data: {
+      schoolId,
+      name: eventData.name,
+      date: eventData.date,
+      displayLotteryResults: eventData.displayLotteryResults ?? false,
+      isActive: false,
+      isArchived: false
+    }
+  });
+
+  return {
+    id: event.id,
+    name: event.name,
+    date: event.date,
+    isActive: event.isActive,
+    isArchived: event.isArchived,
+    displayLotteryResults: event.displayLotteryResults,
+    schoolId: event.schoolId,
+    stats: {
+      totalPositions: 0,
+      totalSlots: 0,
+      studentsWithChoices: 0
+    }
+  };
+}
+
+/**
+ * Activate an event (deactivates any currently active event for the school)
+ */
+export async function activateEvent(eventId: string, schoolId: string): Promise<EventWithStats> {
+  // First, deactivate any currently active event for this school
+  await prisma.event.updateMany({
+    where: {
+      schoolId,
+      isActive: true
+    },
+    data: {
+      isActive: false
+    }
+  });
+
+  // Then activate the specified event
+  const event = await prisma.event.update({
+    where: { id: eventId },
+    data: { isActive: true },
+    include: {
+      positions: {
+        select: {
+          id: true,
+          slots: true,
+          students: {
+            select: { studentId: true }
+          }
+        }
+      }
+    }
+  });
+
+  return {
+    id: event.id,
+    name: event.name,
+    date: event.date,
+    isActive: event.isActive,
+    isArchived: event.isArchived,
+    displayLotteryResults: event.displayLotteryResults,
+    schoolId: event.schoolId,
+    stats: {
+      totalPositions: event.positions.length,
+      totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
+      studentsWithChoices: new Set(
+        event.positions.flatMap(pos => 
+          pos.students.map(s => s.studentId)
+        )
+      ).size
+    }
+  };
+}
+
+/**
+ * Archive an event (sets isArchived = true, isActive = false)
+ */
+export async function archiveEvent(eventId: string): Promise<EventWithStats> {
+  const event = await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      isActive: false,
+      isArchived: true
+    },
+    include: {
+      positions: {
+        select: {
+          id: true,
+          slots: true,
+          students: {
+            select: { studentId: true }
+          }
+        }
+      }
+    }
+  });
+
+  return {
+    id: event.id,
+    name: event.name,
+    date: event.date,
+    isActive: event.isActive,
+    isArchived: event.isArchived,
+    displayLotteryResults: event.displayLotteryResults,
+    schoolId: event.schoolId,
+    stats: {
+      totalPositions: event.positions.length,
+      totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
+      studentsWithChoices: new Set(
+        event.positions.flatMap(pos => 
+          pos.students.map(s => s.studentId)
+        )
+      ).size
+    }
+  };
+}
+
+/**
+ * Update an event
+ */
+export async function updateEvent(
+  eventId: string, 
+  eventData: Partial<EventData>
+): Promise<EventWithStats> {
+  const event = await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      ...(eventData.name !== undefined && { name: eventData.name }),
+      ...(eventData.date !== undefined && { date: eventData.date }),
+      ...(eventData.displayLotteryResults !== undefined && { 
+        displayLotteryResults: eventData.displayLotteryResults 
+      })
+    },
+    include: {
+      positions: {
+        select: {
+          id: true,
+          slots: true,
+          students: {
+            select: { studentId: true }
+          }
+        }
+      }
+    }
+  });
+
+  return {
+    id: event.id,
+    name: event.name,
+    date: event.date,
+    isActive: event.isActive,
+    isArchived: event.isArchived,
+    displayLotteryResults: event.displayLotteryResults,
+    schoolId: event.schoolId,
+    stats: {
+      totalPositions: event.positions.length,
+      totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
+      studentsWithChoices: new Set(
+        event.positions.flatMap(pos => 
+          pos.students.map(s => s.studentId)
+        )
+      ).size
+    }
+  };
+}
+
+/**
+ * Get archived event statistics for dashboard viewing
+ */
+export async function getArchivedEventStats(eventId: string) {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      positions: {
+        include: {
+          host: {
+            include: {
+              company: true
+            }
+          },
+          students: {
+            include: {
+              student: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!event) {
+    throw new Error('Event not found');
+  }
+
+  // Calculate student statistics
+  const allStudentIds = new Set(
+    event.positions.flatMap(pos => 
+      pos.students.map(s => s.studentId)
+    )
+  );
+
+  const students = await prisma.student.findMany({
+    where: {
+      id: { in: Array.from(allStudentIds) }
+    }
+  });
+
+  const gradeDistribution = students.reduce((acc, student) => {
+    acc[student.grade] = (acc[student.grade] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+
+  const permissionSlipsCompleted = students.filter(s => s.permissionSlipCompleted).length;
+
+  // Calculate company statistics
+  const companies = new Set(
+    event.positions.map(pos => pos.host?.company?.id).filter(Boolean)
+  );
+
+  return {
+    event: {
+      id: event.id,
+      name: event.name,
+      date: event.date,
+      isActive: event.isActive,
+      isArchived: event.isArchived
+    },
+    studentStats: {
+      totalStudents: students.length,
+      studentsWithChoices: allStudentIds.size,
+      gradeDistribution,
+      permissionSlipsCompleted
+    },
+    companyStats: {
+      totalCompanies: companies.size,
+      totalPositions: event.positions.length,
+      totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0)
+    }
+  };
+}
