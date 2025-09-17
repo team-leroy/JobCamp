@@ -45,6 +45,22 @@
         <div class="mb-8">
             <EventControlsWidget />
         </div>
+
+        <!-- Archived Events Link -->
+        <div class="mb-8 p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">Archived Events</h3>
+                    <p class="text-sm text-gray-600">View statistics and data from previous events</p>
+                </div>
+                <a 
+                    href="/dashboard/admin/archived" 
+                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition-colors"
+                >
+                    View Archived Events
+                </a>
+            </div>
+        </div>
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <StudentStatsWidget stats={studentStats} />

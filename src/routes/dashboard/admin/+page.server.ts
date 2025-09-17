@@ -1,6 +1,7 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
+import { archiveEvent } from '$lib/server/eventManagement';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -177,4 +178,55 @@ export const load: PageServerLoad = async ({ locals }) => {
             slotsThisYear
         }
     };  
+};
+
+export const actions: Actions = {
+    archiveEvent: async ({ locals }) => {
+        if (!locals.user) {
+            return { 
+                success: false, 
+                message: "User not authenticated" 
+            };
+        }
+
+        try {
+            // Get user's school
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const schoolId = userInfo.adminOfSchools[0].id;
+
+            // Get the active event for this school
+            const activeEvent = await prisma.event.findFirst({
+                where: { 
+                    schoolId,
+                    isActive: true 
+                }
+            });
+
+            if (!activeEvent) {
+                return { success: false, message: "No active event found to archive" };
+            }
+
+            // Archive the event
+            await archiveEvent(activeEvent.id);
+
+            return { 
+                success: true, 
+                message: "Event archived successfully" 
+            };
+        } catch (error) {
+            console.error('Error archiving event:', error);
+            return { 
+                success: false, 
+                message: "Failed to archive event" 
+            };
+        }
+    }
 };
