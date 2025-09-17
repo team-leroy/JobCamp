@@ -4,20 +4,27 @@ import { startLotteryJob } from '$lib/server/lottery';
 import { prisma } from '$lib/server/prisma';
 
 export const load: PageServerLoad = async ({ locals }) => {
+    console.log('Lottery page load started');
+    
     if (!locals.user) {
+        console.log('No user, redirecting to login');
         redirect(302, "/login");
     }
     if (!locals.user.emailVerified) {
+        console.log('User not verified, redirecting to verify-email');
         redirect(302, "/verify-email");
     }
 
     // Check if user is admin
+    console.log('Checking user admin status...');
     const userInfo = await prisma.user.findFirst({
         where: { id: locals.user.id },
         include: { adminOfSchools: true }
     });
+    console.log('User info:', userInfo?.adminOfSchools?.length, 'admin schools');
 
     if (!userInfo?.adminOfSchools?.length) {
+        console.log('User not admin, redirecting to dashboard');
         redirect(302, "/dashboard");
     }
 
@@ -57,6 +64,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     // Get lottery configuration for the first school (assuming single school admin for now)
     const schoolId = schoolIds[0];
+    console.log('Getting lottery configuration for school:', schoolId);
     let lotteryConfig = await prisma.lotteryConfiguration.findUnique({
         where: { schoolId },
         include: {
