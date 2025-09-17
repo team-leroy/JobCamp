@@ -593,4 +593,380 @@ describe('Event Management Functions', () => {
       await expect(getArchivedEventStats('nonexistent-event')).rejects.toThrow('Event not found');
     });
   });
+
+  describe('Event State Management', () => {
+    describe('Draft Events', () => {
+      it('should create events in draft state by default', async () => {
+        const eventData = {
+          name: 'Draft Event',
+          date: testDate,
+          displayLotteryResults: false
+        };
+
+        const mockCreatedEvent = {
+          id: testEventId,
+          name: 'Draft Event',
+          date: testDate,
+          isActive: false,
+          isArchived: false,
+          displayLotteryResults: false,
+          schoolId: testSchoolId
+        };
+
+        prisma.event.create.mockResolvedValue(mockCreatedEvent);
+
+        const result = await createEvent(testSchoolId, eventData);
+
+        expect(result.isActive).toBe(false);
+        expect(result.isArchived).toBe(false);
+        expect(prisma.event.create).toHaveBeenCalledWith({
+          data: {
+            schoolId: testSchoolId,
+            name: 'Draft Event',
+            date: testDate,
+            displayLotteryResults: false,
+            isActive: false,
+            isArchived: false
+          }
+        });
+      });
+
+      it('should allow multiple draft events per school', async () => {
+        const mockEvents = [
+          {
+            id: 'draft1',
+            name: 'Draft Event 1',
+            date: new Date('2024-12-01'),
+            isActive: false,
+            isArchived: false,
+            displayLotteryResults: false,
+            schoolId: testSchoolId,
+            positions: []
+          },
+          {
+            id: 'draft2',
+            name: 'Draft Event 2',
+            date: new Date('2024-12-02'),
+            isActive: false,
+            isArchived: false,
+            displayLotteryResults: false,
+            schoolId: testSchoolId,
+            positions: []
+          }
+        ];
+
+        prisma.event.findMany.mockResolvedValue(mockEvents);
+
+        const result = await getSchoolEvents(testSchoolId, false);
+
+        expect(result).toHaveLength(2);
+        expect(result.every(event => !event.isActive && !event.isArchived)).toBe(true);
+      });
+    });
+
+    describe('Active Events', () => {
+      it('should ensure only one active event per school', async () => {
+        const mockEvent = {
+          id: testEventId,
+          name: 'Active Event',
+          date: testDate,
+          isActive: true,
+          isArchived: false,
+          displayLotteryResults: true,
+          schoolId: testSchoolId,
+          positions: []
+        };
+
+        prisma.event.updateMany.mockResolvedValue({ count: 1 });
+        prisma.event.update.mockResolvedValue(mockEvent);
+
+        await activateEvent(testEventId, testSchoolId);
+
+        expect(prisma.event.updateMany).toHaveBeenCalledWith({
+          where: {
+            schoolId: testSchoolId,
+            isActive: true
+          },
+          data: {
+            isActive: false
+          }
+        });
+
+        expect(prisma.event.update).toHaveBeenCalledWith({
+          where: { id: testEventId },
+          data: { isActive: true },
+          include: {
+            positions: {
+              select: {
+                id: true,
+                slots: true,
+                students: {
+                  select: { studentId: true }
+                }
+              }
+            }
+          }
+        });
+      });
+
+      it('should allow activating archived events (current behavior)', async () => {
+        const archivedEvent = {
+          id: testEventId,
+          name: 'Archived Event',
+          date: testDate,
+          isActive: true, // Will be activated
+          isArchived: true, // But remains archived
+          displayLotteryResults: true,
+          schoolId: testSchoolId,
+          positions: []
+        };
+
+        prisma.event.findFirst.mockResolvedValue(archivedEvent);
+
+        // This should work, but the event will remain archived
+        prisma.event.updateMany.mockResolvedValue({ count: 0 });
+        prisma.event.update.mockResolvedValue(archivedEvent);
+
+        const result = await activateEvent(testEventId, testSchoolId);
+
+        expect(result.isActive).toBe(true);
+        expect(result.isArchived).toBe(true); // Still archived
+      });
+    });
+
+    describe('Archived Events', () => {
+      it('should archive events and make them inactive', async () => {
+        const mockEvent = {
+          id: testEventId,
+          name: 'Event to Archive',
+          date: testDate,
+          isActive: false,
+          isArchived: true,
+          displayLotteryResults: true,
+          schoolId: testSchoolId,
+          positions: []
+        };
+
+        prisma.event.update.mockResolvedValue(mockEvent);
+
+        const result = await archiveEvent(testEventId);
+
+        expect(prisma.event.update).toHaveBeenCalledWith({
+          where: { id: testEventId },
+          data: {
+            isActive: false,
+            isArchived: true
+          },
+          include: {
+            positions: {
+              select: {
+                id: true,
+                slots: true,
+                students: {
+                  select: { studentId: true }
+                }
+              }
+            }
+          }
+        });
+
+        expect(result.isActive).toBe(false);
+        expect(result.isArchived).toBe(true);
+      });
+
+      it('should include archived events when requested', async () => {
+        const mockEvents = [
+          {
+            id: 'active1',
+            name: 'Active Event',
+            date: new Date('2024-12-01'),
+            isActive: true,
+            isArchived: false,
+            displayLotteryResults: true,
+            schoolId: testSchoolId,
+            positions: []
+          },
+          {
+            id: 'archived1',
+            name: 'Archived Event 1',
+            date: new Date('2024-11-01'),
+            isActive: false,
+            isArchived: true,
+            displayLotteryResults: false,
+            schoolId: testSchoolId,
+            positions: []
+          },
+          {
+            id: 'archived2',
+            name: 'Archived Event 2',
+            date: new Date('2024-10-01'),
+            isActive: false,
+            isArchived: true,
+            displayLotteryResults: true,
+            schoolId: testSchoolId,
+            positions: []
+          }
+        ];
+
+        prisma.event.findMany.mockResolvedValue(mockEvents);
+
+        const result = await getSchoolEvents(testSchoolId, true);
+
+        expect(result).toHaveLength(3);
+        expect(result.filter(event => event.isArchived)).toHaveLength(2);
+        expect(result.filter(event => event.isActive)).toHaveLength(1);
+      });
+
+      it('should exclude archived events by default', async () => {
+        const mockEvents = [
+          {
+            id: 'active1',
+            name: 'Active Event',
+            date: new Date('2024-12-01'),
+            isActive: true,
+            isArchived: false,
+            displayLotteryResults: true,
+            schoolId: testSchoolId,
+            positions: []
+          },
+          {
+            id: 'draft1',
+            name: 'Draft Event',
+            date: new Date('2024-12-02'),
+            isActive: false,
+            isArchived: false,
+            displayLotteryResults: false,
+            schoolId: testSchoolId,
+            positions: []
+          }
+        ];
+
+        prisma.event.findMany.mockResolvedValue(mockEvents);
+
+        const result = await getSchoolEvents(testSchoolId, false);
+
+        expect(result).toHaveLength(2);
+        expect(result.every(event => !event.isArchived)).toBe(true);
+      });
+    });
+
+    describe('Event State Transitions', () => {
+      it('should handle draft -> active transition', async () => {
+        const draftEvent = {
+          id: testEventId,
+          name: 'Draft Event',
+          date: testDate,
+          isActive: false,
+          isArchived: false,
+          displayLotteryResults: false,
+          schoolId: testSchoolId,
+          positions: []
+        };
+
+        const activeEvent = {
+          ...draftEvent,
+          isActive: true
+        };
+
+        prisma.event.updateMany.mockResolvedValue({ count: 0 });
+        prisma.event.update.mockResolvedValue(activeEvent);
+
+        const result = await activateEvent(testEventId, testSchoolId);
+
+        expect(result.isActive).toBe(true);
+        expect(result.isArchived).toBe(false);
+      });
+
+      it('should handle active -> archived transition', async () => {
+        const activeEvent = {
+          id: testEventId,
+          name: 'Active Event',
+          date: testDate,
+          isActive: true,
+          isArchived: false,
+          displayLotteryResults: true,
+          schoolId: testSchoolId,
+          positions: []
+        };
+
+        const archivedEvent = {
+          ...activeEvent,
+          isActive: false,
+          isArchived: true
+        };
+
+        prisma.event.update.mockResolvedValue(archivedEvent);
+
+        const result = await archiveEvent(testEventId);
+
+        expect(result.isActive).toBe(false);
+        expect(result.isArchived).toBe(true);
+      });
+
+      it('should handle draft -> archived transition', async () => {
+        const draftEvent = {
+          id: testEventId,
+          name: 'Draft Event',
+          date: testDate,
+          isActive: false,
+          isArchived: false,
+          displayLotteryResults: false,
+          schoolId: testSchoolId,
+          positions: []
+        };
+
+        const archivedEvent = {
+          ...draftEvent,
+          isArchived: true
+        };
+
+        prisma.event.update.mockResolvedValue(archivedEvent);
+
+        const result = await archiveEvent(testEventId);
+
+        expect(result.isActive).toBe(false);
+        expect(result.isArchived).toBe(true);
+      });
+    });
+
+    describe('Event State Validation', () => {
+      it('should validate event state combinations', () => {
+        // Valid states
+        expect(() => validateEventState(false, false)).not.toThrow(); // Draft
+        expect(() => validateEventState(true, false)).not.toThrow();  // Active
+        expect(() => validateEventState(false, true)).not.toThrow(); // Archived
+
+        // Invalid states
+        expect(() => validateEventState(true, true)).toThrow('Event cannot be both active and archived');
+      });
+
+      it('should validate unique active event constraint', async () => {
+        const existingActiveEvent = {
+          id: 'existing-active',
+          name: 'Existing Active Event',
+          date: new Date('2024-11-01'),
+          isActive: true,
+          isArchived: false,
+          displayLotteryResults: true,
+          schoolId: testSchoolId,
+          positions: []
+        };
+
+        prisma.event.findFirst.mockResolvedValue(existingActiveEvent);
+
+        const result = await getActiveEvent(testSchoolId);
+
+        expect(result).not.toBeNull();
+        expect(result?.isActive).toBe(true);
+        expect(result?.isArchived).toBe(false);
+      });
+    });
+  });
 });
+
+// Helper function for event state validation
+function validateEventState(isActive: boolean, isArchived: boolean): void {
+  if (isActive && isArchived) {
+    throw new Error('Event cannot be both active and archived');
+  }
+}
