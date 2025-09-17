@@ -163,7 +163,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         positions,
         companies
     };
-};
+}
 
 async function calculateLotteryStats(results: { studentId: string; positionId: string }[]) {
     // Get all students who made choices
