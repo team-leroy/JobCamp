@@ -2,13 +2,9 @@
 	import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
 	import { cn } from "$lib/utils.js";
 
-	type $$Props = DropdownMenuPrimitive.LabelProps & {
-		inset?: boolean;
-	};
-
 	interface Props {
-		class?: $$Props["class"];
-		inset?: $$Props["inset"];
+		class?: string;
+		inset?: boolean;
 		children?: import('svelte').Snippet;
 		[key: string]: any
 	}
@@ -17,9 +13,9 @@
 	
 </script>
 
-<DropdownMenuPrimitive.Label
+<DropdownMenuPrimitive.GroupHeading
 	class={cn("px-2 py-1.5 text-sm font-semibold", inset && "pl-8", className)}
 	{...rest}
 >
 	{@render children?.()}
-</DropdownMenuPrimitive.Label>
+</DropdownMenuPrimitive.GroupHeading>
