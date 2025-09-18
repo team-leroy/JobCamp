@@ -454,10 +454,13 @@ async function calculateCompanyStats(userInfo: UserInfo) {
 
 async function calculateStudentStats(userInfo: UserInfo) {
     try {
-        // Get all positions to calculate total available slots
+        // Get all positions from active events to calculate total available slots
         const allPositions = await prisma.position.findMany({
             where: {
-                event: { schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) } }
+                event: { 
+                    schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
+                    isActive: true 
+                }
             },
             include: {
                 host: {

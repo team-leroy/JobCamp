@@ -22,12 +22,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
     const positionData = await prisma.position.findMany({
         where: {
-            host: {
-                company: {
-                    school: {
-                        id: school.id
-                    }
-                }
+            event: {
+                schoolId: school.id,
+                isActive: true
             }
         },
         include: {

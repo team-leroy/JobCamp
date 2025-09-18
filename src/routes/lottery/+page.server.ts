@@ -133,10 +133,13 @@ export const load: PageServerLoad = async ({ locals }) => {
         }
     });
 
-    // Get all positions for manual assignment dropdown
+    // Get all positions from the active event for manual assignment dropdown
     const positions = await prisma.position.findMany({
         where: {
-            event: { schoolId }
+            event: { 
+                schoolId,
+                isActive: true 
+            }
         },
         include: {
             host: {

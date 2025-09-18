@@ -3,6 +3,7 @@
   import StudentStatsWidget from "$lib/components/admin/StudentStatsWidget.svelte";
   import CompanyStatsWidget from "$lib/components/admin/CompanyStatsWidget.svelte";
   import EventControlsWidget from "$lib/components/admin/EventControlsWidget.svelte";
+  // import EventManagementWidget from "$lib/components/admin/EventManagementWidget.svelte";
   import { enhance } from "$app/forms";
 
   export let data;
@@ -12,6 +13,7 @@
     loggedIn,
     isHost,
     upcomingEvent,
+    // schoolEvents,
     studentStats,
     companyStats,
   } = data;
@@ -23,23 +25,33 @@
   <div class="max-w-6xl w-full px-4">
     <h1 class="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-    <!-- Upcoming Event Section -->
+    <!-- Active Event Section -->
     <div
       class="mb-8 p-6 bg-white rounded-lg shadow-md border-l-4 border-blue-500"
     >
-      <h2 class="text-xl font-semibold text-gray-800 mb-2">Upcoming Event</h2>
+      <h2 class="text-xl font-semibold text-gray-800 mb-2">Active Event</h2>
       {#if upcomingEvent}
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-lg font-medium text-gray-900">
-              {upcomingEvent.date
-                ? new Date(upcomingEvent.date).toLocaleDateString("en-US", {
+            <h3 class="text-lg font-medium text-gray-900">
+              {upcomingEvent.name ||
+                `Event ${new Date(upcomingEvent.date).toLocaleDateString(
+                  "en-US",
+                  {
                     weekday: "long",
                     year: "numeric",
                     month: "long",
                     day: "numeric",
-                  })
-                : "Date TBD"}
+                  }
+                )}`}
+            </h3>
+            <p class="text-sm text-gray-600">
+              {new Date(upcomingEvent.date).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
             </p>
             {#if upcomingEvent.displayLotteryResults}
               <p class="text-sm text-green-600 mt-1">
@@ -54,9 +66,16 @@
           </div>
         </div>
       {:else}
-        <p class="text-gray-600 italic">No upcoming events</p>
+        <p class="text-gray-600 italic">
+          No active event. Create and activate an event below.
+        </p>
       {/if}
     </div>
+
+    <!-- Event Management Widget -->
+    <!-- <div class="mb-8">
+      <EventManagementWidget {schoolEvents} {form} />
+    </div> -->
 
     <!-- Event Controls Widget -->
     <div class="mb-8">

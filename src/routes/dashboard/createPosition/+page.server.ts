@@ -70,9 +70,16 @@ export const actions: Actions = {
             redirect(302, "/login");
         }
 
-        const event = (await prisma.school.findFirst({where: {id: schoolId}, include: {events: true}}))?.events[0];   
-        if (!event) {
-            redirect(302, "/login")
+        // Get the active event for this school
+        const activeEvent = await prisma.event.findFirst({
+            where: { 
+                schoolId,
+                isActive: true 
+            }
+        });
+        
+        if (!activeEvent) {
+            throw new Error('No active event found for this school');
         }
 
         // var attachments = [];
@@ -107,7 +114,7 @@ export const actions: Actions = {
                             arrival: form.data.arrival,
                             start: form.data.start,
                             end:form.data.release,
-                            event: { connect: { id: event.id } },
+                            event: { connect: { id: activeEvent.id } },
                             // attachments: { create: attachments }
                         }
                     ]

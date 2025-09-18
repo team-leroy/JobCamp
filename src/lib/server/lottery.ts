@@ -96,10 +96,13 @@ async function runLotteryInBackground(jobId: string) {
             }
         });
 
-        // Get all positions
+        // Get all positions from the active event
         const positions = await prisma.position.findMany({
             where: {
-                event: { schoolId }
+                event: { 
+                    schoolId,
+                    isActive: true 
+                }
             },
             include: {
                 event: {
