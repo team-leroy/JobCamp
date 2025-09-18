@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { archiveEvent } from '$lib/server/eventManagement';
+import { archiveEvent, createEvent } from '$lib/server/eventManagement';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -181,6 +181,61 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+    createEvent: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { 
+                success: false, 
+                message: "User not authenticated" 
+            };
+        }
+
+        try {
+            // Get user's school
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const schoolId = userInfo.adminOfSchools[0].id;
+
+            // Parse form data
+            const formData = await request.formData();
+            const eventName = formData.get('eventName')?.toString() || undefined;
+            const eventDate = formData.get('eventDate')?.toString();
+            const displayLotteryResults = formData.get('displayLotteryResults') === 'on';
+            const carryForwardData = formData.get('carryForwardData') === 'on';
+
+            if (!eventDate) {
+                return { success: false, message: "Event date is required" };
+            }
+
+            // Create the event
+            const eventData = {
+                name: eventName,
+                date: new Date(eventDate),
+                displayLotteryResults,
+                carryForwardData
+            };
+
+            await createEvent(schoolId, eventData);
+
+            return { 
+                success: true, 
+                message: "Event created successfully" 
+            };
+        } catch (error) {
+            console.error('Error creating event:', error);
+            return { 
+                success: false, 
+                message: "Failed to create event" 
+            };
+        }
+    },
+
     archiveEvent: async ({ locals }) => {
         if (!locals.user) {
             return { 

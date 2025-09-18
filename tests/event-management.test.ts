@@ -11,6 +11,9 @@ vi.mock('../src/lib/server/prisma', () => ({
       update: vi.fn(),
       updateMany: vi.fn()
     },
+    position: {
+      createMany: vi.fn()
+    },
     student: {
       findMany: vi.fn()
     }
@@ -261,7 +264,14 @@ describe('Event Management Functions', () => {
         schoolId: testSchoolId
       };
 
+      const mockEventWithStats = {
+        ...mockCreatedEvent,
+        positions: []
+      };
+
       vi.mocked(prisma).event.create.mockResolvedValue(mockCreatedEvent);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(null); // No previous event
+      vi.mocked(prisma).event.findUnique.mockResolvedValue(mockEventWithStats);
 
       const result = await createEvent(testSchoolId, eventData);
 
@@ -308,7 +318,14 @@ describe('Event Management Functions', () => {
         schoolId: testSchoolId
       };
 
+      const mockEventWithStats = {
+        ...mockCreatedEvent,
+        positions: []
+      };
+
       vi.mocked(prisma).event.create.mockResolvedValue(mockCreatedEvent);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(null); // No previous event
+      vi.mocked(prisma).event.findUnique.mockResolvedValue(mockEventWithStats);
 
       const result = await createEvent(testSchoolId, eventData);
 
@@ -323,6 +340,154 @@ describe('Event Management Functions', () => {
           isArchived: false
         }
       });
+    });
+
+    it('should carry forward positions when carryForwardData is true', async () => {
+      const eventData = {
+        name: 'New Event',
+        date: testDate,
+        displayLotteryResults: true,
+        carryForwardData: true
+      };
+
+      const mockCreatedEvent = {
+        id: testEventId,
+        name: 'New Event',
+        date: testDate,
+        isActive: false,
+        isArchived: false,
+        displayLotteryResults: true,
+        schoolId: testSchoolId
+      };
+
+      const mockPreviousEvent = {
+        id: 'previous-event-id',
+        positions: [
+          {
+            id: 'pos1',
+            title: 'Software Engineer',
+            career: 'Technology',
+            slots: 2,
+            summary: 'Learn about software development',
+            contact_name: 'John Doe',
+            contact_email: 'john@company.com',
+            address: '123 Main St',
+            instructions: 'Bring laptop',
+            attire: 'Business casual',
+            arrival: '9:00 AM',
+            start: '9:30 AM',
+            end: '3:00 PM',
+            hostId: 'host1'
+          }
+        ]
+      };
+
+      const mockEventWithStats = {
+        ...mockCreatedEvent,
+        positions: [
+          {
+            id: 'new-pos1',
+            slots: 2,
+            students: []
+          }
+        ]
+      };
+
+      vi.mocked(prisma).event.create.mockResolvedValue(mockCreatedEvent);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockPreviousEvent);
+      vi.mocked(prisma).position.createMany.mockResolvedValue({ count: 1 });
+      vi.mocked(prisma).event.findUnique.mockResolvedValue(mockEventWithStats);
+
+      const result = await createEvent(testSchoolId, eventData);
+
+      expect(vi.mocked(prisma).position.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            title: 'Software Engineer',
+            career: 'Technology',
+            slots: 2,
+            summary: 'Learn about software development',
+            contact_name: 'John Doe',
+            contact_email: 'john@company.com',
+            address: '123 Main St',
+            instructions: 'Bring laptop',
+            attire: 'Business casual',
+            arrival: '9:00 AM',
+            start: '9:30 AM',
+            end: '3:00 PM',
+            eventId: testEventId,
+            hostId: 'host1'
+          }
+        ]
+      });
+
+      expect(result.stats.totalPositions).toBe(1);
+    });
+
+    it('should not carry forward positions when carryForwardData is false', async () => {
+      const eventData = {
+        name: 'New Event',
+        date: testDate,
+        displayLotteryResults: true,
+        carryForwardData: false
+      };
+
+      const mockCreatedEvent = {
+        id: testEventId,
+        name: 'New Event',
+        date: testDate,
+        isActive: false,
+        isArchived: false,
+        displayLotteryResults: true,
+        schoolId: testSchoolId
+      };
+
+      const mockEventWithStats = {
+        ...mockCreatedEvent,
+        positions: []
+      };
+
+      vi.mocked(prisma).event.create.mockResolvedValue(mockCreatedEvent);
+      vi.mocked(prisma).event.findUnique.mockResolvedValue(mockEventWithStats);
+
+      const result = await createEvent(testSchoolId, eventData);
+
+      expect(vi.mocked(prisma).position.createMany).not.toHaveBeenCalled();
+      expect(result.stats.totalPositions).toBe(0);
+    });
+
+    it('should default to carrying forward data when carryForwardData is undefined', async () => {
+      const eventData = {
+        name: 'New Event',
+        date: testDate,
+        displayLotteryResults: true
+        // carryForwardData is undefined
+      };
+
+      const mockCreatedEvent = {
+        id: testEventId,
+        name: 'New Event',
+        date: testDate,
+        isActive: false,
+        isArchived: false,
+        displayLotteryResults: true,
+        schoolId: testSchoolId
+      };
+
+      const mockEventWithStats = {
+        ...mockCreatedEvent,
+        positions: []
+      };
+
+      vi.mocked(prisma).event.create.mockResolvedValue(mockCreatedEvent);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(null); // No previous event
+      vi.mocked(prisma).event.findUnique.mockResolvedValue(mockEventWithStats);
+
+      const result = await createEvent(testSchoolId, eventData);
+
+      // Should still call findFirst to look for previous event (default behavior)
+      expect(vi.mocked(prisma).event.findFirst).toHaveBeenCalled();
+      expect(result.stats.totalPositions).toBe(0);
     });
   });
 
@@ -613,7 +778,14 @@ describe('Event Management Functions', () => {
           schoolId: testSchoolId
         };
 
+        const mockEventWithStats = {
+          ...mockCreatedEvent,
+          positions: []
+        };
+
         vi.mocked(prisma).event.create.mockResolvedValue(mockCreatedEvent);
+        vi.mocked(prisma).event.findFirst.mockResolvedValue(null); // No previous event
+        vi.mocked(prisma).event.findUnique.mockResolvedValue(mockEventWithStats);
 
         const result = await createEvent(testSchoolId, eventData);
 

@@ -4,6 +4,7 @@ export interface EventData {
   name?: string;
   date: Date;
   displayLotteryResults?: boolean;
+  carryForwardData?: boolean; // Default to true - carry forward existing data
 }
 
 export interface EventWithStats {
@@ -118,6 +119,9 @@ export async function createEvent(
   schoolId: string, 
   eventData: EventData
 ): Promise<EventWithStats> {
+  const shouldCarryForward = eventData.carryForwardData ?? true; // Default to true
+  
+  // Create the new event
   const event = await prisma.event.create({
     data: {
       schoolId,
@@ -129,18 +133,85 @@ export async function createEvent(
     }
   });
 
+  // If carryForwardData is true, copy positions from the most recent event
+  if (shouldCarryForward) {
+    // Find the most recent event for this school (active or archived)
+    const previousEvent = await prisma.event.findFirst({
+      where: {
+        schoolId,
+        id: { not: event.id } // Exclude the event we just created
+      },
+      orderBy: { date: 'desc' },
+      include: {
+        positions: {
+          include: {
+            host: {
+              include: {
+                company: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (previousEvent && previousEvent.positions.length > 0) {
+      // Copy positions from the previous event
+      const positionData = previousEvent.positions.map(position => ({
+        title: position.title,
+        career: position.career,
+        slots: position.slots,
+        summary: position.summary,
+        contact_name: position.contact_name,
+        contact_email: position.contact_email,
+        address: position.address,
+        instructions: position.instructions,
+        attire: position.attire,
+        arrival: position.arrival,
+        start: position.start,
+        end: position.end,
+        eventId: event.id,
+        hostId: position.hostId
+      }));
+
+      await prisma.position.createMany({
+        data: positionData
+      });
+    }
+  }
+
+  // Get the final event with stats
+  const eventWithStats = await prisma.event.findUnique({
+    where: { id: event.id },
+    include: {
+      positions: {
+        select: {
+          id: true,
+          slots: true,
+          students: {
+            select: { studentId: true }
+          }
+        }
+      }
+    }
+  });
+
   return {
-    id: event.id,
-    name: event.name,
-    date: event.date,
-    isActive: event.isActive,
-    isArchived: event.isArchived,
-    displayLotteryResults: event.displayLotteryResults,
-    schoolId: event.schoolId,
+    id: eventWithStats!.id,
+    name: eventWithStats!.name,
+    date: eventWithStats!.date,
+    isActive: eventWithStats!.isActive,
+    isArchived: eventWithStats!.isArchived,
+    displayLotteryResults: eventWithStats!.displayLotteryResults,
+    schoolId: eventWithStats!.schoolId,
     stats: {
-      totalPositions: 0,
-      totalSlots: 0,
-      studentsWithChoices: 0
+      totalPositions: eventWithStats!.positions.length,
+      totalSlots: eventWithStats!.positions.reduce((sum, pos) => sum + pos.slots, 0),
+      studentsWithChoices: new Set(
+        eventWithStats!.positions.flatMap(pos => 
+          pos.students.map(s => s.studentId)
+        )
+      ).size
     }
   };
 }
