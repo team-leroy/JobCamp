@@ -62,6 +62,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     const posData: Array<{
         id: string;
+        title: string;
+        career: string;
+        slots: number;
+        summary: string;
+        address: string;
+        instructions: string;
+        attire: string;
+        arrival: string;
+        start: string;
+        end: string;
+        host: {
+            company?: {
+                companyName: string;
+                companyDescription?: string;
+                companyUrl?: string;
+            };
+        };
         selected?: boolean;
         [key: string]: unknown;
     }> = positionData;

@@ -44,12 +44,12 @@ describe('Event Management Functions', () => {
 
   describe('getActiveEvent', () => {
     it('should return null when no active event exists', async () => {
-      prisma.event.findFirst.mockResolvedValue(null);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(null);
 
       const result = await getActiveEvent(testSchoolId);
 
       expect(result).toBeNull();
-      expect(prisma.event.findFirst).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.findFirst).toHaveBeenCalledWith({
         where: {
           schoolId: testSchoolId,
           isActive: true
@@ -80,7 +80,7 @@ describe('Event Management Functions', () => {
         positions: []
       };
 
-      prisma.event.findFirst.mockResolvedValue(mockEvent);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent);
 
       const result = await getActiveEvent(testSchoolId);
 
@@ -115,7 +115,7 @@ describe('Event Management Functions', () => {
         ]
       };
 
-      prisma.event.findFirst.mockResolvedValue(mockEvent);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent);
 
       const result = await getActiveEvent(testSchoolId);
 
@@ -152,12 +152,12 @@ describe('Event Management Functions', () => {
         }
       ];
 
-      prisma.event.findMany.mockResolvedValue(mockEvents);
+      vi.mocked(prisma).event.findMany.mockResolvedValue(mockEvents);
 
       const result = await getSchoolEvents(testSchoolId, true);
 
       expect(result).toHaveLength(2);
-      expect(prisma.event.findMany).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.findMany).toHaveBeenCalledWith({
         where: { schoolId: testSchoolId },
         orderBy: { date: 'desc' },
         include: {
@@ -188,12 +188,12 @@ describe('Event Management Functions', () => {
         }
       ];
 
-      prisma.event.findMany.mockResolvedValue(mockEvents);
+      vi.mocked(prisma).event.findMany.mockResolvedValue(mockEvents);
 
       const result = await getSchoolEvents(testSchoolId, false);
 
       expect(result).toHaveLength(1);
-      expect(prisma.event.findMany).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.findMany).toHaveBeenCalledWith({
         where: { schoolId: testSchoolId, isArchived: false },
         orderBy: { date: 'desc' },
         include: {
@@ -234,7 +234,7 @@ describe('Event Management Functions', () => {
         }
       ];
 
-      prisma.event.findMany.mockResolvedValue(mockEvents);
+      vi.mocked(prisma).event.findMany.mockResolvedValue(mockEvents);
 
       const result = await getSchoolEvents(testSchoolId, false);
 
@@ -261,7 +261,7 @@ describe('Event Management Functions', () => {
         schoolId: testSchoolId
       };
 
-      prisma.event.create.mockResolvedValue(mockCreatedEvent);
+      vi.mocked(prisma).event.create.mockResolvedValue(mockCreatedEvent);
 
       const result = await createEvent(testSchoolId, eventData);
 
@@ -280,7 +280,7 @@ describe('Event Management Functions', () => {
         }
       });
 
-      expect(prisma.event.create).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.create).toHaveBeenCalledWith({
         data: {
           schoolId: testSchoolId,
           name: 'New Test Event',
@@ -308,12 +308,12 @@ describe('Event Management Functions', () => {
         schoolId: testSchoolId
       };
 
-      prisma.event.create.mockResolvedValue(mockCreatedEvent);
+      vi.mocked(prisma).event.create.mockResolvedValue(mockCreatedEvent);
 
       const result = await createEvent(testSchoolId, eventData);
 
       expect(result.name).toBeNull();
-      expect(prisma.event.create).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.create).toHaveBeenCalledWith({
         data: {
           schoolId: testSchoolId,
           name: undefined,
@@ -339,12 +339,12 @@ describe('Event Management Functions', () => {
         positions: []
       };
 
-      prisma.event.updateMany.mockResolvedValue({ count: 1 });
-      prisma.event.update.mockResolvedValue(mockEvent);
+      vi.mocked(prisma).event.updateMany.mockResolvedValue({ count: 1 });
+      vi.mocked(prisma).event.update.mockResolvedValue(mockEvent);
 
       const result = await activateEvent(testEventId, testSchoolId);
 
-      expect(prisma.event.updateMany).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.updateMany).toHaveBeenCalledWith({
         where: {
           schoolId: testSchoolId,
           isActive: true
@@ -354,7 +354,7 @@ describe('Event Management Functions', () => {
         }
       });
 
-      expect(prisma.event.update).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.update).toHaveBeenCalledWith({
         where: { id: testEventId },
         data: { isActive: true },
         include: {
@@ -385,8 +385,8 @@ describe('Event Management Functions', () => {
         positions: []
       };
 
-      prisma.event.updateMany.mockResolvedValue({ count: 0 });
-      prisma.event.update.mockResolvedValue(mockEvent);
+      vi.mocked(prisma).event.updateMany.mockResolvedValue({ count: 0 });
+      vi.mocked(prisma).event.update.mockResolvedValue(mockEvent);
 
       const result = await activateEvent(testEventId, testSchoolId);
 
@@ -407,11 +407,11 @@ describe('Event Management Functions', () => {
         positions: []
       };
 
-      prisma.event.update.mockResolvedValue(mockEvent);
+      vi.mocked(prisma).event.update.mockResolvedValue(mockEvent);
 
       const result = await archiveEvent(testEventId);
 
-      expect(prisma.event.update).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.update).toHaveBeenCalledWith({
         where: { id: testEventId },
         data: {
           isActive: false,
@@ -453,11 +453,11 @@ describe('Event Management Functions', () => {
         positions: []
       };
 
-      prisma.event.update.mockResolvedValue(mockUpdatedEvent);
+      vi.mocked(prisma).event.update.mockResolvedValue(mockUpdatedEvent);
 
       const result = await updateEvent(testEventId, updateData);
 
-      expect(prisma.event.update).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.update).toHaveBeenCalledWith({
         where: { id: testEventId },
         data: {
           name: 'Updated Event Name',
@@ -497,12 +497,12 @@ describe('Event Management Functions', () => {
         positions: []
       };
 
-      prisma.event.update.mockResolvedValue(mockUpdatedEvent);
+      vi.mocked(prisma).event.update.mockResolvedValue(mockUpdatedEvent);
 
       const result = await updateEvent(testEventId, updateData);
 
       expect(result.name).toBe('Updated Event Name');
-      expect(prisma.event.update).toHaveBeenCalledWith({
+      expect(vi.mocked(prisma).event.update).toHaveBeenCalledWith({
         where: { id: testEventId },
         data: {
           name: 'Updated Event Name'
@@ -556,8 +556,8 @@ describe('Event Management Functions', () => {
         ]
       };
 
-      prisma.event.findUnique.mockResolvedValue(mockEvent);
-      prisma.student.findMany.mockResolvedValue([
+      vi.mocked(prisma).event.findUnique.mockResolvedValue(mockEvent);
+      vi.mocked(prisma).student.findMany.mockResolvedValue([
         { id: 'student1', grade: 9, permissionSlipCompleted: true },
         { id: 'student2', grade: 10, permissionSlipCompleted: false },
         { id: 'student3', grade: 11, permissionSlipCompleted: true }
@@ -588,7 +588,7 @@ describe('Event Management Functions', () => {
     });
 
     it('should throw error when event not found', async () => {
-      prisma.event.findUnique.mockResolvedValue(null);
+      vi.mocked(prisma).event.findUnique.mockResolvedValue(null);
 
       await expect(getArchivedEventStats('nonexistent-event')).rejects.toThrow('Event not found');
     });
@@ -613,13 +613,13 @@ describe('Event Management Functions', () => {
           schoolId: testSchoolId
         };
 
-        prisma.event.create.mockResolvedValue(mockCreatedEvent);
+        vi.mocked(prisma).event.create.mockResolvedValue(mockCreatedEvent);
 
         const result = await createEvent(testSchoolId, eventData);
 
         expect(result.isActive).toBe(false);
         expect(result.isArchived).toBe(false);
-        expect(prisma.event.create).toHaveBeenCalledWith({
+        expect(vi.mocked(prisma).event.create).toHaveBeenCalledWith({
           data: {
             schoolId: testSchoolId,
             name: 'Draft Event',
@@ -655,7 +655,7 @@ describe('Event Management Functions', () => {
           }
         ];
 
-        prisma.event.findMany.mockResolvedValue(mockEvents);
+        vi.mocked(prisma).event.findMany.mockResolvedValue(mockEvents);
 
         const result = await getSchoolEvents(testSchoolId, false);
 
@@ -677,12 +677,12 @@ describe('Event Management Functions', () => {
           positions: []
         };
 
-        prisma.event.updateMany.mockResolvedValue({ count: 1 });
-        prisma.event.update.mockResolvedValue(mockEvent);
+        vi.mocked(prisma).event.updateMany.mockResolvedValue({ count: 1 });
+        vi.mocked(prisma).event.update.mockResolvedValue(mockEvent);
 
         await activateEvent(testEventId, testSchoolId);
 
-        expect(prisma.event.updateMany).toHaveBeenCalledWith({
+        expect(vi.mocked(prisma).event.updateMany).toHaveBeenCalledWith({
           where: {
             schoolId: testSchoolId,
             isActive: true
@@ -692,7 +692,7 @@ describe('Event Management Functions', () => {
           }
         });
 
-        expect(prisma.event.update).toHaveBeenCalledWith({
+        expect(vi.mocked(prisma).event.update).toHaveBeenCalledWith({
           where: { id: testEventId },
           data: { isActive: true },
           include: {
@@ -721,11 +721,11 @@ describe('Event Management Functions', () => {
           positions: []
         };
 
-        prisma.event.findFirst.mockResolvedValue(archivedEvent);
+        vi.mocked(prisma).event.findFirst.mockResolvedValue(archivedEvent);
 
         // This should work, but the event will remain archived
-        prisma.event.updateMany.mockResolvedValue({ count: 0 });
-        prisma.event.update.mockResolvedValue(archivedEvent);
+        vi.mocked(prisma).event.updateMany.mockResolvedValue({ count: 0 });
+        vi.mocked(prisma).event.update.mockResolvedValue(archivedEvent);
 
         const result = await activateEvent(testEventId, testSchoolId);
 
@@ -747,11 +747,11 @@ describe('Event Management Functions', () => {
           positions: []
         };
 
-        prisma.event.update.mockResolvedValue(mockEvent);
+        vi.mocked(prisma).event.update.mockResolvedValue(mockEvent);
 
         const result = await archiveEvent(testEventId);
 
-        expect(prisma.event.update).toHaveBeenCalledWith({
+        expect(vi.mocked(prisma).event.update).toHaveBeenCalledWith({
           where: { id: testEventId },
           data: {
             isActive: false,
@@ -808,7 +808,7 @@ describe('Event Management Functions', () => {
           }
         ];
 
-        prisma.event.findMany.mockResolvedValue(mockEvents);
+        vi.mocked(prisma).event.findMany.mockResolvedValue(mockEvents);
 
         const result = await getSchoolEvents(testSchoolId, true);
 
@@ -841,7 +841,7 @@ describe('Event Management Functions', () => {
           }
         ];
 
-        prisma.event.findMany.mockResolvedValue(mockEvents);
+        vi.mocked(prisma).event.findMany.mockResolvedValue(mockEvents);
 
         const result = await getSchoolEvents(testSchoolId, false);
 
@@ -868,8 +868,8 @@ describe('Event Management Functions', () => {
           isActive: true
         };
 
-        prisma.event.updateMany.mockResolvedValue({ count: 0 });
-        prisma.event.update.mockResolvedValue(activeEvent);
+        vi.mocked(prisma).event.updateMany.mockResolvedValue({ count: 0 });
+        vi.mocked(prisma).event.update.mockResolvedValue(activeEvent);
 
         const result = await activateEvent(testEventId, testSchoolId);
 
@@ -895,7 +895,7 @@ describe('Event Management Functions', () => {
           isArchived: true
         };
 
-        prisma.event.update.mockResolvedValue(archivedEvent);
+        vi.mocked(prisma).event.update.mockResolvedValue(archivedEvent);
 
         const result = await archiveEvent(testEventId);
 
@@ -920,7 +920,7 @@ describe('Event Management Functions', () => {
           isArchived: true
         };
 
-        prisma.event.update.mockResolvedValue(archivedEvent);
+        vi.mocked(prisma).event.update.mockResolvedValue(archivedEvent);
 
         const result = await archiveEvent(testEventId);
 
@@ -952,7 +952,7 @@ describe('Event Management Functions', () => {
           positions: []
         };
 
-        prisma.event.findFirst.mockResolvedValue(existingActiveEvent);
+        vi.mocked(prisma).event.findFirst.mockResolvedValue(existingActiveEvent);
 
         const result = await getActiveEvent(testSchoolId);
 
