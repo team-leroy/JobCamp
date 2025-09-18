@@ -151,10 +151,14 @@
           },
           tooltip: {
             callbacks: {
-              label: function (tooltipItem: { dataset: { data: (number | null)[] }; parsed: { y: number } }) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              label: function (tooltipItem: any) {
                 const data = tooltipItem.dataset.data;
                 const value = tooltipItem.parsed.y;
-                const total = data.reduce((a: number, b: number) => a + b, 0);
+                const total = data.reduce(
+                  (a: number, b: number | null) => a + (b ?? 0),
+                  0
+                );
                 const percentage = ((value / total) * 100).toFixed(1);
                 return `${value} students (${percentage}%)`;
               },

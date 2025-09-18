@@ -42,7 +42,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
     // Get the selected event ID from URL params
     const selectedEventId = url.searchParams.get('eventId');
-    let selectedEvent: Event | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let selectedEvent: any = null;
     let selectedEventStats: {
         totalStudents: number;
         permissionSlipsSigned: number;
