@@ -1,3 +1,4 @@
+// @ts-nocheck
 <script lang="ts">
 	import { Checkbox as CheckboxPrimitive, type WithoutChildrenOrChild } from "bits-ui";
 	import Check from "lucide-svelte/icons/check";

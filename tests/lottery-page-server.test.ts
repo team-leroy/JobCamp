@@ -1,10 +1,41 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prisma } from '$lib/server/prisma';
+
+// Mock Prisma client
+vi.mock('$lib/server/prisma', () => ({
+	prisma: {
+		lotteryConfiguration: {
+			findUnique: vi.fn(),
+			create: vi.fn(),
+			update: vi.fn()
+		},
+		manualAssignment: {
+			create: vi.fn(),
+			delete: vi.fn(),
+			findMany: vi.fn()
+		},
+		prefillSetting: {
+			create: vi.fn(),
+			delete: vi.fn(),
+			findMany: vi.fn()
+		},
+		student: {
+			findMany: vi.fn()
+		},
+		position: {
+			findMany: vi.fn()
+		},
+		company: {
+			findMany: vi.fn()
+		}
+	}
+}));
 
 // Mock the lottery functions
 vi.mock('$lib/server/lottery', () => ({
 	startLotteryJob: vi.fn()
 }));
+
+import { prisma } from '$lib/server/prisma';
 
 describe('Lottery Page Server Actions', () => {
 	beforeEach(() => {

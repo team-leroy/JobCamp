@@ -24,11 +24,11 @@
     start: string;
     end: string;
     host: {
-      company?: {
+      company: {
         companyName: string;
         companyDescription?: string;
-        companyUrl?: string;
-      };
+        companyUrl?: string | null;
+      } | null;
     };
     selected?: boolean;
     [key: string]: unknown;

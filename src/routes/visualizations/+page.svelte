@@ -151,10 +151,7 @@
           },
           tooltip: {
             callbacks: {
-              label: function (tooltipItem: {
-                dataset: { data: number[] };
-                parsed: { y: number };
-              }) {
+              label: function (tooltipItem: { dataset: { data: number[] }; parsed: { y: number } }) {
                 const data = tooltipItem.dataset.data;
                 const value = tooltipItem.parsed.y;
                 const total = data.reduce((a: number, b: number) => a + b, 0);
@@ -940,7 +937,6 @@
         </div>
       </div>
     </div>
-
   {:else if selectedVisualization === "lottery" && !data.lotteryStats}
     <div class="bg-white rounded-lg shadow p-6">
       <h2 class="text-xl font-semibold mb-4">No Lottery Data Available</h2>
@@ -956,7 +952,8 @@
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">Career Field Distribution</h2>
         <p class="text-gray-600 mb-4">
-          Shows student choices for each career field (1st, 2nd, and 3rd choices only)
+          Shows student choices for each career field (1st, 2nd, and 3rd choices
+          only)
         </p>
         <div class="h-96">
           <canvas bind:this={careerChartCanvas} width="800" height="400"
@@ -1017,7 +1014,9 @@
               data.companyStats.totalChoices / data.companyStats.totalPositions
             ).toFixed(1)}
           </div>
-          <div class="text-sm text-gray-600">Avg Top 3 Choices per Position</div>
+          <div class="text-sm text-gray-600">
+            Avg Top 3 Choices per Position
+          </div>
         </div>
       </div>
     </div>

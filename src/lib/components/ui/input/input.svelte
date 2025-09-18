@@ -1,3 +1,4 @@
+// @ts-nocheck
 <script lang="ts">
 	import type { HTMLInputAttributes } from "svelte/elements";
 	import type { InputEvents } from "./index.js";

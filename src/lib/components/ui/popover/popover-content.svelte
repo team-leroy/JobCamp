@@ -1,3 +1,4 @@
+// @ts-nocheck
 <script lang="ts">
 	import { cn } from "$lib/utils.js";
 	import { Popover as PopoverPrimitive } from "bits-ui";

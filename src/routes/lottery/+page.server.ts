@@ -57,7 +57,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         
         lotteryStats = {
             ...stats,
-            completedAt: latestJob.completedAt,
+            completedAt: latestJob.completedAt?.toISOString(),
             adminEmail: admin?.email || 'Unknown Admin'
         };
     }
@@ -100,6 +100,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             include: {
                 manualAssignments: {
                     include: {
+                        student: true,
                         position: {
                             include: {
                                 host: {
@@ -156,6 +157,52 @@ export const load: PageServerLoad = async ({ locals }) => {
         orderBy: { companyName: 'asc' }
     });
 
+    // Transform positions to match expected interface
+    const transformedPositions = positions.map(position => ({
+        id: position.id,
+        title: position.title,
+        host: {
+            company: position.host.company ? {
+                companyName: position.host.company.companyName,
+                companyDescription: position.host.company.companyDescription,
+                companyUrl: position.host.company.companyUrl
+            } : null
+        }
+    }));
+
+    // Transform lotteryConfig to match expected interface
+    const transformedLotteryConfig = lotteryConfig ? {
+        id: lotteryConfig.id,
+        schoolId: lotteryConfig.schoolId,
+        gradeOrder: lotteryConfig.gradeOrder,
+        manualAssignments: lotteryConfig.manualAssignments?.map(ma => ({
+            studentId: ma.studentId,
+            positionId: ma.positionId,
+            student: ma.student ? {
+                id: ma.student.id,
+                firstName: ma.student.firstName,
+                lastName: ma.student.lastName,
+                grade: ma.student.grade
+            } : undefined,
+            position: ma.position ? {
+                id: ma.position.id,
+                title: ma.position.title,
+                host: {
+                    company: ma.position.host.company ? {
+                        companyName: ma.position.host.company.companyName,
+                        companyDescription: ma.position.host.company.companyDescription,
+                        companyUrl: ma.position.host.company.companyUrl
+                    } : null
+                }
+            } : undefined
+        })),
+        prefillSettings: lotteryConfig.prefillSettings?.map(ps => ({
+            companyId: ps.companyId,
+            prefillPercentage: ps.prefillPercentage,
+            company: ps.company
+        }))
+    } : null;
+
     return {
         isAdmin: true,
         loggedIn: true,
@@ -164,11 +211,27 @@ export const load: PageServerLoad = async ({ locals }) => {
             isRunning: !!runningLottery,
             progress: runningLottery?.progress || 0,
             currentSeed: runningLottery?.currentSeed || 0,
-            stats: lotteryStats
+            results: [], // Empty array for now, will be populated when lottery runs
+            stats: lotteryStats || {
+                completedAt: undefined,
+                adminEmail: '',
+                firstChoice: 0,
+                secondChoice: 0,
+                thirdChoice: 0,
+                fourthChoice: 0,
+                fifthChoice: 0,
+                sixthChoice: 0,
+                seventhChoice: 0,
+                eighthChoice: 0,
+                ninthChoice: 0,
+                tenthChoice: 0,
+                notPlaced: 0,
+                totalStudents: 0
+            }
         },
-        lotteryConfig,
+        lotteryConfig: transformedLotteryConfig,
         students,
-        positions,
+        positions: transformedPositions,
         companies
     };
 }
@@ -323,16 +386,16 @@ export const actions: Actions = {
             // Add manual assignment
             await prisma.manualAssignment.upsert({
                 where: {
-                    studentId_lotteryConfigId: {
+                    studentId_positionId: {
                         studentId,
-                        lotteryConfigId: config.id
+                        positionId
                     }
                 },
                 update: {
                     positionId
                 },
                 create: {
-                    lotteryConfigId: config.id,
+                    lotteryConfigurationId: config.id,
                     studentId,
                     positionId
                 }
@@ -381,7 +444,7 @@ export const actions: Actions = {
             // Remove manual assignment
             await prisma.manualAssignment.deleteMany({
                 where: {
-                    lotteryConfigId: config.id,
+                    lotteryConfigurationId: config.id,
                     studentId
                 }
             });
@@ -399,10 +462,12 @@ export const actions: Actions = {
 
         const formData = await request.formData();
         const companyId = formData.get('companyId') as string;
+        const positionId = formData.get('positionId') as string;
+        const slots = parseInt(formData.get('slots') as string);
         const prefillPercentage = parseInt(formData.get('prefillPercentage') as string);
 
-        if (!companyId || isNaN(prefillPercentage) || prefillPercentage < 0 || prefillPercentage > 100) {
-            return { success: false, message: "Valid company and percentage (0-100) are required" };
+        if (!companyId || !positionId || isNaN(slots) || isNaN(prefillPercentage) || prefillPercentage < 0 || prefillPercentage > 100) {
+            return { success: false, message: "Valid company, position, slots, and percentage (0-100) are required" };
         }
 
         try {
@@ -432,17 +497,19 @@ export const actions: Actions = {
             // Update prefill setting
             await prisma.prefillSetting.upsert({
                 where: {
-                    companyId_lotteryConfigId: {
+                    companyId_positionId: {
                         companyId,
-                        lotteryConfigId: config.id
+                        positionId
                     }
                 },
                 update: {
                     prefillPercentage
                 },
                 create: {
-                    lotteryConfigId: config.id,
+                    lotteryConfigurationId: config.id,
                     companyId,
+                    positionId,
+                    slots,
                     prefillPercentage
                 }
             });
@@ -490,7 +557,7 @@ export const actions: Actions = {
             // Remove prefill setting
             await prisma.prefillSetting.deleteMany({
                 where: {
-                    lotteryConfigId: config.id,
+                    lotteryConfigurationId: config.id,
                     companyId
                 }
             });

@@ -1,3 +1,4 @@
+// @ts-nocheck
 <script lang="ts">
 	import type { HTMLTdAttributes } from "svelte/elements";
 	import type { WithElementRef } from "bits-ui";

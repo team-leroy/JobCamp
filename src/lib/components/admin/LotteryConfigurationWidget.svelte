@@ -14,7 +14,9 @@
     host: {
       company: {
         companyName: string;
-      };
+        companyDescription?: string;
+        companyUrl?: string | null;
+      } | null;
     };
   }
 
@@ -224,29 +226,39 @@
         </form>
 
         <!-- Current Manual Assignments -->
-        {#if lotteryConfig?.manualAssignments?.length > 0}
+        {#if lotteryConfig && lotteryConfig.manualAssignments && lotteryConfig.manualAssignments.length > 0}
           <div class="mt-4">
             <h5 class="font-medium mb-2">Current Manual Assignments</h5>
             <div class="space-y-2">
               {#each lotteryConfig.manualAssignments as assignment}
+                {@const typedAssignment = assignment as {
+                  studentId: string;
+                  positionId: string;
+                  student?: Student;
+                  position?: Position;
+                }}
                 <div
                   class="flex items-center justify-between p-3 bg-gray-50 rounded"
                 >
                   <div>
                     <span class="font-medium">
-                      {students.find((s) => s.id === assignment.studentId)
+                      {students.find((s) => s.id === typedAssignment.studentId)
                         ? getStudentName(
-                            students.find((s) => s.id === assignment.studentId)
+                            students.find(
+                              (s) => s.id === typedAssignment.studentId
+                            )!
                           )
                         : "Unknown Student"}
                     </span>
                     <span class="text-gray-500"> → </span>
                     <span>
-                      {positions.find((p) => p.id === assignment.positionId)
+                      {positions.find(
+                        (p) => p.id === typedAssignment.positionId
+                      )
                         ? getPositionName(
                             positions.find(
-                              (p) => p.id === assignment.positionId
-                            )
+                              (p) => p.id === typedAssignment.positionId
+                            )!
                           )
                         : "Unknown Position"}
                     </span>
@@ -272,7 +284,7 @@
                     <input
                       type="hidden"
                       name="studentId"
-                      value={assignment.studentId}
+                      value={typedAssignment.studentId}
                     />
                     <button
                       type="submit"
@@ -364,21 +376,26 @@
         </form>
 
         <!-- Current Prefill Settings -->
-        {#if lotteryConfig?.prefillSettings?.length > 0}
+        {#if lotteryConfig && lotteryConfig.prefillSettings && lotteryConfig.prefillSettings.length > 0}
           <div class="mt-4">
             <h5 class="font-medium mb-2">Current Prefill Settings</h5>
             <div class="space-y-2">
               {#each lotteryConfig.prefillSettings as setting}
+                {@const typedSetting = setting as {
+                  companyId: string;
+                  prefillPercentage: number;
+                  company?: Company;
+                }}
                 <div
                   class="flex items-center justify-between p-3 bg-gray-50 rounded"
                 >
                   <div>
                     <span class="font-medium">
-                      {companies.find((c) => c.id === setting.companyId)
+                      {companies.find((c) => c.id === typedSetting.companyId)
                         ?.companyName || "Unknown Company"}
                     </span>
                     <span class="text-gray-500"> → </span>
-                    <span>{setting.prefillPercentage}% of slots</span>
+                    <span>{typedSetting.prefillPercentage}% of slots</span>
                   </div>
                   <form
                     method="POST"
@@ -401,7 +418,7 @@
                     <input
                       type="hidden"
                       name="companyId"
-                      value={setting.companyId}
+                      value={typedSetting.companyId}
                     />
                     <button
                       type="submit"

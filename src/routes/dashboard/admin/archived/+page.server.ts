@@ -42,8 +42,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
     // Get the selected event ID from URL params
     const selectedEventId = url.searchParams.get('eventId');
-    let selectedEvent = null;
-    let selectedEventStats = null;
+    let selectedEvent: Event | null = null;
+    let selectedEventStats: {
+        totalStudents: number;
+        studentsByGrade: Record<number, number>;
+        studentsByCompany: Record<string, number>;
+        totalPositions: number;
+        positionsByCompany: Record<string, number>;
+    } | null = null;
 
     if (selectedEventId) {
         // Find the selected event

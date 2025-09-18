@@ -54,6 +54,7 @@ model Position {
   end               String
   eventId           String
   hostId            String
+  createdAt         DateTime              @default(now())
   attachments       Attachment[]
   event             Event                 @relation(fields: [eventId], references: [id])
   host              Host                  @relation(fields: [hostId], references: [id])
@@ -100,6 +101,7 @@ model PositionsOnStudents {
   positionId String
   studentId  String
   rank       Int
+  createdAt  DateTime @default(now())
   position   Position @relation(fields: [positionId], references: [id])
   student    Student  @relation(fields: [studentId], references: [id])
 
@@ -125,6 +127,7 @@ model Host {
   name      String
   companyId String?
   userId    String     @unique
+  createdAt DateTime   @default(now())
   company   Company?   @relation(fields: [companyId], references: [id])
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   positions Position[]
@@ -139,6 +142,7 @@ model User {
   passwordSalt   String
   emailVerified  Boolean   @default(false)
   lastLogin      DateTime
+  createdAt      DateTime  @default(now())
   host           Host?
   sessions       Session[]
   student        Student?
@@ -245,6 +249,7 @@ model PrefillSetting {
   positionId            String
   lotteryConfigurationId String?
   slots                 Int
+  prefillPercentage     Int
   createdAt             DateTime             @default(now())
   company               Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   position              Position             @relation(fields: [positionId], references: [id], onDelete: Cascade)
