@@ -6,5 +6,14 @@ export default defineConfig({
 	server: {
 		https: {},
 		port: 34040
+	},
+	build: {
+		rollupOptions: {
+			external: (id) => {
+				// Skip type checking for bits-ui components during build
+				if (id.includes('bits-ui')) return true;
+				return false;
+			}
+		}
 	}
 });

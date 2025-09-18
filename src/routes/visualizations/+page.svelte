@@ -151,7 +151,7 @@
           },
           tooltip: {
             callbacks: {
-              label: function (tooltipItem: { dataset: { data: number[] }; parsed: { y: number } }) {
+              label: function (tooltipItem: { dataset: { data: (number | null)[] }; parsed: { y: number } }) {
                 const data = tooltipItem.dataset.data;
                 const value = tooltipItem.parsed.y;
                 const total = data.reduce((a: number, b: number) => a + b, 0);

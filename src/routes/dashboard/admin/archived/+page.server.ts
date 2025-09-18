@@ -45,10 +45,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     let selectedEvent: Event | null = null;
     let selectedEventStats: {
         totalStudents: number;
-        studentsByGrade: Record<number, number>;
-        studentsByCompany: Record<string, number>;
-        totalPositions: number;
-        positionsByCompany: Record<string, number>;
+        permissionSlipsSigned: number;
+        studentsWithoutChoices: number;
+        totalStudentChoices: number;
+        gradeStats: {
+            freshman: number;
+            sophomore: number;
+            junior: number;
+            senior: number;
+        };
+        totalCompanies: number;
+        positionsCount: number;
+        slotsCount: number;
     } | null = null;
 
     if (selectedEventId) {

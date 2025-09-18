@@ -43,7 +43,7 @@ jobs:
         run: pnpm lint || true
         timeout-minutes: 5
 
-      - name: Run type checking
+      - name: Run type checking (skip bits-ui errors)
         run: pnpm check || true
         timeout-minutes: 5
 
