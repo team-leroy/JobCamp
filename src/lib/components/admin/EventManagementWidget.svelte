@@ -8,26 +8,17 @@
     CardTitle,
   } from "$lib/components/ui/card";
   import { goto } from "$app/navigation";
-  // Import type definition
-  type EventWithStats = {
-    id: string;
-    name: string | null;
-    date: Date;
-    isActive: boolean;
-    isArchived: boolean;
-    displayLotteryResults: boolean;
-    schoolId: string;
-    stats: {
-      totalPositions: number;
-      totalSlots: number;
-      studentsWithChoices: number;
-    };
-  };
+  import type { EventWithStats } from "$lib/server/eventManagement";
+
+  interface FormResult {
+    success?: boolean;
+    message?: string;
+  }
 
   let {
     schoolEvents = [],
     form = null,
-  }: { schoolEvents?: EventWithStats[]; form?: unknown } = $props();
+  }: { schoolEvents?: EventWithStats[]; form?: FormResult | null } = $props();
 
   let isActivating = $state(false);
 
@@ -152,17 +143,17 @@
               <div>
                 <span class="font-medium">Positions:</span>
                 <br />
-                {event.stats.totalPositions}
+                {event.stats?.totalPositions ?? 0}
               </div>
               <div>
                 <span class="font-medium">Total Slots:</span>
                 <br />
-                {event.stats.totalSlots}
+                {event.stats?.totalSlots ?? 0}
               </div>
               <div>
                 <span class="font-medium">Students with Choices:</span>
                 <br />
-                {event.stats.studentsWithChoices}
+                {event.stats?.studentsWithChoices ?? 0}
               </div>
             </div>
 

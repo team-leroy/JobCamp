@@ -3,17 +3,13 @@
   import StudentStatsWidget from "$lib/components/admin/StudentStatsWidget.svelte";
   import CompanyStatsWidget from "$lib/components/admin/CompanyStatsWidget.svelte";
   import EventControlsWidget from "$lib/components/admin/EventControlsWidget.svelte";
-  // import EventManagementWidget from "$lib/components/admin/EventManagementWidget.svelte";
-  import { enhance } from "$app/forms";
 
   export let data;
-  export let form;
   const {
     isAdmin,
     loggedIn,
     isHost,
     upcomingEvent,
-    // schoolEvents,
     studentStats,
     companyStats,
   } = data;
@@ -72,125 +68,91 @@
       {/if}
     </div>
 
-    <!-- Event Management Widget -->
-    <!-- <div class="mb-8">
-      <EventManagementWidget {schoolEvents} {form} />
-    </div> -->
+    <!-- Navigation to Event Management -->
+    <div class="mb-8 p-6 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-blue-900">Event Management</h3>
+          <p class="text-blue-700">
+            Create, activate, and manage your school's job shadow events
+          </p>
+        </div>
+        <a
+          href="/dashboard/admin/event-mgmt"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors font-medium"
+        >
+          Manage Events
+        </a>
+      </div>
+    </div>
 
     <!-- Event Controls Widget -->
     <div class="mb-8">
       <EventControlsWidget />
     </div>
 
-    <!-- Create New Event Section -->
-    <div
-      class="mb-8 p-6 bg-white rounded-lg shadow-md border-l-4 border-green-500"
-    >
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">Create New Event</h2>
-
-      {#if form?.message}
-        <div
-          class="mb-4 p-3 rounded-md {form.success
-            ? 'bg-green-100 text-green-800'
-            : 'bg-red-100 text-red-800'}"
-        >
-          {form.message}
-        </div>
-      {/if}
-
-      <form method="POST" action="?/createEvent" class="space-y-4" use:enhance>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label
-              for="eventName"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >Event Name (Optional)</label
+    <!-- Active Event Statistics Notice -->
+    {#if !upcomingEvent}
+      <div
+        class="mb-8 p-6 bg-yellow-50 rounded-lg border-l-4 border-yellow-400"
+      >
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <svg
+              class="h-5 w-5 text-yellow-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
             >
-            <input
-              type="text"
-              id="eventName"
-              name="eventName"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Spring 2025 Job Shadow"
-            />
+              <path
+                fill-rule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"
+              />
+            </svg>
           </div>
-          <div>
-            <label
-              for="eventDate"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >Event Date *</label
-            >
-            <input
-              type="date"
-              id="eventDate"
-              name="eventDate"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-yellow-800">No Active Event</h3>
+            <p class="mt-1 text-sm text-yellow-700">
+              Statistics below will be empty until you have an active event.
+              <a
+                href="/dashboard/admin/event-mgmt"
+                class="font-medium underline hover:text-yellow-600"
+              >
+                Create and activate an event
+              </a> to see live data.
+            </p>
           </div>
         </div>
-
-        <div class="space-y-3">
-          <div class="flex items-center">
-            <input
-              type="checkbox"
-              id="displayLotteryResults"
-              name="displayLotteryResults"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label
-              for="displayLotteryResults"
-              class="ml-2 block text-sm text-gray-700"
-            >
-              Display lottery results to students
-            </label>
-          </div>
-
-          <div class="flex items-center">
-            <input
-              type="checkbox"
-              id="carryForwardData"
-              name="carryForwardData"
-              checked
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label
-              for="carryForwardData"
-              class="ml-2 block text-sm text-gray-700"
-            >
-              Carry forward positions from previous event (recommended)
-            </label>
-          </div>
-        </div>
-
-        <div class="pt-4">
-          <button
-            type="submit"
-            class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md transition-colors font-medium"
-          >
-            Create New Event
-          </button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Archived Events Link -->
-    <div class="mb-8 p-4 bg-gray-50 rounded-lg">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-lg font-medium text-gray-900">Archived Events</h3>
-          <p class="text-sm text-gray-600">
-            View statistics and data from previous events
-          </p>
-        </div>
-        <a
-          href="/dashboard/admin/archived"
-          class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition-colors"
-        >
-          View Archived Events
-        </a>
       </div>
-    </div>
+    {:else}
+      <div class="mb-8 p-6 bg-green-50 rounded-lg border-l-4 border-green-400">
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <svg
+              class="h-5 w-5 text-green-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-green-800">
+              Active Event Statistics
+            </h3>
+            <p class="mt-1 text-sm text-green-700">
+              The statistics below reflect data for your active event: <strong
+                >{upcomingEvent.name || "Unnamed Event"}</strong
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+    {/if}
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <StudentStatsWidget stats={studentStats} />

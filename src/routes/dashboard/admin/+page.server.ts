@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { archiveEvent, createEvent, activateEvent, getSchoolEvents } from '$lib/server/eventManagement';
+import { archiveEvent } from '$lib/server/eventManagement';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -153,19 +153,12 @@ export const load: PageServerLoad = async ({ locals }) => {
         }).then(res => res._sum.slots || 0)
     ]);
 
-    // Get all events for event management
-    const allEvents = await Promise.all(
-        schoolIds.map(schoolId => getSchoolEvents(schoolId, false))
-    );
-    const schoolEvents = allEvents.flat();
-
     return {
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host,
         upcomingEvent,
         schools,
-        schoolEvents,
         studentStats: {
             totalStudents,
             permissionSlipsSigned,
@@ -186,61 +179,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-    createEvent: async ({ request, locals }) => {
-        if (!locals.user) {
-            return { 
-                success: false, 
-                message: "User not authenticated" 
-            };
-        }
-
-        try {
-            // Get user's school
-            const userInfo = await prisma.user.findFirst({
-                where: { id: locals.user.id },
-                include: { adminOfSchools: true }
-            });
-
-            if (!userInfo?.adminOfSchools?.length) {
-                return { success: false, message: "Not authorized" };
-            }
-
-            const schoolId = userInfo.adminOfSchools[0].id;
-
-            // Parse form data
-            const formData = await request.formData();
-            const eventName = formData.get('eventName')?.toString() || undefined;
-            const eventDate = formData.get('eventDate')?.toString();
-            const displayLotteryResults = formData.get('displayLotteryResults') === 'on';
-            const carryForwardData = formData.get('carryForwardData') === 'on';
-
-            if (!eventDate) {
-                return { success: false, message: "Event date is required" };
-            }
-
-            // Create the event
-            const eventData = {
-                name: eventName,
-                date: new Date(eventDate),
-                displayLotteryResults,
-                carryForwardData
-            };
-
-            await createEvent(schoolId, eventData);
-
-            return { 
-                success: true, 
-                message: "Event created successfully" 
-            };
-        } catch (error) {
-            console.error('Error creating event:', error);
-            return { 
-                success: false, 
-                message: "Failed to create event" 
-            };
-        }
-    },
-
     archiveEvent: async ({ locals }) => {
         if (!locals.user) {
             return { 
@@ -286,59 +224,6 @@ export const actions: Actions = {
             return { 
                 success: false, 
                 message: "Failed to archive event" 
-            };
-        }
-    },
-
-    activateEvent: async ({ request, locals }) => {
-        if (!locals.user) {
-            return { success: false, message: "Not authenticated" };
-        }
-
-        try {
-            // Get user's school
-            const userInfo = await prisma.user.findFirst({
-                where: { id: locals.user.id },
-                include: { adminOfSchools: true }
-            });
-
-            if (!userInfo?.adminOfSchools?.length) {
-                return { success: false, message: "Not authorized" };
-            }
-
-            const schoolId = userInfo.adminOfSchools[0].id;
-            
-            // Parse form data
-            const formData = await request.formData();
-            const eventId = formData.get('eventId')?.toString();
-
-            if (!eventId) {
-                return { success: false, message: "Event ID is required" };
-            }
-
-            // Verify the event belongs to the school
-            const event = await prisma.event.findFirst({
-                where: { 
-                    id: eventId,
-                    schoolId 
-                }
-            });
-
-            if (!event) {
-                return { success: false, message: "Event not found or not authorized" };
-            }
-
-            await activateEvent(eventId, schoolId);
-
-            return { 
-                success: true, 
-                message: "Event activated successfully" 
-            };
-        } catch (error) {
-            console.error('Error activating event:', error);
-            return { 
-                success: false, 
-                message: "Failed to activate event" 
             };
         }
     }

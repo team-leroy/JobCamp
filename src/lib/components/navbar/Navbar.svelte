@@ -53,6 +53,11 @@
           <Button href="/dashboard" variant="link" class="text-white text-xl"
             >Dashboard</Button
           >
+          <Button
+            href="/dashboard/admin/event-mgmt"
+            variant="link"
+            class="text-white text-xl">Event Mgmt</Button
+          >
           <DropdownMenu.Root>
             <DropdownMenu.Trigger>
               <span
