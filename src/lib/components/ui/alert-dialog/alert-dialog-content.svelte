@@ -1,4 +1,3 @@
-// @ts-nocheck
 <script lang="ts">
 	import { AlertDialog as AlertDialogPrimitive } from "bits-ui";
 	import * as AlertDialog from "./index.js";

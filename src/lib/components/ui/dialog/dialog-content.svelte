@@ -1,4 +1,3 @@
-// @ts-nocheck
 <script lang="ts">
 	import { Dialog as DialogPrimitive, type WithoutChildrenOrChild } from "bits-ui";
 	import X from "lucide-svelte/icons/x";

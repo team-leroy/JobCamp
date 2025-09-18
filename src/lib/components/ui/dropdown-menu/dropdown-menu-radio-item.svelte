@@ -1,4 +1,3 @@
-// @ts-nocheck
 <script lang="ts">
 	import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
 	import Circle from "lucide-svelte/icons/circle";

@@ -1,4 +1,3 @@
-// @ts-nocheck
 <script lang="ts">
 	import type {
 		Command as CommandPrimitive,

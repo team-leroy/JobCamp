@@ -7,7 +7,7 @@
     "dev": "vite dev --port 34040",
     "build": "vite build",
     "build:no-check": "SKIP_TYPE_CHECK=true vite build",
-    "preview": "vite preview --port 4173 --host 0.0.0.0",
+    "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --no-tsconfig --ignore '**/ui/**'",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "eslint .",

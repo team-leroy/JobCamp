@@ -1,4 +1,3 @@
-// @ts-nocheck
 <script lang="ts">
 	import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
 	import ChevronRight from "lucide-svelte/icons/chevron-right";

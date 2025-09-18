@@ -1,4 +1,3 @@
-// @ts-nocheck
 <script lang="ts">
 	import { Accordion as AccordionPrimitive } from "bits-ui";
 	import { cn } from "$lib/utils.js";

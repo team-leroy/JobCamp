@@ -1,4 +1,3 @@
-// @ts-nocheck
 <script lang="ts">
 	import { ScrollArea as ScrollAreaPrimitive } from "bits-ui";
 	import { cn } from "$lib/utils.js";
