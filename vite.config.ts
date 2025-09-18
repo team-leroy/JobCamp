@@ -6,5 +6,10 @@ export default defineConfig({
 	server: {
 		https: {},
 		port: 34040
+	},
+	preview: {
+		port: 4173,
+		host: '0.0.0.0',
+		https: false
 	}
 });
