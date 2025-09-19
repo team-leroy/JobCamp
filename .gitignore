@@ -22,3 +22,5 @@ vite.config.ts.timestamp-*
 
 #test database
 prisma/dev.sqlite
+# Development SSL certificates
+*.pem
