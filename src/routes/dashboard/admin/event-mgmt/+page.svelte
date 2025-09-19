@@ -1,6 +1,7 @@
 <script lang="ts">
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import EventManagementWidget from "$lib/components/admin/EventManagementWidget.svelte";
+  import EventControlsWidget from "$lib/components/admin/EventControlsWidget.svelte";
   import { enhance } from "$app/forms";
   import type { EventWithStats } from "$lib/server/eventManagement";
 
@@ -28,6 +29,11 @@
     <!-- Event Management Widget -->
     <div class="mb-8">
       <EventManagementWidget {schoolEvents} {form} />
+    </div>
+
+    <!-- Event Controls Widget -->
+    <div class="mb-8">
+      <EventControlsWidget />
     </div>
 
     <!-- Create New Event Section -->

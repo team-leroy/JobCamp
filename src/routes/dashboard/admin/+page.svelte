@@ -2,7 +2,6 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import StudentStatsWidget from "$lib/components/admin/StudentStatsWidget.svelte";
   import CompanyStatsWidget from "$lib/components/admin/CompanyStatsWidget.svelte";
-  import EventControlsWidget from "$lib/components/admin/EventControlsWidget.svelte";
 
   export let data;
   const {
@@ -10,6 +9,7 @@
     loggedIn,
     isHost,
     upcomingEvent,
+    schools,
     studentStats,
     companyStats,
   } = data;
@@ -19,7 +19,10 @@
 
 <div class="w-full mt-28 flex flex-col items-center">
   <div class="max-w-6xl w-full px-4">
-    <h1 class="text-3xl font-bold mb-6">Admin Dashboard</h1>
+    <h1 class="text-3xl font-bold mb-2">Admin Dashboard</h1>
+    <h2 class="text-xl text-gray-600 mb-6">
+      {schools?.[0]?.name || "School Dashboard"}
+    </h2>
 
     <!-- Active Event Section -->
     <div
@@ -63,32 +66,15 @@
         </div>
       {:else}
         <p class="text-gray-600 italic">
-          No active event. Create and activate an event below.
+          No active event.
+          <a
+            href="/dashboard/admin/event-mgmt"
+            class="text-blue-600 hover:text-blue-800 underline"
+          >
+            Go to Event Mgmt tab
+          </a> to create and activate an event.
         </p>
       {/if}
-    </div>
-
-    <!-- Navigation to Event Management -->
-    <div class="mb-8 p-6 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-lg font-semibold text-blue-900">Event Management</h3>
-          <p class="text-blue-700">
-            Create, activate, and manage your school's job shadow events
-          </p>
-        </div>
-        <a
-          href="/dashboard/admin/event-mgmt"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors font-medium"
-        >
-          Manage Events
-        </a>
-      </div>
-    </div>
-
-    <!-- Event Controls Widget -->
-    <div class="mb-8">
-      <EventControlsWidget />
     </div>
 
     <!-- Active Event Statistics Notice -->

@@ -30,59 +30,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         select: { id: true, name: true }
     });
 
-    // Student Statistics
-    const [
-        totalStudents,
-        permissionSlipsSigned,
-        studentsWithoutChoices,
-        totalStudentChoices,
-        gradeDistribution
-    ] = await Promise.all([
-        // Total students registered
-        prisma.student.count({
-            where: { schoolId: { in: schoolIds } }
-        }),
-        
-        // Permission slips signed
-        prisma.student.count({
-            where: { 
-                schoolId: { in: schoolIds },
-                permissionSlipCompleted: true
-            }
-        }),
-        
-        // Students without choices
-        prisma.student.count({
-            where: { 
-                schoolId: { in: schoolIds },
-                positionsSignedUpFor: { none: {} }
-            }
-        }),
-        
-        // Total student choices
-        prisma.positionsOnStudents.count({
-            where: {
-                student: { schoolId: { in: schoolIds } }
-            }
-        }),
-        
-        // Grade distribution
-        prisma.student.groupBy({
-            by: ['grade'],
-            where: { schoolId: { in: schoolIds } },
-            _count: { grade: true }
-        })
-    ]);
-
-    // Convert grade distribution to object
-    const gradeStats = {
-        freshman: gradeDistribution.find(g => g.grade === 9)?._count.grade || 0,
-        sophomore: gradeDistribution.find(g => g.grade === 10)?._count.grade || 0,
-        junior: gradeDistribution.find(g => g.grade === 11)?._count.grade || 0,
-        senior: gradeDistribution.find(g => g.grade === 12)?._count.grade || 0
-    };
-
-    // Get active event (now that we have isActive field)
+    // Get active event first to determine if we should show statistics
     const upcomingEvent = await prisma.event.findFirst({
         where: {
             schoolId: { in: schoolIds },
@@ -93,26 +41,126 @@ export const load: PageServerLoad = async ({ locals }) => {
         }
     });
 
-    // Company Statistics
-    const [
-        totalCompanies,
-        companiesLoggedInThisYear,
-        positionsThisYear,
-        slotsThisYear
-    ] = await Promise.all([
-        // Total companies present in the DB
-        prisma.company.count({
-            where: { 
-                schoolId: { in: schoolIds }
-            }
-        }),
-        
-        // Companies logged in during the current calendar year (Jan-Dec of this year)
-        prisma.company.count({
-            where: { 
-                schoolId: { in: schoolIds },
-                hosts: {
-                    some: {
+    // Only calculate statistics if there's an active event
+    let studentStats, gradeStats, companyStats;
+    
+    if (upcomingEvent) {
+        // Student Statistics (filtered by active event)
+        const [
+            totalStudents,
+            permissionSlipsSigned,
+            studentsWithoutChoices,
+            totalStudentChoices,
+            gradeDistribution
+        ] = await Promise.all([
+            // Total students registered
+            prisma.student.count({
+                where: { schoolId: { in: schoolIds } }
+            }),
+            
+            // Permission slips signed
+            prisma.student.count({
+                where: { 
+                    schoolId: { in: schoolIds },
+                    permissionSlipCompleted: true
+                }
+            }),
+            
+            // Students without choices for active event
+            prisma.student.count({
+                where: { 
+                    schoolId: { in: schoolIds },
+                    positionsSignedUpFor: { 
+                        none: {
+                            position: {
+                                eventId: upcomingEvent.id
+                            }
+                        }
+                    }
+                }
+            }),
+            
+            // Total student choices for active event
+            prisma.positionsOnStudents.count({
+                where: {
+                    student: { schoolId: { in: schoolIds } },
+                    position: { eventId: upcomingEvent.id }
+                }
+            }),
+            
+            // Grade distribution
+            prisma.student.groupBy({
+                by: ['grade'],
+                where: { schoolId: { in: schoolIds } },
+                _count: { grade: true }
+            })
+        ]);
+
+        // Convert grade distribution to object
+        gradeStats = {
+            freshman: gradeDistribution.find(g => g.grade === 9)?._count.grade || 0,
+            sophomore: gradeDistribution.find(g => g.grade === 10)?._count.grade || 0,
+            junior: gradeDistribution.find(g => g.grade === 11)?._count.grade || 0,
+            senior: gradeDistribution.find(g => g.grade === 12)?._count.grade || 0
+        };
+
+        studentStats = {
+            totalStudents,
+            permissionSlipsSigned,
+            studentsWithoutChoices,
+            totalStudentChoices,
+            ...gradeStats
+        };
+    } else {
+        // No active event - return empty stats
+        studentStats = {
+            totalStudents: 0,
+            permissionSlipsSigned: 0,
+            studentsWithoutChoices: 0,
+            totalStudentChoices: 0,
+            freshman: 0,
+            sophomore: 0,
+            junior: 0,
+            senior: 0
+        };
+    }
+
+    // Company Statistics (only if there's an active event)
+    if (upcomingEvent) {
+        const [
+            totalCompanies,
+            companiesLoggedInThisYear,
+            positionsThisYear,
+            slotsThisYear
+        ] = await Promise.all([
+            // Total companies present in the DB
+            prisma.company.count({
+                where: { 
+                    schoolId: { in: schoolIds }
+                }
+            }),
+            
+            // Companies logged in during the current calendar year (Jan-Dec of this year)
+            prisma.company.count({
+                where: { 
+                    schoolId: { in: schoolIds },
+                    hosts: {
+                        some: {
+                            user: {
+                                lastLogin: {
+                                    gte: new Date(currentYear, 0, 1)
+                                }
+                            }
+                        }
+                    }
+                }
+            }),
+            
+            // Positions for active event (only for companies logged in this year)
+            prisma.position.count({
+                where: {
+                    eventId: upcomingEvent.id,
+                    host: {
                         user: {
                             lastLogin: {
                                 gte: new Date(currentYear, 0, 1)
@@ -120,38 +168,39 @@ export const load: PageServerLoad = async ({ locals }) => {
                         }
                     }
                 }
-            }
-        }),
-        
-        // Positions this year (only for companies logged in this year)
-        prisma.position.count({
-            where: {
-                event: { schoolId: { in: schoolIds } },
-                host: {
-                    user: {
-                        lastLogin: {
-                            gte: new Date(currentYear, 0, 1)
+            }),
+            
+            // Slots for active event (only for companies logged in this year)
+            prisma.position.aggregate({
+                where: {
+                    eventId: upcomingEvent.id,
+                    host: {
+                        user: {
+                            lastLogin: {
+                                gte: new Date(currentYear, 0, 1)
+                            }
                         }
                     }
-                }
-            }
-        }),
-        
-        // Slots this year (only for companies logged in this year)
-        prisma.position.aggregate({
-            where: {
-                event: { schoolId: { in: schoolIds } },
-                host: {
-                    user: {
-                        lastLogin: {
-                            gte: new Date(currentYear, 0, 1)
-                        }
-                    }
-                }
-            },
-            _sum: { slots: true }
-        }).then(res => res._sum.slots || 0)
-    ]);
+                },
+                _sum: { slots: true }
+            }).then(res => res._sum.slots || 0)
+        ]);
+
+        companyStats = {
+            totalCompanies,
+            companiesLoggedInThisYear,
+            positionsThisYear,
+            slotsThisYear
+        };
+    } else {
+        // No active event - return empty stats
+        companyStats = {
+            totalCompanies: 0,
+            companiesLoggedInThisYear: 0,
+            positionsThisYear: 0,
+            slotsThisYear: 0
+        };
+    }
 
     return {
         isAdmin: true,
@@ -159,22 +208,8 @@ export const load: PageServerLoad = async ({ locals }) => {
         isHost: !!locals.user.host,
         upcomingEvent,
         schools,
-        studentStats: {
-            totalStudents,
-            permissionSlipsSigned,
-            studentsWithoutChoices,
-            totalStudentChoices,
-            freshman: gradeStats.freshman,
-            sophomore: gradeStats.sophomore,
-            junior: gradeStats.junior,
-            senior: gradeStats.senior   
-        },
-        companyStats: {
-            totalCompanies,
-            companiesLoggedInThisYear,
-            positionsThisYear,
-            slotsThisYear
-        }
+        studentStats,
+        companyStats
     };  
 };
 
