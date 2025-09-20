@@ -109,42 +109,59 @@ export const load = async ({ locals }: { locals: Locals }) => {
             redirect(302, "/dashboard");
         }
 
-        // Get latest completed lottery results
+        const schoolIds = userInfo.adminOfSchools.map(s => s.id);
+
+        // Get the active event - visualizations should only show data for the active event
+        const activeEvent = await prisma.event.findFirst({
+            where: {
+                schoolId: { in: schoolIds },
+                isActive: true
+            },
+            orderBy: {
+                date: 'asc'
+            }
+        });
+
+        // Get latest completed lottery results for the active event only
         let lotteryStats = null;
         let companyStats = null;
         let studentStats = null;
         let timelineStats = null;
-        try {
-            const latestJob = await prisma.lotteryJob.findFirst({
-                where: { status: 'COMPLETED' },
-                orderBy: { completedAt: 'desc' },
-                include: { 
-                    results: true
-                }
-            });
+        
+        if (activeEvent) {
+            try {
+                const latestJob = await prisma.lotteryJob.findFirst({
+                    where: { 
+                        status: 'COMPLETED',
+                        adminId: { in: schoolIds }
+                    },
+                    orderBy: { completedAt: 'desc' },
+                    include: { 
+                        results: true
+                    }
+                });
 
-            if (latestJob) {
-                // Calculate choice statistics
-                lotteryStats = await calculateLotteryStats(latestJob.results);
+                if (latestJob) {
+                    // Calculate choice statistics for active event only
+                    lotteryStats = await calculateLotteryStats(latestJob.results, activeEvent.id);
+                }
                 
-                // Calculate company analytics
-                companyStats = await calculateCompanyStats(userInfo);
+                // Calculate analytics for active event only
+                companyStats = await calculateCompanyStats(userInfo, activeEvent.id);
+                studentStats = await calculateStudentStats(userInfo, activeEvent.id);
+                timelineStats = await calculateTimelineStats(userInfo, activeEvent.id);
                 
-                // Calculate student demographics
-                studentStats = await calculateStudentStats(userInfo);
-                
-                // Calculate event timeline
-                timelineStats = await calculateTimelineStats(userInfo);
+            } catch (lotteryError) {
+                console.error('Error fetching lottery stats:', lotteryError);
+                // Continue without lottery stats
             }
-        } catch (lotteryError) {
-            console.error('Error fetching lottery stats:', lotteryError);
-            // Continue without lottery stats
         }
 
         return {
             isAdmin: true,
             loggedIn: true,
             isHost: !!locals.user.host,
+            activeEvent,
             lotteryStats,
             companyStats,
             studentStats,
@@ -156,12 +173,18 @@ export const load = async ({ locals }: { locals: Locals }) => {
     }
 };
 
-async function calculateLotteryStats(results: { studentId: string; positionId: string }[]) {
+async function calculateLotteryStats(results: { studentId: string; positionId: string }[], activeEventId: string) {
     try {
-        // Get all students who made choices
+        // Get all students who made choices for the active event
         const allStudentsWithChoices = await prisma.student.findMany({
             where: {
-                positionsSignedUpFor: { some: {} }
+                positionsSignedUpFor: { 
+                    some: {
+                        position: {
+                            eventId: activeEventId
+                        }
+                    }
+                }
             },
             select: { id: true }
         });
@@ -184,9 +207,10 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             notPlaced: notPlacedCount
         };
 
-        // Get all positions with their companies for subscription rate calculation
+        // Get all positions with their companies for subscription rate calculation (active event only)
         const positionsWithCompanies = await prisma.position.findMany({
             where: {
+                eventId: activeEventId,
                 students: { some: {} } // Only positions that have student choices
             },
             include: {
@@ -245,9 +269,14 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             .sort((a, b) => b.averageSubscriptionRate - a.averageSubscriptionRate);
 
         for (const result of results) {
-            // Get student's choices in order
+            // Get student's choices in order for the active event only
             const studentChoices = await prisma.positionsOnStudents.findMany({
-                where: { studentId: result.studentId },
+                where: { 
+                    studentId: result.studentId,
+                    position: {
+                        eventId: activeEventId
+                    }
+                },
                 orderBy: { rank: 'asc' },
                 select: { positionId: true }
             });
@@ -285,12 +314,12 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
     }
 }
 
-async function calculateCompanyStats(userInfo: UserInfo) {
+async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) {
     try {
-        // Get all positions with their companies and student choices
+        // Get all positions with their companies and student choices (active event only)
         const positionsWithChoices = await prisma.position.findMany({
             where: {
-                event: { schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) } }
+                eventId: activeEventId
             },
             include: {
                 host: {
@@ -452,15 +481,12 @@ async function calculateCompanyStats(userInfo: UserInfo) {
     }
 }
 
-async function calculateStudentStats(userInfo: UserInfo) {
+async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) {
     try {
-        // Get all positions from active events to calculate total available slots
+        // Get all positions from the active event to calculate total available slots
         const allPositions = await prisma.position.findMany({
             where: {
-                event: { 
-                    schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
-                    isActive: true 
-                }
+                eventId: activeEventId
             },
             include: {
                 host: {
@@ -473,13 +499,18 @@ async function calculateStudentStats(userInfo: UserInfo) {
 
         const totalAvailableSlots = allPositions.reduce((sum, p) => sum + p.slots, 0);
 
-        // Get all students with their choices and grade information
+        // Get all students with their choices and grade information (for active event only)
         const studentsWithChoices = await prisma.student.findMany({
             where: {
                 schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
             },
             include: {
                 positionsSignedUpFor: {
+                    where: {
+                        position: {
+                            eventId: activeEventId
+                        }
+                    },
                     include: {
                         position: {
                             include: {
@@ -653,14 +684,13 @@ async function calculateStudentStats(userInfo: UserInfo) {
     }
 }
 
-async function calculateTimelineStats(userInfo: UserInfo) {
+async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string) {
     try {
-        // Get the event date to use as reference
+        // Get the active event to use as reference
         const event = await prisma.event.findFirst({
             where: {
-                schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
-            },
-            orderBy: { date: 'desc' }
+                id: activeEventId
+            }
         });
 
         if (!event) {
@@ -695,7 +725,7 @@ async function calculateTimelineStats(userInfo: UserInfo) {
             };
         }
 
-        // Get all students with their choice data
+        // Get all students with their choice data (for active event only)
         const students = await prisma.student.findMany({
             where: {
                 schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
@@ -703,6 +733,11 @@ async function calculateTimelineStats(userInfo: UserInfo) {
             include: {
                 user: true,
                 positionsSignedUpFor: {
+                    where: {
+                        position: {
+                            eventId: activeEventId
+                        }
+                    },
                     include: {
                         position: true
                     },
@@ -726,10 +761,10 @@ async function calculateTimelineStats(userInfo: UserInfo) {
             }
         });
 
-        // Get all positions
+        // Get all positions from the active event
         const positions = await prisma.position.findMany({
             where: {
-                event: { schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) } }
+                eventId: activeEventId
             },
             include: {
                 host: {

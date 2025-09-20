@@ -23,7 +23,8 @@
   }
 
   function selectEvent(eventId: string) {
-    goto(`/dashboard/admin/archived?eventId=${eventId}`);
+    // Force full page reload to ensure fresh data
+    window.location.href = `/dashboard/admin/archived?eventId=${eventId}`;
   }
 
   function goToActiveEvent() {

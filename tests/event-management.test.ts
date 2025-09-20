@@ -297,7 +297,13 @@ describe('Event Management Functions', () => {
           date: testDate,
           displayLotteryResults: true,
           isActive: false,
-          isArchived: false
+          isArchived: false,
+          // Event Controls - new events start in draft mode (all disabled)
+          eventEnabled: false,
+          companyAccountsEnabled: false,
+          studentAccountsEnabled: false,
+          studentSignupsEnabled: false,
+          lotteryPublished: false
         }
       });
     });
@@ -337,7 +343,13 @@ describe('Event Management Functions', () => {
           date: testDate,
           displayLotteryResults: false,
           isActive: false,
-          isArchived: false
+          isArchived: false,
+          // Event Controls - new events start in draft mode (all disabled)
+          eventEnabled: false,
+          companyAccountsEnabled: false,
+          studentAccountsEnabled: false,
+          studentSignupsEnabled: false,
+          lotteryPublished: false
         }
       });
     });
@@ -798,7 +810,13 @@ describe('Event Management Functions', () => {
             date: testDate,
             displayLotteryResults: false,
             isActive: false,
-            isArchived: false
+            isArchived: false,
+            // Event Controls - new events start in draft mode (all disabled)
+            eventEnabled: false,
+            companyAccountsEnabled: false,
+            studentAccountsEnabled: false,
+            studentSignupsEnabled: false,
+            lotteryPublished: false
           }
         });
       });

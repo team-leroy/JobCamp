@@ -83,19 +83,6 @@ async function runLotteryInBackground(jobId: string) {
             });
         }
 
-        // Get all students and their preferences
-        const students = await prisma.student.findMany({
-            where: { schoolId },
-            include: {
-                positionsSignedUpFor: {
-                    include: {
-                        position: true
-                    },
-                    orderBy: { rank: 'asc' }
-                }
-            }
-        });
-
         // Get all positions from the active event
         const positions = await prisma.position.findMany({
             where: {
@@ -117,6 +104,35 @@ async function runLotteryInBackground(jobId: string) {
                 }
             }
         });
+
+        // Check if there are any positions for the active event
+        if (positions.length === 0) {
+            throw new Error('No positions found for the active event. Cannot run lottery without positions.');
+        }
+
+        // Get all students and their preferences for the active event
+        const students = await prisma.student.findMany({
+            where: { schoolId },
+            include: {
+                positionsSignedUpFor: {
+                    where: {
+                        position: {
+                            eventId: { in: positions.map(p => p.event.id) }
+                        }
+                    },
+                    include: {
+                        position: true
+                    },
+                    orderBy: { rank: 'asc' }
+                }
+            }
+        });
+
+        // Check if students have made choices for the active event
+        const studentsWithChoices = students.filter(s => s.positionsSignedUpFor.length > 0);
+        if (studentsWithChoices.length === 0) {
+            throw new Error('No student choices found for the active event. The event may be in draft mode or students have not yet signed up. Please ensure the event is properly configured and students have access before running the lottery.');
+        }
 
         // Apply manual assignments first
         const manualAssignments = new Map();

@@ -791,748 +791,781 @@
     </p>
   </div>
 
-  <!-- Visualization Selector -->
-  <div class="mb-8 bg-white rounded-lg shadow p-6">
-    <h2 class="text-xl font-semibold mb-4">Select Visualization</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {#each visualizations as viz}
-        <button
-          class="p-4 border rounded-lg text-left transition-colors {selectedVisualization ===
-          viz.value
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-200 hover:border-gray-300'}"
-          onclick={() => (selectedVisualization = viz.value)}
+  <!-- No Active Event Notice -->
+  {#if !data.activeEvent}
+    <div class="mb-8 p-6 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+      <h2 class="text-xl font-semibold text-yellow-800 mb-2">
+        No Active Event
+      </h2>
+      <p class="text-yellow-700">
+        Visualizations require an active event to display data.
+        <a
+          href="/dashboard/admin/event-mgmt"
+          class="text-yellow-800 hover:text-yellow-900 underline font-medium"
         >
-          <div class="font-semibold text-gray-900">{viz.label}</div>
-          <div class="text-sm text-gray-600 mt-1">{viz.description}</div>
-          {#if selectedVisualization === viz.value}
-            <div class="text-xs text-blue-600 mt-2">✓ Selected</div>
-          {/if}
-        </button>
-      {/each}
+          Go to Event Management
+        </a> to activate an event.
+      </p>
     </div>
-  </div>
+  {/if}
 
-  {#if selectedVisualization === "lottery" && data.lotteryStats}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Main Chart -->
-      <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">Choice Distribution</h2>
-        <div class="h-96">
-          <canvas bind:this={chartCanvas} width="800" height="400"></canvas>
+  <!-- Visualization Selector -->
+  {#if data.activeEvent}
+    <div class="mb-8 bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold mb-4">Select Visualization</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {#each visualizations as viz}
+          <button
+            class="p-4 border rounded-lg text-left transition-colors {selectedVisualization ===
+            viz.value
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300'}"
+            onclick={() => (selectedVisualization = viz.value)}
+          >
+            <div class="font-semibold text-gray-900">{viz.label}</div>
+            <div class="text-sm text-gray-600 mt-1">{viz.description}</div>
+            {#if selectedVisualization === viz.value}
+              <div class="text-xs text-blue-600 mt-2">✓ Selected</div>
+            {/if}
+          </button>
+        {/each}
+      </div>
+    </div>
+
+    {#if selectedVisualization === "lottery" && data.lotteryStats}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Chart -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">Choice Distribution</h2>
+          <div class="h-96">
+            <canvas bind:this={chartCanvas} width="800" height="400"></canvas>
+          </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">Summary</h2>
+          <div class="space-y-4">
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+              <div class="text-2xl font-bold text-green-600">
+                {data.lotteryStats.firstChoice}
+              </div>
+              <div class="text-sm text-green-600">Got 1st Choice</div>
+              <div class="text-xs text-gray-500">
+                {(
+                  (data.lotteryStats.firstChoice /
+                    data.lotteryStats.totalStudents) *
+                  100
+                ).toFixed(1)}% of students
+              </div>
+            </div>
+
+            <div class="text-center p-4 bg-yellow-50 rounded-lg">
+              <div class="text-2xl font-bold text-yellow-600">
+                {data.lotteryStats.secondChoice}
+              </div>
+              <div class="text-sm text-yellow-600">Got 2nd Choice</div>
+              <div class="text-xs text-gray-500">
+                {(
+                  (data.lotteryStats.secondChoice /
+                    data.lotteryStats.totalStudents) *
+                  100
+                ).toFixed(1)}% of students
+              </div>
+            </div>
+
+            <div class="text-center p-4 bg-orange-50 rounded-lg">
+              <div class="text-2xl font-bold text-orange-600">
+                {data.lotteryStats.thirdChoice}
+              </div>
+              <div class="text-sm text-orange-600">Got 3rd Choice</div>
+              <div class="text-xs text-gray-500">
+                {(
+                  (data.lotteryStats.thirdChoice /
+                    data.lotteryStats.totalStudents) *
+                  100
+                ).toFixed(1)}% of students
+              </div>
+            </div>
+
+            <div class="text-center p-4 bg-red-50 rounded-lg">
+              <div class="text-2xl font-bold text-red-600">
+                {data.lotteryStats.notPlaced}
+              </div>
+              <div class="text-sm text-red-600">Not Placed</div>
+              <div class="text-xs text-gray-500">
+                {(
+                  (data.lotteryStats.notPlaced /
+                    data.lotteryStats.totalStudents) *
+                  100
+                ).toFixed(1)}% of students
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Summary Stats -->
-      <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">Summary</h2>
-        <div class="space-y-4">
-          <div class="text-center p-4 bg-green-50 rounded-lg">
-            <div class="text-2xl font-bold text-green-600">
-              {data.lotteryStats.firstChoice}
+      <!-- Additional Stats -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Detailed Statistics</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div class="text-center">
+            <div class="text-lg font-semibold">
+              {data.lotteryStats.totalStudents}
             </div>
-            <div class="text-sm text-green-600">Got 1st Choice</div>
-            <div class="text-xs text-gray-500">
+            <div class="text-sm text-gray-600">Total Students</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-green-600">
+              {data.lotteryStats.firstChoice +
+                data.lotteryStats.secondChoice +
+                data.lotteryStats.thirdChoice}
+            </div>
+            <div class="text-sm text-gray-600">Top 3 Choices</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-blue-600">
+              {data.lotteryStats.totalStudents - data.lotteryStats.notPlaced}
+            </div>
+            <div class="text-sm text-gray-600">Successfully Placed</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-purple-600">
               {(
                 (data.lotteryStats.firstChoice /
                   data.lotteryStats.totalStudents) *
                 100
-              ).toFixed(1)}% of students
+              ).toFixed(1)}%
             </div>
+            <div class="text-sm text-gray-600">1st Choice Rate</div>
           </div>
-
-          <div class="text-center p-4 bg-yellow-50 rounded-lg">
-            <div class="text-2xl font-bold text-yellow-600">
-              {data.lotteryStats.secondChoice}
-            </div>
-            <div class="text-sm text-yellow-600">Got 2nd Choice</div>
-            <div class="text-xs text-gray-500">
+          <div class="text-center">
+            <div class="text-lg font-semibold text-orange-600">
               {(
-                (data.lotteryStats.secondChoice /
+                ((data.lotteryStats.totalStudents -
+                  data.lotteryStats.notPlaced) /
                   data.lotteryStats.totalStudents) *
                 100
-              ).toFixed(1)}% of students
+              ).toFixed(1)}%
             </div>
+            <div class="text-sm text-gray-600">Placement Rate</div>
           </div>
-
-          <div class="text-center p-4 bg-orange-50 rounded-lg">
-            <div class="text-2xl font-bold text-orange-600">
-              {data.lotteryStats.thirdChoice}
-            </div>
-            <div class="text-sm text-orange-600">Got 3rd Choice</div>
-            <div class="text-xs text-gray-500">
-              {(
-                (data.lotteryStats.thirdChoice /
-                  data.lotteryStats.totalStudents) *
-                100
-              ).toFixed(1)}% of students
-            </div>
-          </div>
-
-          <div class="text-center p-4 bg-red-50 rounded-lg">
-            <div class="text-2xl font-bold text-red-600">
-              {data.lotteryStats.notPlaced}
-            </div>
-            <div class="text-sm text-red-600">Not Placed</div>
-            <div class="text-xs text-gray-500">
+          <div class="text-center">
+            <div class="text-lg font-semibold text-red-600">
               {(
                 (data.lotteryStats.notPlaced /
                   data.lotteryStats.totalStudents) *
                 100
-              ).toFixed(1)}% of students
+              ).toFixed(1)}%
             </div>
+            <div class="text-sm text-gray-600">Not Placed Rate</div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Additional Stats -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">Detailed Statistics</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <div class="text-center">
-          <div class="text-lg font-semibold">
-            {data.lotteryStats.totalStudents}
-          </div>
-          <div class="text-sm text-gray-600">Total Students</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-green-600">
-            {data.lotteryStats.firstChoice +
-              data.lotteryStats.secondChoice +
-              data.lotteryStats.thirdChoice}
-          </div>
-          <div class="text-sm text-gray-600">Top 3 Choices</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-blue-600">
-            {data.lotteryStats.totalStudents - data.lotteryStats.notPlaced}
-          </div>
-          <div class="text-sm text-gray-600">Successfully Placed</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-purple-600">
-            {(
-              (data.lotteryStats.firstChoice /
-                data.lotteryStats.totalStudents) *
-              100
-            ).toFixed(1)}%
-          </div>
-          <div class="text-sm text-gray-600">1st Choice Rate</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-orange-600">
-            {(
-              ((data.lotteryStats.totalStudents - data.lotteryStats.notPlaced) /
-                data.lotteryStats.totalStudents) *
-              100
-            ).toFixed(1)}%
-          </div>
-          <div class="text-sm text-gray-600">Placement Rate</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-red-600">
-            {(
-              (data.lotteryStats.notPlaced / data.lotteryStats.totalStudents) *
-              100
-            ).toFixed(1)}%
-          </div>
-          <div class="text-sm text-gray-600">Not Placed Rate</div>
-        </div>
-      </div>
-    </div>
-  {:else if selectedVisualization === "lottery" && !data.lotteryStats}
-    <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">No Lottery Data Available</h2>
-      <p class="text-gray-600 mb-4">
-        No lottery results are currently available. Run the lottery first to see
-        the analysis.
-      </p>
-      <Button href="/lottery" variant="default">Go to Lottery</Button>
-    </div>
-  {:else if selectedVisualization === "company" && data.companyStats}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <!-- Career Field Distribution -->
+    {:else if selectedVisualization === "lottery" && !data.lotteryStats}
       <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">Career Field Distribution</h2>
+        <h2 class="text-xl font-semibold mb-4">No Lottery Data Available</h2>
         <p class="text-gray-600 mb-4">
-          Shows student choices for each career field (1st, 2nd, and 3rd choices
-          only)
+          No lottery results are currently available. Run the lottery first to
+          see the analysis.
         </p>
-        <div class="h-96">
-          <canvas bind:this={careerChartCanvas} width="800" height="400"
-          ></canvas>
+        <Button href="/lottery" variant="default">Go to Lottery</Button>
+      </div>
+    {:else if selectedVisualization === "company" && data.companyStats}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Career Field Distribution -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">Career Field Distribution</h2>
+          <p class="text-gray-600 mb-4">
+            Shows student choices for each career field (1st, 2nd, and 3rd
+            choices only)
+          </p>
+          <div class="h-96">
+            <canvas bind:this={careerChartCanvas} width="800" height="400"
+            ></canvas>
+          </div>
+        </div>
+
+        <!-- Company Popularity -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">Company Popularity</h2>
+          <div class="h-96">
+            <canvas bind:this={companyChartCanvas} width="800" height="400"
+            ></canvas>
+          </div>
         </div>
       </div>
 
-      <!-- Company Popularity -->
-      <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">Company Popularity</h2>
-        <div class="h-96">
-          <canvas bind:this={companyChartCanvas} width="800" height="400"
-          ></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Company Summary -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">Company Summary</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <div class="text-center">
-          <div class="text-lg font-semibold">
-            {data.companyStats.totalCompanies}
+      <!-- Company Summary -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Company Summary</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div class="text-center">
+            <div class="text-lg font-semibold">
+              {data.companyStats.totalCompanies}
+            </div>
+            <div class="text-sm text-gray-600">Total Companies</div>
           </div>
-          <div class="text-sm text-gray-600">Total Companies</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-green-600">
-            {data.companyStats.totalChoices}
+          <div class="text-center">
+            <div class="text-lg font-semibold text-green-600">
+              {data.companyStats.totalChoices}
+            </div>
+            <div class="text-sm text-gray-600">Top 3 Student Choices</div>
           </div>
-          <div class="text-sm text-gray-600">Top 3 Student Choices</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-blue-600">
-            {data.companyStats.totalSlots}
+          <div class="text-center">
+            <div class="text-lg font-semibold text-blue-600">
+              {data.companyStats.totalSlots}
+            </div>
+            <div class="text-sm text-gray-600">Total Available Slots</div>
           </div>
-          <div class="text-sm text-gray-600">Total Available Slots</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-purple-600">
-            {data.companyStats.totalPositions}
+          <div class="text-center">
+            <div class="text-lg font-semibold text-purple-600">
+              {data.companyStats.totalPositions}
+            </div>
+            <div class="text-sm text-gray-600">Total Positions</div>
           </div>
-          <div class="text-sm text-gray-600">Total Positions</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-orange-600">
-            {(
-              (data.companyStats.totalChoices / data.companyStats.totalSlots) *
-              100
-            ).toFixed(1)}%
+          <div class="text-center">
+            <div class="text-lg font-semibold text-orange-600">
+              {(
+                (data.companyStats.totalChoices /
+                  data.companyStats.totalSlots) *
+                100
+              ).toFixed(1)}%
+            </div>
+            <div class="text-sm text-gray-600">Fill Rate</div>
           </div>
-          <div class="text-sm text-gray-600">Fill Rate</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-red-600">
-            {(
-              data.companyStats.totalChoices / data.companyStats.totalPositions
-            ).toFixed(1)}
-          </div>
-          <div class="text-sm text-gray-600">
-            Avg Top 3 Choices per Position
+          <div class="text-center">
+            <div class="text-lg font-semibold text-red-600">
+              {(
+                data.companyStats.totalChoices /
+                data.companyStats.totalPositions
+              ).toFixed(1)}
+            </div>
+            <div class="text-sm text-gray-600">
+              Avg Top 3 Choices per Position
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Company Subscription Rate Statistics -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">Company Subscription Rates</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
-        <div class="text-center">
-          <div class="text-lg font-semibold">
-            {data.companyStats.totalPositions}
+      <!-- Company Subscription Rate Statistics -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Company Subscription Rates</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+          <div class="text-center">
+            <div class="text-lg font-semibold">
+              {data.companyStats.totalPositions}
+            </div>
+            <div class="text-sm text-gray-600">Total Positions</div>
           </div>
-          <div class="text-sm text-gray-600">Total Positions</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-green-600">
-            {data.companyStats.totalChoices}
+          <div class="text-center">
+            <div class="text-lg font-semibold text-green-600">
+              {data.companyStats.totalChoices}
+            </div>
+            <div class="text-sm text-gray-600">Total Choices</div>
           </div>
-          <div class="text-sm text-gray-600">Total Choices</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-blue-600">
-            {data.companyStats.totalSlots}
+          <div class="text-center">
+            <div class="text-lg font-semibold text-blue-600">
+              {data.companyStats.totalSlots}
+            </div>
+            <div class="text-sm text-gray-600">Total Slots</div>
           </div>
-          <div class="text-sm text-gray-600">Total Slots</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-purple-600">
-            {(data.companyStats.overallSubscriptionRate * 100).toFixed(1)}%
+          <div class="text-center">
+            <div class="text-lg font-semibold text-purple-600">
+              {(data.companyStats.overallSubscriptionRate * 100).toFixed(1)}%
+            </div>
+            <div class="text-sm text-gray-600">Overall Subscription Rate</div>
           </div>
-          <div class="text-sm text-gray-600">Overall Subscription Rate</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-orange-600">
-            {data.companyStats.companySubscriptionStats.length}
+          <div class="text-center">
+            <div class="text-lg font-semibold text-orange-600">
+              {data.companyStats.companySubscriptionStats.length}
+            </div>
+            <div class="text-sm text-gray-600">Companies with Choices</div>
           </div>
-          <div class="text-sm text-gray-600">Companies with Choices</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-red-600">
-            {(
-              data.companyStats.totalChoices / data.companyStats.totalPositions
-            ).toFixed(1)}
+          <div class="text-center">
+            <div class="text-lg font-semibold text-red-600">
+              {(
+                data.companyStats.totalChoices /
+                data.companyStats.totalPositions
+              ).toFixed(1)}
+            </div>
+            <div class="text-sm text-gray-600">Avg Choices per Position</div>
           </div>
-          <div class="text-sm text-gray-600">Avg Choices per Position</div>
         </div>
-      </div>
 
-      <!-- Company Subscription Details Table -->
-      <div class="overflow-x-auto">
-        <table class="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr>
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Company</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Positions</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Total Choices</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Total Slots</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Subscription Rate</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Status</th
-              >
-            </tr>
-          </thead>
-          <tbody>
-            {#each data.companyStats.companySubscriptionStats as company}
+        <!-- Company Subscription Details Table -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200">
+            <thead>
               <tr>
-                <td class="py-2 px-4 border-b text-sm text-gray-800"
-                  >{company.company}</td
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Company</th
                 >
-                <td class="py-2 px-4 border-b text-sm text-gray-600"
-                  >{company.totalPositions}</td
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Positions</th
                 >
-                <td class="py-2 px-4 border-b text-sm text-green-600"
-                  >{company.totalChoices}</td
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Total Choices</th
                 >
-                <td class="py-2 px-4 border-b text-sm text-blue-600"
-                  >{company.totalSlots}</td
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Total Slots</th
                 >
-                <td class="py-2 px-4 border-b text-sm font-medium">
-                  <span
-                    class={company.averageSubscriptionRate > 1
-                      ? "text-red-600"
-                      : company.averageSubscriptionRate > 0.5
-                        ? "text-orange-600"
-                        : "text-green-600"}
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Subscription Rate</th
+                >
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Status</th
+                >
+              </tr>
+            </thead>
+            <tbody>
+              {#each data.companyStats.companySubscriptionStats as company}
+                <tr>
+                  <td class="py-2 px-4 border-b text-sm text-gray-800"
+                    >{company.company}</td
                   >
-                    {(company.averageSubscriptionRate * 100).toFixed(1)}%
-                  </span>
-                </td>
-                <td class="py-2 px-4 border-b text-sm">
-                  {#if company.averageSubscriptionRate > 1}
+                  <td class="py-2 px-4 border-b text-sm text-gray-600"
+                    >{company.totalPositions}</td
+                  >
+                  <td class="py-2 px-4 border-b text-sm text-green-600"
+                    >{company.totalChoices}</td
+                  >
+                  <td class="py-2 px-4 border-b text-sm text-blue-600"
+                    >{company.totalSlots}</td
+                  >
+                  <td class="py-2 px-4 border-b text-sm font-medium">
                     <span
-                      class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs"
-                      >Oversubscribed</span
+                      class={company.averageSubscriptionRate > 1
+                        ? "text-red-600"
+                        : company.averageSubscriptionRate > 0.5
+                          ? "text-orange-600"
+                          : "text-green-600"}
                     >
-                  {:else if company.averageSubscriptionRate > 0.5}
-                    <span
-                      class="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs"
-                      >Moderate</span
-                    >
-                  {:else}
-                    <span
-                      class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs"
-                      >Available</span
-                    >
-                  {/if}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+                      {(company.averageSubscriptionRate * 100).toFixed(1)}%
+                    </span>
+                  </td>
+                  <td class="py-2 px-4 border-b text-sm">
+                    {#if company.averageSubscriptionRate > 1}
+                      <span
+                        class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs"
+                        >Oversubscribed</span
+                      >
+                    {:else if company.averageSubscriptionRate > 0.5}
+                      <span
+                        class="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs"
+                        >Moderate</span
+                      >
+                    {:else}
+                      <span
+                        class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs"
+                        >Available</span
+                      >
+                    {/if}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
 
-    <!-- Career Field Details Table -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">Career Field Details</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr>
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Career Field</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Total Choices</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Total Slots</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Slots Filled</th
-              >
-            </tr>
-          </thead>
-          <tbody>
-            {#each data.companyStats.careerStats as career}
+      <!-- Career Field Details Table -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Career Field Details</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200">
+            <thead>
               <tr>
-                <td class="py-2 px-4 border-b text-sm text-gray-800"
-                  >{career.career}</td
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Career Field</th
                 >
-                <td class="py-2 px-4 border-b text-sm text-green-600"
-                  >{career.totalChoices}</td
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Total Choices</th
                 >
-                <td class="py-2 px-4 border-b text-sm text-blue-600"
-                  >{career.totalSlots}</td
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Total Slots</th
                 >
-                <td class="py-2 px-4 border-b text-sm text-red-600"
-                  >{career.totalSlots - career.totalChoices}</td
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Slots Filled</th
                 >
               </tr>
-            {/each}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {#each data.companyStats.careerStats as career}
+                <tr>
+                  <td class="py-2 px-4 border-b text-sm text-gray-800"
+                    >{career.career}</td
+                  >
+                  <td class="py-2 px-4 border-b text-sm text-green-600"
+                    >{career.totalChoices}</td
+                  >
+                  <td class="py-2 px-4 border-b text-sm text-blue-600"
+                    >{career.totalSlots}</td
+                  >
+                  <td class="py-2 px-4 border-b text-sm text-red-600"
+                    >{career.totalSlots - career.totalChoices}</td
+                  >
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  {:else if selectedVisualization === "company" && !data.companyStats}
-    <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">No Company Data Available</h2>
-      <p class="text-gray-600 mb-4">
-        No company participation data is currently available. Ensure students
-        have registered and selected companies.
-      </p>
-    </div>
-  {:else if selectedVisualization === "student" && data.studentStats}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Grade Distribution -->
+    {:else if selectedVisualization === "company" && !data.companyStats}
       <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">No Company Data Available</h2>
+        <p class="text-gray-600 mb-4">
+          No company participation data is currently available. Ensure students
+          have registered and selected companies.
+        </p>
+      </div>
+    {:else if selectedVisualization === "student" && data.studentStats}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Grade Distribution -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">
+            Student Distribution by Grade
+          </h2>
+          <div class="h-96">
+            <canvas bind:this={gradeChartCanvas} width="800" height="400"
+            ></canvas>
+          </div>
+        </div>
+
+        <!-- Choice Distribution -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">
+            Distribution of Student Choices
+          </h2>
+          <div class="h-96">
+            <canvas bind:this={choiceChartCanvas} width="800" height="400"
+            ></canvas>
+          </div>
+        </div>
+
+        <!-- Slot Availability Overview -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">Slot Availability Overview</h2>
+          <div class="h-96">
+            <canvas bind:this={slotChartCanvas} width="800" height="400"
+            ></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Summary -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Student Summary</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div class="text-center">
+            <div class="text-lg font-semibold">
+              {data.studentStats.totalStudents}
+            </div>
+            <div class="text-sm text-gray-600">Total Students</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-green-600">
+              {data.studentStats.totalStudentsWithChoices}
+            </div>
+            <div class="text-sm text-gray-600">Students with Choices</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-blue-600">
+              {data.studentStats.totalChoices}
+            </div>
+            <div class="text-sm text-gray-600">Total Student Choices</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-purple-600">
+              {data.studentStats.averageChoicesPerStudent.toFixed(1)}
+            </div>
+            <div class="text-sm text-gray-600">Avg Choices per Student</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-orange-600">
+              {data.studentStats.totalAvailableSlots}
+            </div>
+            <div class="text-sm text-gray-600">Total Available Slots</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-red-600">
+              {data.studentStats.studentsWithNoChoices.length}
+            </div>
+            <div class="text-sm text-gray-600">Students with No Choices</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Details Table -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Student Details</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200">
+            <thead>
+              <tr>
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Grade</th
+                >
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Total Students</th
+                >
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Students with Choices</th
+                >
+              </tr>
+            </thead>
+            <tbody>
+              {#each data.studentStats.gradeStats as grade}
+                <tr>
+                  <td class="py-2 px-4 border-b text-sm text-gray-800"
+                    >{grade.grade}</td
+                  >
+                  <td class="py-2 px-4 border-b text-sm text-green-600"
+                    >{grade.totalStudents}</td
+                  >
+                  <td class="py-2 px-4 border-b text-sm text-blue-600"
+                    >{grade.studentsWithChoices}</td
+                  >
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Choice Details Table -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Choice Details</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200">
+            <thead>
+              <tr>
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Number of Choices</th
+                >
+                <th
+                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
+                  >Count</th
+                >
+              </tr>
+            </thead>
+            <tbody>
+              {#each data.studentStats.choiceStats as choice}
+                <tr>
+                  <td class="py-2 px-4 border-b text-sm text-gray-800"
+                    >{choice.choices} choices</td
+                  >
+                  <td class="py-2 px-4 border-b text-sm text-blue-600"
+                    >{choice.count}</td
+                  >
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Slot Details Table -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">
-          Student Distribution by Grade
+          Choice Patterns vs Slot Availability
         </h2>
         <div class="h-96">
-          <canvas bind:this={gradeChartCanvas} width="800" height="400"
+          <canvas bind:this={choiceVsSlotsChartCanvas} width="800" height="400"
           ></canvas>
         </div>
       </div>
-
-      <!-- Choice Distribution -->
+    {:else if selectedVisualization === "student" && !data.studentStats}
       <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">
-          Distribution of Student Choices
-        </h2>
-        <div class="h-96">
-          <canvas bind:this={choiceChartCanvas} width="800" height="400"
-          ></canvas>
+        <h2 class="text-xl font-semibold mb-4">No Student Data Available</h2>
+        <p class="text-gray-600 mb-4">
+          No student registration or choice data is currently available. Ensure
+          students have registered and selected companies.
+        </p>
+      </div>
+    {:else if selectedVisualization === "timeline" && data.timelineStats}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Registration Timeline -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">
+            Student Registration Timeline
+          </h2>
+          <div class="h-96">
+            <canvas bind:this={registrationChartCanvas} width="800" height="400"
+            ></canvas>
+          </div>
+        </div>
+
+        <!-- Choice Submission Timeline -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold mb-4">Choice Submission Timeline</h2>
+          <div class="h-96">
+            <canvas
+              bind:this={choiceTimelineChartCanvas}
+              width="800"
+              height="400"
+            ></canvas>
+          </div>
+        </div>
+
+        <!-- Company Engagement Timeline -->
+        <div class="bg-white rounded-lg shadow p-6 lg:col-span-2">
+          <h2 class="text-xl font-semibold mb-4">
+            Company Engagement Timeline
+          </h2>
+          <div class="h-96">
+            <canvas
+              bind:this={companyTimelineChartCanvas}
+              width="800"
+              height="400"
+            ></canvas>
+          </div>
         </div>
       </div>
 
-      <!-- Slot Availability Overview -->
+      <!-- Event Milestones -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Event Milestones</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="text-center">
+            <div class="text-lg font-semibold text-blue-600">
+              {data.timelineStats.milestones.totalStudents}
+            </div>
+            <div class="text-sm text-gray-600">Total Students</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-green-600">
+              {data.timelineStats.milestones.studentsWithChoices}
+            </div>
+            <div class="text-sm text-gray-600">Students with Choices</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-purple-600">
+              {data.timelineStats.milestones.totalCompanies}
+            </div>
+            <div class="text-sm text-gray-600">Total Companies</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-orange-600">
+              {data.timelineStats.milestones.totalPositions}
+            </div>
+            <div class="text-sm text-gray-600">Total Positions</div>
+          </div>
+        </div>
+
+        <!-- Timeline Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 class="text-lg font-semibold mb-3">Registration Period</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">First Registration:</span>
+                <span class="font-medium"
+                  >{data.timelineStats.milestones.firstRegistration
+                    ? new Date(
+                        data.timelineStats.milestones.firstRegistration
+                      ).toLocaleDateString()
+                    : "N/A"}</span
+                >
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Last Registration:</span>
+                <span class="font-medium"
+                  >{data.timelineStats.milestones.lastRegistration
+                    ? new Date(
+                        data.timelineStats.milestones.lastRegistration
+                      ).toLocaleDateString()
+                    : "N/A"}</span
+                >
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Duration:</span>
+                <span class="font-medium"
+                  >{data.timelineStats.velocity.totalDays} days</span
+                >
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Avg per Day:</span>
+                <span class="font-medium"
+                  >{data.timelineStats.velocity.avgRegistrationsPerDay.toFixed(
+                    1
+                  )}</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-lg font-semibold mb-3">Choice Period</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">First Choice:</span>
+                <span class="font-medium"
+                  >{data.timelineStats.milestones.firstChoice
+                    ? new Date(
+                        data.timelineStats.milestones.firstChoice
+                      ).toLocaleDateString()
+                    : "N/A"}</span
+                >
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Last Choice:</span>
+                <span class="font-medium"
+                  >{data.timelineStats.milestones.lastChoice
+                    ? new Date(
+                        data.timelineStats.milestones.lastChoice
+                      ).toLocaleDateString()
+                    : "N/A"}</span
+                >
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Duration:</span>
+                <span class="font-medium"
+                  >{data.timelineStats.velocity.choiceDays} days</span
+                >
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Avg per Day:</span>
+                <span class="font-medium"
+                  >{data.timelineStats.velocity.avgChoicesPerDay.toFixed(
+                    1
+                  )}</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {:else if selectedVisualization === "timeline" && !data.timelineStats}
       <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">Slot Availability Overview</h2>
-        <div class="h-96">
-          <canvas bind:this={slotChartCanvas} width="800" height="400"></canvas>
-        </div>
+        <h2 class="text-xl font-semibold mb-4">No Timeline Data Available</h2>
+        <p class="text-gray-600 mb-4">
+          No event timeline data is currently available. Ensure students and
+          companies have registered and made choices.
+        </p>
       </div>
-    </div>
-
-    <!-- Student Summary -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">Student Summary</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <div class="text-center">
-          <div class="text-lg font-semibold">
-            {data.studentStats.totalStudents}
-          </div>
-          <div class="text-sm text-gray-600">Total Students</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-green-600">
-            {data.studentStats.totalStudentsWithChoices}
-          </div>
-          <div class="text-sm text-gray-600">Students with Choices</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-blue-600">
-            {data.studentStats.totalChoices}
-          </div>
-          <div class="text-sm text-gray-600">Total Student Choices</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-purple-600">
-            {data.studentStats.averageChoicesPerStudent.toFixed(1)}
-          </div>
-          <div class="text-sm text-gray-600">Avg Choices per Student</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-orange-600">
-            {data.studentStats.totalAvailableSlots}
-          </div>
-          <div class="text-sm text-gray-600">Total Available Slots</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-red-600">
-            {data.studentStats.studentsWithNoChoices.length}
-          </div>
-          <div class="text-sm text-gray-600">Students with No Choices</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Student Details Table -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">Student Details</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr>
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Grade</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Total Students</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Students with Choices</th
-              >
-            </tr>
-          </thead>
-          <tbody>
-            {#each data.studentStats.gradeStats as grade}
-              <tr>
-                <td class="py-2 px-4 border-b text-sm text-gray-800"
-                  >{grade.grade}</td
-                >
-                <td class="py-2 px-4 border-b text-sm text-green-600"
-                  >{grade.totalStudents}</td
-                >
-                <td class="py-2 px-4 border-b text-sm text-blue-600"
-                  >{grade.studentsWithChoices}</td
-                >
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Choice Details Table -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">Choice Details</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr>
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Number of Choices</th
-              >
-              <th
-                class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                >Count</th
-              >
-            </tr>
-          </thead>
-          <tbody>
-            {#each data.studentStats.choiceStats as choice}
-              <tr>
-                <td class="py-2 px-4 border-b text-sm text-gray-800"
-                  >{choice.choices} choices</td
-                >
-                <td class="py-2 px-4 border-b text-sm text-blue-600"
-                  >{choice.count}</td
-                >
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Slot Details Table -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">
-        Choice Patterns vs Slot Availability
-      </h2>
-      <div class="h-96">
-        <canvas bind:this={choiceVsSlotsChartCanvas} width="800" height="400"
-        ></canvas>
-      </div>
-    </div>
-  {:else if selectedVisualization === "student" && !data.studentStats}
-    <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">No Student Data Available</h2>
-      <p class="text-gray-600 mb-4">
-        No student registration or choice data is currently available. Ensure
-        students have registered and selected companies.
-      </p>
-    </div>
-  {:else if selectedVisualization === "timeline" && data.timelineStats}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <!-- Registration Timeline -->
+    {:else}
       <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">
-          Student Registration Timeline
-        </h2>
-        <div class="h-96">
-          <canvas bind:this={registrationChartCanvas} width="800" height="400"
-          ></canvas>
-        </div>
+        <h2 class="text-xl font-semibold mb-4">Coming Soon</h2>
+        <p class="text-gray-600 mb-4">
+          The {visualizations.find((v) => v.value === selectedVisualization)
+            ?.label} visualization is under development and will be available soon.
+        </p>
       </div>
-
-      <!-- Choice Submission Timeline -->
-      <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">Choice Submission Timeline</h2>
-        <div class="h-96">
-          <canvas bind:this={choiceTimelineChartCanvas} width="800" height="400"
-          ></canvas>
-        </div>
-      </div>
-
-      <!-- Company Engagement Timeline -->
-      <div class="bg-white rounded-lg shadow p-6 lg:col-span-2">
-        <h2 class="text-xl font-semibold mb-4">Company Engagement Timeline</h2>
-        <div class="h-96">
-          <canvas
-            bind:this={companyTimelineChartCanvas}
-            width="800"
-            height="400"
-          ></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Event Milestones -->
-    <div class="mt-8 bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">Event Milestones</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="text-center">
-          <div class="text-lg font-semibold text-blue-600">
-            {data.timelineStats.milestones.totalStudents}
-          </div>
-          <div class="text-sm text-gray-600">Total Students</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-green-600">
-            {data.timelineStats.milestones.studentsWithChoices}
-          </div>
-          <div class="text-sm text-gray-600">Students with Choices</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-purple-600">
-            {data.timelineStats.milestones.totalCompanies}
-          </div>
-          <div class="text-sm text-gray-600">Total Companies</div>
-        </div>
-        <div class="text-center">
-          <div class="text-lg font-semibold text-orange-600">
-            {data.timelineStats.milestones.totalPositions}
-          </div>
-          <div class="text-sm text-gray-600">Total Positions</div>
-        </div>
-      </div>
-
-      <!-- Timeline Details -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h3 class="text-lg font-semibold mb-3">Registration Period</h3>
-          <div class="space-y-2">
-            <div class="flex justify-between">
-              <span class="text-gray-600">First Registration:</span>
-              <span class="font-medium"
-                >{data.timelineStats.milestones.firstRegistration
-                  ? new Date(
-                      data.timelineStats.milestones.firstRegistration
-                    ).toLocaleDateString()
-                  : "N/A"}</span
-              >
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Last Registration:</span>
-              <span class="font-medium"
-                >{data.timelineStats.milestones.lastRegistration
-                  ? new Date(
-                      data.timelineStats.milestones.lastRegistration
-                    ).toLocaleDateString()
-                  : "N/A"}</span
-              >
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Duration:</span>
-              <span class="font-medium"
-                >{data.timelineStats.velocity.totalDays} days</span
-              >
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Avg per Day:</span>
-              <span class="font-medium"
-                >{data.timelineStats.velocity.avgRegistrationsPerDay.toFixed(
-                  1
-                )}</span
-              >
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h3 class="text-lg font-semibold mb-3">Choice Period</h3>
-          <div class="space-y-2">
-            <div class="flex justify-between">
-              <span class="text-gray-600">First Choice:</span>
-              <span class="font-medium"
-                >{data.timelineStats.milestones.firstChoice
-                  ? new Date(
-                      data.timelineStats.milestones.firstChoice
-                    ).toLocaleDateString()
-                  : "N/A"}</span
-              >
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Last Choice:</span>
-              <span class="font-medium"
-                >{data.timelineStats.milestones.lastChoice
-                  ? new Date(
-                      data.timelineStats.milestones.lastChoice
-                    ).toLocaleDateString()
-                  : "N/A"}</span
-              >
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Duration:</span>
-              <span class="font-medium"
-                >{data.timelineStats.velocity.choiceDays} days</span
-              >
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Avg per Day:</span>
-              <span class="font-medium"
-                >{data.timelineStats.velocity.avgChoicesPerDay.toFixed(1)}</span
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  {:else if selectedVisualization === "timeline" && !data.timelineStats}
-    <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">No Timeline Data Available</h2>
-      <p class="text-gray-600 mb-4">
-        No event timeline data is currently available. Ensure students and
-        companies have registered and made choices.
-      </p>
-    </div>
-  {:else}
-    <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">Coming Soon</h2>
-      <p class="text-gray-600 mb-4">
-        The {visualizations.find((v) => v.value === selectedVisualization)
-          ?.label} visualization is under development and will be available soon.
-      </p>
-    </div>
+    {/if}
   {/if}
 </div>

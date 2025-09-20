@@ -113,16 +113,16 @@
           </h3>
           <div class="bg-blue-50 p-4 rounded-lg space-y-2 text-sm">
             <p>
-              <strong>Draft State:</strong> New events are created in "draft" state
-              (inactive).
+              <strong>Creation:</strong> New events are created as "Inactive" - they
+              exist but are not the primary event.
             </p>
             <p>
               <strong>Activation:</strong> Use the "Activate" button to make this
-              event active for your school.
+              the active event for your school (only one active event allowed).
             </p>
             <p>
-              <strong>Event Controls:</strong> Once active, use Event Controls to
-              enable student/company access.
+              <strong>Event Controls:</strong> Once active, configure user access
+              permissions in the Event Controls section.
             </p>
             <p>
               <strong>School Scope:</strong> This event will be created for
@@ -155,12 +155,6 @@
             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition-colors"
           >
             View Event History
-          </a>
-          <a
-            href="/lottery"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
-          >
-            Manage Lottery
           </a>
         </div>
       </div>

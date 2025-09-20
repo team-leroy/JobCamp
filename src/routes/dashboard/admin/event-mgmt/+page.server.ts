@@ -93,7 +93,7 @@ export const actions: Actions = {
 
             return { 
                 success: true, 
-                message: `Event "${eventName}" created successfully in draft state. Use the "Activate" button to make it active.` 
+                message: `Event "${eventName}" created successfully as inactive. Use the "Activate" button to make it your active event.` 
             };
         } catch (error) {
             console.error('Error creating event:', error);

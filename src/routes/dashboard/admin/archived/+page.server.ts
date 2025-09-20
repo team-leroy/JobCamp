@@ -65,8 +65,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         selectedEvent = allArchivedEvents.find(event => event.id === selectedEventId);
         
         if (selectedEvent) {
-            // Get statistics for the selected archived event
-            selectedEventStats = await prisma.student.aggregate({
+            try {
+                // Get statistics for the selected archived event
+                selectedEventStats = await prisma.student.aggregate({
                 where: { schoolId: selectedEvent.schoolId },
                 _count: { id: true }
             }).then(async (studentCount) => {
@@ -87,18 +88,25 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                         }
                     }),
                     
-                    // Students without choices
+                    // Students without choices for this specific event
                     prisma.student.count({
                         where: { 
                             schoolId: selectedEvent.schoolId,
-                            positionsSignedUpFor: { none: {} }
+                            positionsSignedUpFor: { 
+                                none: {
+                                    position: {
+                                        eventId: selectedEvent.id
+                                    }
+                                }
+                            }
                         }
                     }),
                     
-                    // Total student choices
+                    // Total student choices for this specific event
                     prisma.positionsOnStudents.count({
                         where: {
-                            student: { schoolId: selectedEvent.schoolId }
+                            student: { schoolId: selectedEvent.schoolId },
+                            position: { eventId: selectedEvent.id }
                         }
                     }),
                     
@@ -109,9 +117,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                         _count: { grade: true }
                     }),
                     
-                    // Total companies
+                    // Total companies that participated in this specific event
                     prisma.company.count({
-                        where: { schoolId: selectedEvent.schoolId }
+                        where: { 
+                            schoolId: selectedEvent.schoolId,
+                            hosts: {
+                                some: {
+                                    positions: {
+                                        some: {
+                                            eventId: selectedEvent.id
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }),
                     
                     // Positions for this event
@@ -134,7 +153,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                     senior: gradeDistribution.find(g => g.grade === 12)?._count.grade || 0
                 };
 
-                return {
+                const result = {
                     totalStudents: studentCount._count.id,
                     permissionSlipsSigned,
                     studentsWithoutChoices,
@@ -144,7 +163,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                     positionsCount,
                     slotsCount
                 };
+                
+                return result;
             });
+            } catch (error) {
+                console.error('Error calculating statistics for event:', selectedEvent.id, error);
+                selectedEventStats = null;
+            }
         }
     }
 

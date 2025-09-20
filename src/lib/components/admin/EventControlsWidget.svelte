@@ -51,7 +51,17 @@
 </script>
 
 <div class="bg-white rounded-lg shadow p-6">
-  <h2 class="text-xl font-bold mb-4">Event Controls</h2>
+  <h2 class="text-xl font-bold mb-2">Event Controls</h2>
+  <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+    <p class="text-sm text-blue-700">
+      <strong>Active Event:</strong> An event must be "active" to be the primary
+      event for your school.
+      <br />
+      <strong>Event Controls:</strong> These access controls determine what users
+      can do within the active event. You can keep controls disabled while preparing
+      your active event, then enable them when ready.
+    </p>
+  </div>
 
   <div class="space-y-4">
     <!-- Event Control -->

@@ -5,6 +5,12 @@ export interface EventData {
   date: Date;
   displayLotteryResults?: boolean;
   carryForwardData?: boolean; // Default to true - carry forward existing data
+  // Event Controls
+  eventEnabled?: boolean;
+  companyAccountsEnabled?: boolean;
+  studentAccountsEnabled?: boolean;
+  studentSignupsEnabled?: boolean;
+  lotteryPublished?: boolean;
 }
 
 export interface EventWithStats {
@@ -15,6 +21,12 @@ export interface EventWithStats {
   isArchived: boolean;
   displayLotteryResults: boolean;
   schoolId: string;
+  // Event Controls
+  eventEnabled: boolean;
+  companyAccountsEnabled: boolean;
+  studentAccountsEnabled: boolean;
+  studentSignupsEnabled: boolean;
+  lotteryPublished: boolean;
   stats?: {
     totalPositions: number;
     totalSlots: number;
@@ -56,6 +68,12 @@ export async function getSchoolEvents(
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
     schoolId: event.schoolId,
+    // Event Controls
+    eventEnabled: event.eventEnabled,
+    companyAccountsEnabled: event.companyAccountsEnabled,
+    studentAccountsEnabled: event.studentAccountsEnabled,
+    studentSignupsEnabled: event.studentSignupsEnabled,
+    lotteryPublished: event.lotteryPublished,
     stats: {
       totalPositions: event.positions.length,
       totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
@@ -100,6 +118,12 @@ export async function getActiveEvent(schoolId: string): Promise<EventWithStats |
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
     schoolId: event.schoolId,
+    // Event Controls
+    eventEnabled: event.eventEnabled,
+    companyAccountsEnabled: event.companyAccountsEnabled,
+    studentAccountsEnabled: event.studentAccountsEnabled,
+    studentSignupsEnabled: event.studentSignupsEnabled,
+    lotteryPublished: event.lotteryPublished,
     stats: {
       totalPositions: event.positions.length,
       totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
@@ -129,7 +153,13 @@ export async function createEvent(
       date: eventData.date,
       displayLotteryResults: eventData.displayLotteryResults ?? false,
       isActive: false,
-      isArchived: false
+      isArchived: false,
+      // Event Controls - new events start in draft mode (all disabled)
+      eventEnabled: eventData.eventEnabled ?? false,
+      companyAccountsEnabled: eventData.companyAccountsEnabled ?? false,
+      studentAccountsEnabled: eventData.studentAccountsEnabled ?? false,
+      studentSignupsEnabled: eventData.studentSignupsEnabled ?? false,
+      lotteryPublished: eventData.lotteryPublished ?? false
     }
   });
 
@@ -204,6 +234,12 @@ export async function createEvent(
     isArchived: eventWithStats!.isArchived,
     displayLotteryResults: eventWithStats!.displayLotteryResults,
     schoolId: eventWithStats!.schoolId,
+    // Event Controls
+    eventEnabled: eventWithStats!.eventEnabled,
+    companyAccountsEnabled: eventWithStats!.companyAccountsEnabled,
+    studentAccountsEnabled: eventWithStats!.studentAccountsEnabled,
+    studentSignupsEnabled: eventWithStats!.studentSignupsEnabled,
+    lotteryPublished: eventWithStats!.lotteryPublished,
     stats: {
       totalPositions: eventWithStats!.positions.length,
       totalSlots: eventWithStats!.positions.reduce((sum, pos) => sum + pos.slots, 0),

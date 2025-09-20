@@ -21,6 +21,7 @@
   }: { schoolEvents?: EventWithStats[]; form?: FormResult | null } = $props();
 
   let isActivating = $state(false);
+  let expandedEventId = $state<string | null>(null);
 
   // Handle event activation
   async function handleActivateEvent(eventId: string) {
@@ -71,6 +72,11 @@
     if (event.isArchived)
       return { text: "Archived", variant: "secondary" as const };
     return { text: "Inactive", variant: "outline" as const };
+  }
+
+  // Toggle event details
+  function showEventDetails(eventId: string) {
+    expandedEventId = expandedEventId === eventId ? null : eventId;
   }
 </script>
 
@@ -124,10 +130,17 @@
                 <Button
                   variant="ghost"
                   size="sm"
-                  onclick={() =>
-                    goto(`/dashboard/admin/archived?eventId=${event.id}`)}
+                  onclick={() => {
+                    if (event.isActive) {
+                      // For active events, show detailed statistics in place
+                      showEventDetails(event.id);
+                    } else {
+                      // For archived events, go to the archived page
+                      goto(`/dashboard/admin/archived?eventId=${event.id}`);
+                    }
+                  }}
                 >
-                  View Details
+                  {event.isActive ? "Show Details" : "View Details"}
                 </Button>
               </div>
             </div>
@@ -167,6 +180,59 @@
                 </Badge>
               </div>
             {/if}
+
+            <!-- Expanded Details for Active Events -->
+            {#if event.isActive && expandedEventId === event.id}
+              <div class="mt-4 pt-4 border-t border-gray-200">
+                <h4 class="font-semibold text-gray-800 mb-3">Event Details</h4>
+                <div class="space-y-3 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Event Status:</span>
+                    <span class="font-medium text-blue-600">Active</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Event ID:</span>
+                    <span class="font-mono text-xs">{event.id}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Created:</span>
+                    <span>{formatDate(event.date)}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Lottery Results:</span>
+                    <span
+                      class={event.displayLotteryResults
+                        ? "text-green-600"
+                        : "text-gray-500"}
+                    >
+                      {event.displayLotteryResults
+                        ? "Displayed to Students"
+                        : "Hidden from Students"}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Quick Actions for Active Event -->
+                <div class="mt-4 pt-3 border-t border-gray-100">
+                  <div class="flex gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onclick={() => goto("/dashboard/admin")}
+                    >
+                      View Dashboard
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onclick={() => goto("/visualizations")}
+                    >
+                      View Analytics
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            {/if}
           </div>
         {/each}
       </div>
@@ -182,9 +248,6 @@
           onclick={() => goto("/dashboard/admin/archived")}
         >
           View Event History
-        </Button>
-        <Button variant="outline" size="sm" onclick={() => goto("/lottery")}>
-          Manage Lottery
         </Button>
       </div>
     </div>
