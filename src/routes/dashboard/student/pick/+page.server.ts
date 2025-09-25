@@ -17,6 +17,21 @@ export const load: PageServerLoad = async ({ locals }) => {
         redirect(302, "/");
     }
 
+    // Check if event is enabled and student signups are allowed
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            schoolId: school.id,
+            isActive: true
+        }
+    });
+
+    const eventEnabled = activeEvent?.eventEnabled ?? false;
+    const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
+    const studentSignupsEnabled = activeEvent?.studentSignupsEnabled ?? false;
+
+    // Student signups require: Event enabled + Student accounts enabled + Student signups enabled
+    const canSignUp = eventEnabled && studentAccountsEnabled && studentSignupsEnabled;
+
     const positionData = await prisma.position.findMany({
         where: {
             event: {
@@ -80,7 +95,16 @@ export const load: PageServerLoad = async ({ locals }) => {
         [key: string]: unknown;
     }> = positionData;
 
-    return { positionData: posData, countSelected: positionsOnStudents.length, permissionSlipCompleted: student.permissionSlipCompleted, parentEmail: student.parentEmail };
+    return { 
+        positionData: posData, 
+        countSelected: positionsOnStudents.length, 
+        permissionSlipCompleted: student.permissionSlipCompleted, 
+        parentEmail: student.parentEmail,
+        eventEnabled,
+        studentAccountsEnabled,
+        studentSignupsEnabled,
+        canSignUp
+    };
 }
 
 
@@ -122,6 +146,44 @@ export const actions: Actions = {
         const id = locals.user?.id;
         if (!id) {
             redirect(302, "/login");
+        }
+
+        // Check if event and student signups are enabled (hierarchical check)
+        const schoolWebAddr = "lghs";
+        const school = await prisma.school.findFirst({ where: { webAddr: schoolWebAddr } });
+        
+        if (school) {
+            const activeEvent = await prisma.event.findFirst({
+                where: {
+                    schoolId: school.id,
+                    isActive: true
+                }
+            });
+
+            const eventEnabled = activeEvent?.eventEnabled ?? false;
+            const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
+            const studentSignupsEnabled = activeEvent?.studentSignupsEnabled ?? false;
+
+            if (!eventEnabled) {
+                return { 
+                    success: false, 
+                    message: "Event is currently in draft mode. Please contact your administrator." 
+                };
+            }
+
+            if (!studentAccountsEnabled) {
+                return { 
+                    success: false, 
+                    message: "Student accounts are currently disabled. Please contact your administrator." 
+                };
+            }
+
+            if (!studentSignupsEnabled) {
+                return { 
+                    success: false, 
+                    message: "Student signups are currently disabled. Please contact your administrator." 
+                };
+            }
         }
 
         const student = await prisma.student.findFirst({where: {userId: id}});

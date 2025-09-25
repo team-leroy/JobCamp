@@ -12,11 +12,13 @@
     loggedIn,
     isHost,
     schoolEvents,
+    upcomingEvent,
   }: {
     isAdmin: boolean;
     loggedIn: boolean;
     isHost: boolean;
     schoolEvents: EventWithStats[];
+    upcomingEvent?: EventWithStats | null;
   } = data;
 </script>
 
@@ -33,7 +35,7 @@
 
     <!-- Event Controls Widget -->
     <div class="mb-8">
-      <EventControlsWidget />
+      <EventControlsWidget {upcomingEvent} />
     </div>
 
     <!-- Create New Event Section -->

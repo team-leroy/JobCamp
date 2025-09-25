@@ -20,21 +20,46 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         redirect(302, "/");
     }
 
-    const positionData = await prisma.position.findMany({
+    // Check if there's an active event and if company directory is enabled
+    const activeEvent = await prisma.event.findFirst({
         where: {
-            event: {
-                schoolId: school.id,
-                isActive: true
-            }
-        },
-        include: {
-            host: {
-                select: {
-                    company: true
-                }
-            }
+            schoolId: school.id,
+            isActive: true
         }
     });
 
-    return { positionData, isHost, loggedIn, isAdmin };
+    const eventEnabled = activeEvent?.eventEnabled ?? false;
+    const companyDirectoryEnabled = activeEvent?.companyDirectoryEnabled ?? false;
+    const directoryAccessible = activeEvent && eventEnabled && companyDirectoryEnabled;
+
+    let positionData = [];
+    if (directoryAccessible) {
+        positionData = await prisma.position.findMany({
+            where: {
+                event: {
+                    schoolId: school.id,
+                    isActive: true
+                }
+            },
+            include: {
+                host: {
+                    select: {
+                        company: true
+                    }
+                }
+            }
+        });
+    }
+
+    return { 
+        positionData, 
+        isHost, 
+        loggedIn, 
+        isAdmin,
+        hasActiveEvent: !!activeEvent,
+        eventEnabled,
+        companyDirectoryEnabled,
+        directoryAccessible,
+        eventName: activeEvent?.name || null
+    };
 }

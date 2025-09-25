@@ -12,6 +12,21 @@ import { fail, redirect } from '@sveltejs/kit';
 export const load: PageServerLoad = async (event) => {
     userAccountSetupFlow(event.locals, PageType.AccountCreation);
 
+    // Check if season is active for signups
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            isActive: true
+        }
+    });
+
+    const eventEnabled = activeEvent?.eventEnabled ?? false;
+    const seasonActive = activeEvent && eventEnabled;
+
+    // Redirect to homepage if season is not active
+    if (!seasonActive) {
+        redirect(302, "/");
+    }
+
     const form = await superValidate(zod(createCompanySchema()));
     return { form, isAdmin: false };
 };

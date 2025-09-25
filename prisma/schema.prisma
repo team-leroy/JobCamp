@@ -22,6 +22,7 @@ model Event {
   studentAccountsEnabled Boolean   @default(false)  // Student login access
   studentSignupsEnabled Boolean    @default(false)  // Student signup access
   lotteryPublished      Boolean    @default(false)  // Lottery results visibility
+  companyDirectoryEnabled Boolean  @default(false)  // Public company directory visibility
   
   school                School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   positions             Position[]

@@ -303,7 +303,8 @@ describe('Event Management Functions', () => {
           companyAccountsEnabled: false,
           studentAccountsEnabled: false,
           studentSignupsEnabled: false,
-          lotteryPublished: false
+          lotteryPublished: false,
+          companyDirectoryEnabled: false
         }
       });
     });
@@ -349,7 +350,8 @@ describe('Event Management Functions', () => {
           companyAccountsEnabled: false,
           studentAccountsEnabled: false,
           studentSignupsEnabled: false,
-          lotteryPublished: false
+          lotteryPublished: false,
+          companyDirectoryEnabled: false
         }
       });
     });
@@ -816,7 +818,8 @@ describe('Event Management Functions', () => {
             companyAccountsEnabled: false,
             studentAccountsEnabled: false,
             studentSignupsEnabled: false,
-            lotteryPublished: false
+            lotteryPublished: false,
+            companyDirectoryEnabled: false
           }
         });
       });

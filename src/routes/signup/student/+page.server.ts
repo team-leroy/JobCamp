@@ -14,6 +14,21 @@ export const load: PageServerLoad = async (event) => {
         redirect(302, "/dashboard");
     }
 
+    // Check if season is active for signups
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            isActive: true
+        }
+    });
+
+    const eventEnabled = activeEvent?.eventEnabled ?? false;
+    const seasonActive = activeEvent && eventEnabled;
+
+    // Redirect to homepage if season is not active
+    if (!seasonActive) {
+        redirect(302, "/");
+    }
+
     const schools = await prisma.school.findMany();
     const schoolMapping = Object.fromEntries(schools.map((val) => [val.id, val.name]));
 

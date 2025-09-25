@@ -31,23 +31,29 @@ export const load: PageServerLoad = async (event) => {
         redirect(302, "/dashboard");
     }
 
-    // let positionsOnStudents = await prisma.positionsOnStudents.findMany({
-    //     where: {studentId: student.id},
-    //     orderBy: { rank: "asc" },
-    //     include: { position: {
-    //         include: {
-    //             host: {
-    //                 include: {
-    //                     company: true
-    //                 }
-    //             }
-    //         }
-    //     } }
-    // });
+    // Check event controls for lottery result visibility
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            isActive: true
+        }
+    });
 
-    // let positions = positionsOnStudents.map(val => val.position);
+    const eventEnabled = activeEvent?.eventEnabled ?? false;
+    const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
+    const lotteryPublished = activeEvent?.lotteryPublished ?? false;
 
-    return { lotteryResult: student.lotteryResult, permissionSlipCompleted: student.permissionSlipCompleted, parentEmail: student.parentEmail };
+    // Only show lottery results if event is enabled AND lottery is published
+    const showLotteryResult = eventEnabled && lotteryPublished;
+
+    return { 
+        lotteryResult: showLotteryResult ? student.lotteryResult : null, 
+        permissionSlipCompleted: student.permissionSlipCompleted, 
+        parentEmail: student.parentEmail,
+        eventEnabled,
+        studentAccountsEnabled,
+        lotteryPublished,
+        showLotteryResult
+    };
 };
 
 

@@ -35,16 +35,89 @@ export const load: PageServerLoad = async ({ locals }) => {
     );
     const schoolEvents = allEvents.flat();
 
+    // Get active event with current event controls
+    const upcomingEvent = await prisma.event.findFirst({
+        where: {
+            schoolId: { in: schoolIds },
+            isActive: true
+        },
+        orderBy: {
+            date: 'asc'
+        }
+    });
+
     return {
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host,
         schools,
-        schoolEvents
+        schoolEvents,
+        upcomingEvent
     };
 };
 
 export const actions: Actions = {
+    updateEventControls: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: 'Not authenticated' };
+        }
+
+        // Check if user is admin
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!userInfo?.adminOfSchools?.length) {
+            return { success: false, message: 'Not authorized' };
+        }
+
+        const schoolIds = userInfo.adminOfSchools.map(s => s.id);
+        const formData = await request.formData();
+        const controlType = formData.get('controlType') as string;
+        const enabled = formData.get('enabled') === 'true';
+
+        // Get the active event for this school
+        const activeEvent = await prisma.event.findFirst({
+            where: {
+                schoolId: { in: schoolIds },
+                isActive: true
+            }
+        });
+
+        if (!activeEvent) {
+            return { success: false, message: 'No active event found' };
+        }
+
+        // Map control types to database fields
+        const fieldMap: Record<string, string> = {
+            'event': 'eventEnabled',
+            'companyAccounts': 'companyAccountsEnabled',
+            'studentAccounts': 'studentAccountsEnabled',
+            'studentSignups': 'studentSignupsEnabled',
+            'lotteryPublished': 'lotteryPublished',
+            'companyDirectory': 'companyDirectoryEnabled'
+        };
+
+        const field = fieldMap[controlType];
+        if (!field) {
+            return { success: false, message: 'Invalid control type' };
+        }
+
+        // Update the event control
+        await prisma.event.update({
+            where: { id: activeEvent.id },
+            data: { [field]: enabled }
+        });
+
+        return { 
+            success: true, 
+            message: `${controlType} ${enabled ? 'enabled' : 'disabled'} successfully`,
+            controlType,
+            enabled
+        };
+    },
+
     createEvent: async ({ request, locals }) => {
         if (!locals.user) {
             return { 

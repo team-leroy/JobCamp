@@ -11,6 +11,7 @@ export interface EventData {
   studentAccountsEnabled?: boolean;
   studentSignupsEnabled?: boolean;
   lotteryPublished?: boolean;
+  companyDirectoryEnabled?: boolean;
 }
 
 export interface EventWithStats {
@@ -27,6 +28,7 @@ export interface EventWithStats {
   studentAccountsEnabled: boolean;
   studentSignupsEnabled: boolean;
   lotteryPublished: boolean;
+  companyDirectoryEnabled: boolean;
   stats?: {
     totalPositions: number;
     totalSlots: number;
@@ -74,6 +76,7 @@ export async function getSchoolEvents(
     studentAccountsEnabled: event.studentAccountsEnabled,
     studentSignupsEnabled: event.studentSignupsEnabled,
     lotteryPublished: event.lotteryPublished,
+    companyDirectoryEnabled: event.companyDirectoryEnabled,
     stats: {
       totalPositions: event.positions.length,
       totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
@@ -124,6 +127,7 @@ export async function getActiveEvent(schoolId: string): Promise<EventWithStats |
     studentAccountsEnabled: event.studentAccountsEnabled,
     studentSignupsEnabled: event.studentSignupsEnabled,
     lotteryPublished: event.lotteryPublished,
+    companyDirectoryEnabled: event.companyDirectoryEnabled,
     stats: {
       totalPositions: event.positions.length,
       totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
@@ -159,7 +163,8 @@ export async function createEvent(
       companyAccountsEnabled: eventData.companyAccountsEnabled ?? false,
       studentAccountsEnabled: eventData.studentAccountsEnabled ?? false,
       studentSignupsEnabled: eventData.studentSignupsEnabled ?? false,
-      lotteryPublished: eventData.lotteryPublished ?? false
+      lotteryPublished: eventData.lotteryPublished ?? false,
+      companyDirectoryEnabled: eventData.companyDirectoryEnabled ?? false
     }
   });
 
@@ -240,6 +245,7 @@ export async function createEvent(
     studentAccountsEnabled: eventWithStats!.studentAccountsEnabled,
     studentSignupsEnabled: eventWithStats!.studentSignupsEnabled,
     lotteryPublished: eventWithStats!.lotteryPublished,
+    companyDirectoryEnabled: eventWithStats!.companyDirectoryEnabled,
     stats: {
       totalPositions: eventWithStats!.positions.length,
       totalSlots: eventWithStats!.positions.reduce((sum, pos) => sum + pos.slots, 0),

@@ -98,7 +98,42 @@
 
 <Navbar isHost={false} loggedIn={true} isAdmin={false} />
 
-<div class="flex sm:flex-row flex-col w-full h-screen pt-20">
+<!-- Event Access Disabled Warning -->
+{#if !data.canSignUp}
+  <div class="mt-20 mx-auto max-w-4xl px-4">
+    <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
+      <div class="flex">
+        <div class="ml-3">
+          <p class="text-sm text-yellow-700 mb-2">
+            <strong>Position selection is currently unavailable.</strong>
+          </p>
+          {#if !data.eventEnabled}
+            <p class="text-sm text-yellow-600">• Event is in draft mode</p>
+          {/if}
+          {#if data.eventEnabled && !data.studentAccountsEnabled}
+            <p class="text-sm text-yellow-600">
+              • Student accounts are disabled
+            </p>
+          {/if}
+          {#if data.eventEnabled && data.studentAccountsEnabled && !data.studentSignupsEnabled}
+            <p class="text-sm text-yellow-600">
+              • Student signups are disabled
+            </p>
+          {/if}
+          <p class="text-sm text-yellow-700 mt-2">
+            Please contact your administrator for more information.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<div
+  class="flex sm:flex-row flex-col w-full h-screen pt-20"
+  class:pointer-events-none={!data.canSignUp}
+  class:opacity-50={!data.canSignUp}
+>
   <div
     class="flex flex-col px-4 gap-2 h-full justify-start items-start p-4 border-r-2 border-r-slate-950"
   >

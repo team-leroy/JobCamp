@@ -12,8 +12,23 @@ export const load: PageServerLoad = async (event) => {
         redirect(302, "/dashboard");
     }
 
+    // Check if there's an active and enabled event for the season
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            isActive: true
+        }
+    });
+
+    const eventEnabled = activeEvent?.eventEnabled ?? false;
+    const seasonActive = activeEvent && eventEnabled;
+
     const form = await superValidate(zod(schema));
-    return { form };
+    return { 
+        form,
+        seasonActive,
+        eventEnabled,
+        hasActiveEvent: !!activeEvent
+    };
 };
 
 export const actions: Actions = {
@@ -25,14 +40,44 @@ export const actions: Actions = {
             return fail(400, { form });
         }
 
+        // Check if season is active before attempting login
+        const activeEvent = await prisma.event.findFirst({
+            where: {
+                isActive: true
+            }
+        });
+
+        const eventEnabled = activeEvent?.eventEnabled ?? false;
+        const seasonActive = activeEvent && eventEnabled;
+
         const res = await login(form.data.email, form.data.password, event);
         if (res == AuthError.IncorrectCredentials) {
             return message(form, "Incorrect Email or Password.");
         }
         
-        const user = await prisma.user.findFirst({where: { id: res }});
+        const user = await prisma.user.findFirst({
+            where: { id: res },
+            include: { 
+                adminOfSchools: true,
+                host: true,
+                student: true
+            }
+        });
+        
         if (!user) {
             return message(form, "Error creating account. Please try again or contact support at admin@jobcamp.org.");
+        }
+
+        // Check if user is admin - admins can always login
+        const isAdmin = user.adminOfSchools && user.adminOfSchools.length > 0;
+        
+        // Block student/company login if season is not active
+        if (!isAdmin && !seasonActive) {
+            if (!activeEvent) {
+                return message(form, "JobCamp season has ended. Please check back next year!");
+            } else if (!eventEnabled) {
+                return message(form, "JobCamp is currently in preparation mode. Please check back later!");
+            }
         }
 
         if (!user.emailVerified) {
