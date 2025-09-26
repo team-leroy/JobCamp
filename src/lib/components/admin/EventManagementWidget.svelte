@@ -35,14 +35,17 @@
         const formData = new FormData();
         formData.append("eventId", eventId);
 
-        const response = await fetch("/dashboard/admin?/activateEvent", {
-          method: "POST",
-          body: formData,
-        });
+        const response = await fetch(
+          "/dashboard/admin/event-mgmt?/activateEvent",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
 
         if (response.ok) {
           // Refresh the page to show updated state
-          goto("/dashboard/admin", { replaceState: true });
+          goto("/dashboard/admin/event-mgmt", { replaceState: true });
         } else {
           alert("Failed to activate event. Please try again.");
         }

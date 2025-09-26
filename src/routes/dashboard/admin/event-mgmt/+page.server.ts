@@ -132,7 +132,7 @@ export const actions: Actions = {
                 where: { id: locals.user.id },
                 include: { adminOfSchools: true }
             });
-
+            
             if (!userInfo?.adminOfSchools?.length) {
                 return { success: false, message: "Not authorized" };
             }
@@ -170,9 +170,11 @@ export const actions: Actions = {
             };
         } catch (error) {
             console.error('Error creating event:', error);
+            console.error('Error details:', error.message);
+            console.error('Error stack:', error.stack);
             return { 
                 success: false, 
-                message: "Failed to create event" 
+                message: `Failed to create event: ${error.message}` 
             };
         }
     },

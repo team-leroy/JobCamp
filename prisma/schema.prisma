@@ -8,27 +8,23 @@ datasource db {
 }
 
 model Event {
-  id                    String     @id @default(cuid())
-  schoolId              String
-  date                  DateTime
-  displayLotteryResults Boolean
-  isActive              Boolean    @default(false)
-  isArchived            Boolean    @default(false)
-  name                  String?
-  
-  // Event Controls - determine what users can access within the event
-  eventEnabled          Boolean    @default(false)  // Overall event access
-  companyAccountsEnabled Boolean   @default(false)  // Company login access
-  studentAccountsEnabled Boolean   @default(false)  // Student login access
-  studentSignupsEnabled Boolean    @default(false)  // Student signup access
-  lotteryPublished      Boolean    @default(false)  // Lottery results visibility
-  companyDirectoryEnabled Boolean  @default(false)  // Public company directory visibility
-  
-  school                School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  positions             Position[]
+  id                      String     @id @default(cuid())
+  schoolId                String
+  date                    DateTime
+  displayLotteryResults   Boolean
+  isActive                Boolean    @default(false)
+  isArchived              Boolean    @default(false)
+  name                    String?
+  companyAccountsEnabled  Boolean    @default(false)
+  eventEnabled            Boolean    @default(false)
+  lotteryPublished        Boolean    @default(false)
+  studentAccountsEnabled  Boolean    @default(false)
+  studentSignupsEnabled   Boolean    @default(false)
+  companyDirectoryEnabled Boolean    @default(false)
+  school                  School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  positions               Position[]
 
   @@index([schoolId, isArchived, date])
-  // Note: Unique constraint for active events is handled by filtered index in migration
 }
 
 model School {

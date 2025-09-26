@@ -1,36 +1,42 @@
 # JobCamp Development Rules
 
 ## Package Manager
+
 - Always use `pnpm` instead of `npm` for package management
 - Use `pnpm install`, `pnpm add`, `pnpm run`, etc.
 - Never use `npm` commands unless specifically required
 
 ## Development Commands
+
 - Use `pnpm run dev` to start the development server
 - Use `pnpm run build` to build the project
 - Use `pnpm run check` to run TypeScript checks
 - Use `pnpm run lint` to run linting
 
 ## Code Style
+
 - Follow TypeScript best practices
 - Use SvelteKit conventions
 - Prefer concise code fixes when possible
 - Maintain existing code structure and patterns
 
 ## Database
+
 - Use Prisma for database operations
 - Run `pnpm prisma generate` after schema changes
 - Use `pnpm prisma db push` for schema updates
 
 ## Testing & Commits
+
 - ALWAYS run `pnpm test` before committing changes
 - Update unit tests when adding new fields, functions, or changing behavior
 - Run `pnpm prisma generate` after schema/migration changes
 - Check for linting errors with `pnpm run lint` before commits
 
 ## Project Context
+
 - This is a SvelteKit application for managing job shadowing events at schools
 - Uses Lucia for authentication
 - Uses Tailwind CSS for styling
 - Uses bits-ui for UI components
-- Uses Prisma with MySQL database 
+- Uses Prisma with MySQL database
