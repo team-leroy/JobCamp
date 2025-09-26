@@ -22,6 +22,12 @@
 - Run `pnpm prisma generate` after schema changes
 - Use `pnpm prisma db push` for schema updates
 
+## Testing & Commits
+- ALWAYS run `pnpm test` before committing changes
+- Update unit tests when adding new fields, functions, or changing behavior
+- Run `pnpm prisma generate` after schema/migration changes
+- Check for linting errors with `pnpm run lint` before commits
+
 ## Project Context
 - This is a SvelteKit application for managing job shadowing events at schools
 - Uses Lucia for authentication

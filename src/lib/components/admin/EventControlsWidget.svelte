@@ -1,8 +1,6 @@
 <script lang="ts">
   import { Switch } from "$lib/components/ui/switch";
   import { Label } from "$lib/components/ui/label";
-  import { Button } from "$lib/components/ui/button";
-  import { goto } from "$app/navigation";
 
   // Props
   interface EventControls {
@@ -103,8 +101,8 @@
         });
 
         if (response.ok) {
-          // Refresh the page to show updated state
-          goto("/dashboard/admin", { replaceState: true });
+          // Reload the page to show updated state
+          window.location.reload();
         } else {
           alert("Failed to archive event. Please try again.");
         }
@@ -294,13 +292,13 @@
           Move the current event to archived status
         </p>
       </div>
-      <Button
-        on:click={handleArchiveEvent}
+      <button
+        onclick={handleArchiveEvent}
         disabled={isArchiving}
-        class="bg-orange-600 hover:bg-orange-700 text-white"
+        class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded"
       >
         {isArchiving ? "Archiving..." : "Archive Event"}
-      </Button>
+      </button>
     </div>
   </div>
 </div>
