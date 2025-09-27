@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { createEvent, activateEvent, getSchoolEvents } from '$lib/server/eventManagement';
+import { createEvent, activateEvent, getSchoolEvents, deleteEvent } from '$lib/server/eventManagement';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -228,6 +228,43 @@ export const actions: Actions = {
             return { 
                 success: false, 
                 message: "Failed to activate event" 
+            };
+        }
+    },
+
+    deleteEvent: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        try {
+            // Get user's school
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const schoolId = userInfo.adminOfSchools[0].id;
+            
+            // Parse form data
+            const formData = await request.formData();
+            const eventId = formData.get('eventId')?.toString();
+
+            if (!eventId) {
+                return { success: false, message: "Event ID is required" };
+            }
+
+            const result = await deleteEvent(eventId, schoolId);
+            return result;
+        } catch (error: any) {
+            console.error('Error deleting event:', error);
+            return { 
+                success: false, 
+                message: `Failed to delete event: ${error.message}` 
             };
         }
     }

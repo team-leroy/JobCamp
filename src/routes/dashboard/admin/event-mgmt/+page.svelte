@@ -3,6 +3,7 @@
   import EventManagementWidget from "$lib/components/admin/EventManagementWidget.svelte";
   import EventControlsWidget from "$lib/components/admin/EventControlsWidget.svelte";
   import { enhance } from "$app/forms";
+  import { invalidateAll } from "$app/navigation";
   import type { EventWithStats } from "$lib/server/eventManagement";
 
   export let data;
@@ -54,7 +55,24 @@
         </div>
       {/if}
 
-      <form method="POST" action="?/createEvent" class="space-y-4" use:enhance>
+      <form
+        method="POST"
+        action="?/createEvent"
+        class="space-y-4"
+        use:enhance={() => {
+          return async ({ result }) => {
+            if (result.type === "success" && result.data?.success) {
+              // Clear form
+              const form = document.querySelector(
+                'form[action="?/createEvent"]'
+              ) as HTMLFormElement;
+              form?.reset();
+              // Refresh data to show new event
+              await invalidateAll();
+            }
+          };
+        }}
+      >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label

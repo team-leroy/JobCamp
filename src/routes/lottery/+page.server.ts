@@ -30,14 +30,28 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     const schoolIds = userInfo.adminOfSchools.map(s => s.id);
 
-    // Check if lottery is already running
-    const runningLottery = await prisma.lotteryJob.findFirst({
-        where: { status: 'RUNNING' }
+    // Get the active event for this school
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            schoolId: { in: schoolIds },
+            isActive: true
+        }
     });
 
-    // Get latest completed lottery results
+    // Check if lottery is already running for the active event
+    const runningLottery = await prisma.lotteryJob.findFirst({
+        where: { 
+            status: 'RUNNING',
+            eventId: activeEvent?.id // Only show running jobs for active event
+        }
+    });
+
+    // Get latest completed lottery results for the active event
     const latestJob = await prisma.lotteryJob.findFirst({
-        where: { status: 'COMPLETED' },
+        where: { 
+            status: 'COMPLETED',
+            eventId: activeEvent?.id // Only show completed jobs for active event
+        },
         orderBy: { completedAt: 'desc' },
         include: { 
             results: true

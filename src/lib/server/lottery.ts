@@ -1,14 +1,55 @@
 import { prisma } from './prisma.js';
 
 export async function startLotteryJob(adminId: string) {
-    // Clear any existing lottery results (only keep latest)
-    await prisma.lotteryResults.deleteMany({});
+    // Get admin's school to find active event
+    const admin = await prisma.user.findUnique({
+        where: { id: adminId },
+        include: { adminOfSchools: true }
+    });
+
+    if (!admin?.adminOfSchools?.length) {
+        throw new Error('Admin not found or no schools assigned');
+    }
+
+    const schoolId = admin.adminOfSchools[0].id;
+
+    // Get the active event for this school
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            schoolId,
+            isActive: true
+        }
+    });
+
+    if (!activeEvent) {
+        throw new Error('No active event found for this school');
+    }
+
+    // Clear any existing lottery results for this specific event
+    const existingJobs = await prisma.lotteryJob.findMany({
+        where: { eventId: activeEvent.id },
+        select: { id: true }
+    });
+
+    if (existingJobs.length > 0) {
+        await prisma.lotteryResults.deleteMany({
+            where: {
+                lotteryJobId: {
+                    in: existingJobs.map(job => job.id)
+                }
+            }
+        });
+        await prisma.lotteryJob.deleteMany({
+            where: { eventId: activeEvent.id }
+        });
+    }
     
-    // Create job record
+    // Create job record linked to the active event
     const job = await prisma.lotteryJob.create({
         data: {
             status: 'RUNNING',
             adminId,
+            eventId: activeEvent.id,
             startedAt: new Date()
         }
     });
@@ -31,26 +72,29 @@ async function runLotteryInBackground(jobId: string) {
             }
         });
         
-        // Get the job to find the admin
+        // Get the job with event information
         const job = await prisma.lotteryJob.findUnique({
-            where: { id: jobId }
+            where: { id: jobId },
+            include: {
+                event: {
+                    select: {
+                        id: true,
+                        schoolId: true
+                    }
+                }
+            }
         });
 
         if (!job) {
             throw new Error('Job not found');
         }
 
-        // Get admin's school
-        const admin = await prisma.user.findUnique({
-            where: { id: job.adminId },
-            include: { adminOfSchools: true }
-        });
-
-        if (!admin?.adminOfSchools?.length) {
-            throw new Error('Admin not found or no schools assigned');
+        if (!job.event) {
+            throw new Error('Event not found for lottery job');
         }
 
-        const schoolId = admin.adminOfSchools[0].id;
+        const schoolId = job.event.schoolId;
+        const eventId = job.event.id;
 
         // Get lottery configuration
         let lotteryConfig = await prisma.lotteryConfiguration.findUnique({
@@ -83,13 +127,10 @@ async function runLotteryInBackground(jobId: string) {
             });
         }
 
-        // Get all positions from the active event
+        // Get all positions from the specific event
         const positions = await prisma.position.findMany({
             where: {
-                event: { 
-                    schoolId,
-                    isActive: true 
-                }
+                eventId: eventId
             },
             include: {
                 event: {
@@ -110,14 +151,14 @@ async function runLotteryInBackground(jobId: string) {
             throw new Error('No positions found for the active event. Cannot run lottery without positions.');
         }
 
-        // Get all students and their preferences for the active event
+        // Get all students and their preferences for this specific event
         const students = await prisma.student.findMany({
             where: { schoolId },
             include: {
                 positionsSignedUpFor: {
                     where: {
                         position: {
-                            eventId: { in: positions.map(p => p.event.id) }
+                            eventId: eventId
                         }
                     },
                     include: {

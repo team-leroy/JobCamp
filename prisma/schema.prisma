@@ -21,8 +21,9 @@ model Event {
   studentAccountsEnabled  Boolean    @default(false)
   studentSignupsEnabled   Boolean    @default(false)
   companyDirectoryEnabled Boolean    @default(false)
-  school                  School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school                  School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   positions               Position[]
+  lotteryJobs             LotteryJob[] // NEW: Track lottery jobs for this event
 
   @@index([schoolId, isArchived, date])
 }
@@ -195,10 +196,14 @@ model LotteryJob {
   progress    Float            @default(0)
   currentSeed Int              @default(0)
   adminId     String
+  eventId     String           // NEW: Link lottery jobs to specific events
   startedAt   DateTime         @default(now())
   completedAt DateTime?
   error       String?
   results     LotteryResults[]
+  event       Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
 }
 
 model LotteryResults {

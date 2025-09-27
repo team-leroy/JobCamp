@@ -21,6 +21,7 @@
   }: { schoolEvents?: EventWithStats[]; form?: FormResult | null } = $props();
 
   let isActivating = $state(false);
+  let isDeleting = $state(false);
   let expandedEventId = $state<string | null>(null);
 
   // Handle event activation
@@ -77,6 +78,56 @@
     return { text: "Inactive", variant: "outline" as const };
   }
 
+  // Handle event deletion
+  async function handleDeleteEvent(eventId: string, eventName: string) {
+    const confirmMessage = `⚠️ DELETE EVENT: "${eventName}"
+
+This will permanently delete the event and cannot be undone.
+
+✅ Safe to delete if:
+• Event was created by mistake
+• No students have signed up
+• No lottery has been run
+• You want to completely remove it
+
+❌ Consider ARCHIVING instead if:
+• Students have participated
+• Event was completed
+• You want to preserve historical data
+
+Continue with deletion?`;
+
+    if (confirm(confirmMessage)) {
+      isDeleting = true;
+      try {
+        const formData = new FormData();
+        formData.append("eventId", eventId);
+
+        const response = await fetch(
+          "/dashboard/admin/event-mgmt?/deleteEvent",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success) {
+          // Refresh the page to show updated state
+          goto("/dashboard/admin/event-mgmt", { replaceState: true });
+        } else {
+          alert(result.message || "Failed to delete event. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        alert("An error occurred while deleting the event.");
+      } finally {
+        isDeleting = false;
+      }
+    }
+  }
+
   // Toggle event details
   function showEventDetails(eventId: string) {
     expandedEventId = expandedEventId === eventId ? null : eventId;
@@ -128,6 +179,18 @@
                     disabled={isActivating}
                   >
                     {isActivating ? "Activating..." : "Activate"}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onclick={() =>
+                      handleDeleteEvent(
+                        event.id,
+                        event.name || `Event ${formatDate(event.date)}`
+                      )}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? "Deleting..." : "Delete"}
                   </Button>
                 {/if}
                 <Button
@@ -238,6 +301,36 @@
             {/if}
           </div>
         {/each}
+      </div>
+    {/if}
+
+    <!-- Event Management Guidelines -->
+    {#if schoolEvents.length > 0}
+      <div class="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+        <h4 class="text-sm font-semibold text-gray-800 mb-2">💡 Event Management Guidelines</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600">
+          <div>
+            <p class="font-medium text-green-700 mb-1">✅ Delete events when:</p>
+            <ul class="space-y-1 ml-3">
+              <li>• Created by mistake or as test</li>
+              <li>• No student signups yet</li>
+              <li>• Planning was abandoned</li>
+              <li>• Want to completely remove</li>
+            </ul>
+          </div>
+          <div>
+            <p class="font-medium text-orange-700 mb-1">📚 Archive events when:</p>
+            <ul class="space-y-1 ml-3">
+              <li>• Students have participated</li>
+              <li>• Event was completed</li>
+              <li>• Lottery was run</li>
+              <li>• Want to preserve history</li>
+            </ul>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-3 italic">
+          💡 Tip: The system will automatically prevent deletion if students have signed up or lottery has been run.
+        </p>
       </div>
     {/if}
 

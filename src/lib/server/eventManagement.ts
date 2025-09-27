@@ -403,6 +403,81 @@ export async function updateEvent(
 }
 
 /**
+ * Delete an event (only allowed for inactive, non-archived events with no student assignments)
+ */
+export async function deleteEvent(eventId: string, schoolId: string): Promise<{ success: boolean; message: string }> {
+  // Check if event exists and belongs to the school
+  const event = await prisma.event.findFirst({
+    where: { 
+      id: eventId,
+      schoolId 
+    },
+    include: {
+      positions: {
+        include: {
+          students: true
+        }
+      }
+    }
+  });
+
+  if (!event) {
+    return { success: false, message: "Event not found or not authorized" };
+  }
+
+  // Validate deletion rules
+  if (event.isActive) {
+    return { success: false, message: "Cannot delete the active event. Deactivate it first by activating another event." };
+  }
+
+  if (event.isArchived) {
+    return { success: false, message: "Cannot delete archived events. Archived events preserve historical data." };
+  }
+
+  // Check for any student interactions with this event
+  const hasStudentSignups = event.positions.some(position => position.students.length > 0);
+  if (hasStudentSignups) {
+    return { success: false, message: "Cannot delete event with student signups. Archive it instead to preserve data." };
+  }
+
+  // Check if any manual assignments exist for positions in this event
+  const hasManualAssignments = await prisma.manualAssignment.findFirst({
+    where: {
+      position: {
+        eventId: eventId
+      }
+    }
+  });
+
+  if (hasManualAssignments) {
+    return { success: false, message: "Cannot delete event with manual position assignments. Archive it instead to preserve data." };
+  }
+
+  // Check if any lottery jobs exist for this event
+  const hasLotteryJobs = await prisma.lotteryJob.findFirst({
+    where: {
+      eventId: eventId
+    }
+  });
+
+  if (hasLotteryJobs) {
+    return { success: false, message: "Cannot delete event with lottery history. Archive it instead to preserve historical data." };
+  }
+
+  // Delete positions first (cascade should handle this, but being explicit)
+  await prisma.position.deleteMany({
+    where: { eventId }
+  });
+
+  // Delete the event
+  await prisma.event.delete({
+    where: { id: eventId }
+  });
+
+  return { success: true, message: `Event "${event.name || 'Unnamed Event'}" deleted successfully.` };
+}
+
+/**
  * Get archived event statistics for dashboard viewing
  */
 export async function getArchivedEventStats(eventId: string) {

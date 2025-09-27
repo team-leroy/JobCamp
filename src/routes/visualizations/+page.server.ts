@@ -133,7 +133,7 @@ export const load = async ({ locals }: { locals: Locals }) => {
                 const latestJob = await prisma.lotteryJob.findFirst({
                     where: { 
                         status: 'COMPLETED',
-                        adminId: { in: schoolIds }
+                        eventId: activeEvent.id  // NEW: Filter by specific event
                     },
                     orderBy: { completedAt: 'desc' },
                     include: { 
