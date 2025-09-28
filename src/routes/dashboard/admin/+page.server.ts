@@ -53,25 +53,30 @@ export const load: PageServerLoad = async ({ locals }) => {
             totalStudentChoices,
             gradeDistribution
         ] = await Promise.all([
-            // Total students registered
+            // Total active students registered
             prisma.student.count({
-                where: { schoolId: { in: schoolIds } }
+                where: { 
+                    schoolId: { in: schoolIds },
+                    isActive: true
+                }
             }),
             
-            // Permission slips signed for active event
+            // Permission slips signed for active event (from active students only)
             prisma.permissionSlipSubmission.count({
                 where: {
                     eventId: upcomingEvent.id,
                     student: {
-                        schoolId: { in: schoolIds }
+                        schoolId: { in: schoolIds },
+                        isActive: true
                     }
                 }
             }),
             
-            // Students without choices for active event
+            // Active students without choices for active event
             prisma.student.count({
                 where: { 
                     schoolId: { in: schoolIds },
+                    isActive: true,
                     positionsSignedUpFor: { 
                         none: {
                             position: {
@@ -82,18 +87,24 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Total student choices for active event
+            // Total student choices for active event (from active students only)
             prisma.positionsOnStudents.count({
                 where: {
-                    student: { schoolId: { in: schoolIds } },
+                    student: { 
+                        schoolId: { in: schoolIds },
+                        isActive: true
+                    },
                     position: { eventId: upcomingEvent.id }
                 }
             }),
             
-            // Grade distribution
+            // Grade distribution (active students only)
             prisma.student.groupBy({
                 by: ['grade'],
-                where: { schoolId: { in: schoolIds } },
+                where: { 
+                    schoolId: { in: schoolIds },
+                    isActive: true
+                },
                 _count: { grade: true }
             })
         ]);
