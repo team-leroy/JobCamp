@@ -80,11 +80,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                     positionsCount,
                     slotsCount
                 ] = await Promise.all([
-                    // Permission slips signed
-                    prisma.student.count({
-                        where: { 
-                            schoolId: selectedEvent.schoolId,
-                            permissionSlipCompleted: true
+                    // Permission slips signed for this specific event
+                    prisma.permissionSlipSubmission.count({
+                        where: {
+                            eventId: selectedEvent.id,
+                            student: {
+                                schoolId: selectedEvent.schoolId
+                            }
                         }
                     }),
                     
