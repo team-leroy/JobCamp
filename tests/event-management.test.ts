@@ -1192,11 +1192,11 @@ describe('Event Management Functions', () => {
         ]
       };
 
-      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent as any);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent);
       vi.mocked(prisma).manualAssignment.findFirst.mockResolvedValue(null);
       vi.mocked(prisma).lotteryJob.findFirst.mockResolvedValue(null);
       vi.mocked(prisma).position.deleteMany.mockResolvedValue({ count: 1 });
-      vi.mocked(prisma).event.delete.mockResolvedValue(mockEvent as any);
+      vi.mocked(prisma).event.delete.mockResolvedValue(mockEvent);
 
       const result = await deleteEvent(testEventId, testSchoolId);
 
@@ -1221,7 +1221,7 @@ describe('Event Management Functions', () => {
         positions: []
       };
 
-      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent as any);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent);
 
       const result = await deleteEvent(testEventId, testSchoolId);
 
@@ -1240,7 +1240,7 @@ describe('Event Management Functions', () => {
         positions: []
       };
 
-      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent as any);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent);
 
       const result = await deleteEvent(testEventId, testSchoolId);
 
@@ -1264,7 +1264,7 @@ describe('Event Management Functions', () => {
         ]
       };
 
-      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent as any);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent);
 
       const result = await deleteEvent(testEventId, testSchoolId);
 
@@ -1288,13 +1288,13 @@ describe('Event Management Functions', () => {
         ]
       };
 
-      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent as any);
+      vi.mocked(prisma).event.findFirst.mockResolvedValue(mockEvent);
       vi.mocked(prisma).manualAssignment.findFirst.mockResolvedValue(null);
       vi.mocked(prisma).lotteryJob.findFirst.mockResolvedValue({
         id: 'lottery-job-1',
         eventId: testEventId,
         status: 'COMPLETED'
-      } as any);
+      });
 
       const result = await deleteEvent(testEventId, testSchoolId);
 

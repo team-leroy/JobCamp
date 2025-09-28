@@ -260,11 +260,11 @@ export const actions: Actions = {
 
             const result = await deleteEvent(eventId, schoolId);
             return result;
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error deleting event:', error);
             return { 
                 success: false, 
-                message: `Failed to delete event: ${error.message}` 
+                message: `Failed to delete event: ${error instanceof Error ? error.message : 'Unknown error'}` 
             };
         }
     }
