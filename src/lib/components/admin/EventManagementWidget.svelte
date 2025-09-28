@@ -79,7 +79,7 @@
   }
 
   // Handle event deletion
-  async function handleDeleteEvent(eventId: string, eventName: string) {
+  function handleDeleteEvent(eventId: string, eventName: string) {
     const confirmMessage = `⚠️ DELETE EVENT: "${eventName}"
 
 This will permanently delete the event and cannot be undone.
@@ -98,33 +98,21 @@ This will permanently delete the event and cannot be undone.
 Continue with deletion?`;
 
     if (confirm(confirmMessage)) {
+      // Create a form and submit it
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '?/deleteEvent';
+      
+      const eventIdInput = document.createElement('input');
+      eventIdInput.type = 'hidden';
+      eventIdInput.name = 'eventId';
+      eventIdInput.value = eventId;
+      
+      form.appendChild(eventIdInput);
+      document.body.appendChild(form);
+      
       isDeleting = true;
-      try {
-        const formData = new FormData();
-        formData.append("eventId", eventId);
-
-        const response = await fetch(
-          "/dashboard/admin/event-mgmt?/deleteEvent",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-        const result = await response.json();
-
-        if (result.success) {
-          // Refresh the page to show updated state
-          goto("/dashboard/admin/event-mgmt", { replaceState: true });
-        } else {
-          alert(result.message || "Failed to delete event. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error deleting event:", error);
-        alert("An error occurred while deleting the event.");
-      } finally {
-        isDeleting = false;
-      }
+      form.submit();
     }
   }
 

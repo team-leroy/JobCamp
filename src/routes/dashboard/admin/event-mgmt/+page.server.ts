@@ -254,11 +254,14 @@ export const actions: Actions = {
             const formData = await request.formData();
             const eventId = formData.get('eventId')?.toString();
 
+            console.log('Delete event request - eventId:', eventId, 'schoolId:', schoolId);
+
             if (!eventId) {
                 return { success: false, message: "Event ID is required" };
             }
 
             const result = await deleteEvent(eventId, schoolId);
+            console.log('Delete event result:', result);
             return result;
         } catch (error) {
             console.error('Error deleting event:', error);
