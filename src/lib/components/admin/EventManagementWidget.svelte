@@ -21,12 +21,14 @@
     form = null,
   }: { schoolEvents?: EventWithStats[]; form?: FormResult | null } = $props();
 
-  // Debug: Log when schoolEvents changes
-  $effect(() => {
-    console.log('🏫 EventManagementWidget: schoolEvents updated', {
-      count: schoolEvents.length,
-      events: schoolEvents.map(e => ({ id: e.id, name: e.name, isActive: e.isActive }))
-    });
+  // Debug: Log schoolEvents on component load/update
+  console.log("🏫 EventManagementWidget rendered with schoolEvents:", {
+    count: schoolEvents.length,
+    events: schoolEvents.map((e) => ({
+      id: e.id,
+      name: e.name,
+      isActive: e.isActive,
+    })),
   });
 
   let isActivating = $state(false);
@@ -54,10 +56,10 @@
         );
 
         if (response.ok) {
-          console.log('✅ Event activation successful, refreshing data...');
+          console.log("✅ Event activation successful, refreshing data...");
           // Refresh the data to show updated state
           await invalidateAll();
-          console.log('📊 Data invalidated after activation');
+          console.log("📊 Data invalidated after activation");
         } else {
           alert("Failed to activate event. Please try again.");
         }
@@ -313,10 +315,16 @@ Continue with deletion?`;
     <!-- Event Management Guidelines -->
     {#if schoolEvents.length > 0}
       <div class="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
-        <h4 class="text-sm font-semibold text-gray-800 mb-2">💡 Event Management Guidelines</h4>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600">
+        <h4 class="text-sm font-semibold text-gray-800 mb-2">
+          💡 Event Management Guidelines
+        </h4>
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600"
+        >
           <div>
-            <p class="font-medium text-green-700 mb-1">✅ Delete events when:</p>
+            <p class="font-medium text-green-700 mb-1">
+              ✅ Delete events when:
+            </p>
             <ul class="space-y-1 ml-3">
               <li>• Created by mistake or as test</li>
               <li>• No student signups yet</li>
@@ -325,7 +333,9 @@ Continue with deletion?`;
             </ul>
           </div>
           <div>
-            <p class="font-medium text-orange-700 mb-1">📚 Archive events when:</p>
+            <p class="font-medium text-orange-700 mb-1">
+              📚 Archive events when:
+            </p>
             <ul class="space-y-1 ml-3">
               <li>• Students have participated</li>
               <li>• Event was completed</li>
@@ -335,7 +345,8 @@ Continue with deletion?`;
           </div>
         </div>
         <p class="text-xs text-gray-500 mt-3 italic">
-          💡 Tip: The system will automatically prevent deletion if students have signed up or lottery has been run.
+          💡 Tip: The system will automatically prevent deletion if students
+          have signed up or lottery has been run.
         </p>
       </div>
     {/if}

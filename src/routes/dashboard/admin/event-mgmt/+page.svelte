@@ -3,7 +3,7 @@
   import EventManagementWidget from "$lib/components/admin/EventManagementWidget.svelte";
   import EventControlsWidget from "$lib/components/admin/EventControlsWidget.svelte";
   import { enhance } from "$app/forms";
-  import { invalidateAll } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import type { EventWithStats } from "$lib/server/eventManagement";
 
   export let data;
@@ -60,7 +60,7 @@
         action="?/createEvent"
         class="space-y-4"
         use:enhance={() => {
-          return async ({ result }) => {
+          return async ({ result, update }) => {
             console.log('🔄 Event creation form result:', result);
             if (result.type === "success" && result.data?.success) {
               console.log('✅ Event created successfully, refreshing data...');
@@ -69,11 +69,17 @@
                 'form[action="?/createEvent"]'
               ) as HTMLFormElement;
               form?.reset();
-              // Refresh data to show new event
-              await invalidateAll();
-              console.log('📊 Data invalidated, widget should update');
+              // Force page reload with data invalidation
+              await goto('/dashboard/admin/event-mgmt', { 
+                replaceState: true, 
+                invalidateAll: true,
+                noScroll: true 
+              });
+              console.log('📊 Page reloaded with data invalidation');
             } else {
               console.log('❌ Event creation failed or no success flag');
+              // Still run the default update for error handling
+              await update();
             }
           };
         }}
