@@ -3,6 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { generatePermissionSlipCode } from '$lib/server/auth';
 import { sendPermissionSlipEmail } from '$lib/server/email';
+import { getPermissionSlipStatus } from '$lib/server/permissionSlips';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -54,6 +55,9 @@ export const load: PageServerLoad = async ({ locals }) => {
         redirect(302, "/login");
     }
 
+    // Get permission slip status for the active event
+    const permissionSlipStatus = await getPermissionSlipStatus(studentId, school.id);
+
     const positionsOnStudents = await prisma.positionsOnStudents.findMany({ where: {
         studentId: studentId
     }})
@@ -98,12 +102,14 @@ export const load: PageServerLoad = async ({ locals }) => {
     return { 
         positionData: posData, 
         countSelected: positionsOnStudents.length, 
-        permissionSlipCompleted: student.permissionSlipCompleted, 
+        permissionSlipCompleted: permissionSlipStatus.hasPermissionSlip,
         parentEmail: student.parentEmail,
         eventEnabled,
         studentAccountsEnabled,
         studentSignupsEnabled,
-        canSignUp
+        canSignUp,
+        activeEventName: permissionSlipStatus.eventName,
+        hasActiveEvent: permissionSlipStatus.hasActiveEvent
     };
 }
 

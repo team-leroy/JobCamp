@@ -27,6 +27,9 @@ vi.mock('../src/lib/server/prisma', () => ({
     },
     lotteryJob: {
       findFirst: vi.fn()
+    },
+    permissionSlipSubmission: {
+      count: vi.fn()
     }
   }
 }));
@@ -736,8 +739,8 @@ describe('Event Management Functions', () => {
               company: { id: 'company1', companyName: 'Test Company' }
             },
             students: [
-              { studentId: 'student1', student: { id: 'student1', grade: 9, permissionSlipCompleted: true } },
-              { studentId: 'student2', student: { id: 'student2', grade: 10, permissionSlipCompleted: false } }
+              { studentId: 'student1', student: { id: 'student1', grade: 9 } },
+              { studentId: 'student2', student: { id: 'student2', grade: 10 } }
             ]
           },
           {
@@ -747,8 +750,8 @@ describe('Event Management Functions', () => {
               company: { id: 'company2', companyName: 'Another Company' }
             },
             students: [
-              { studentId: 'student1', student: { id: 'student1', grade: 9, permissionSlipCompleted: true } },
-              { studentId: 'student3', student: { id: 'student3', grade: 11, permissionSlipCompleted: true } }
+              { studentId: 'student1', student: { id: 'student1', grade: 9 } },
+              { studentId: 'student3', student: { id: 'student3', grade: 11 } }
             ]
           }
         ]
@@ -756,10 +759,11 @@ describe('Event Management Functions', () => {
 
       vi.mocked(prisma).event.findUnique.mockResolvedValue(mockEvent);
       vi.mocked(prisma).student.findMany.mockResolvedValue([
-        { id: 'student1', grade: 9, permissionSlipCompleted: true },
-        { id: 'student2', grade: 10, permissionSlipCompleted: false },
-        { id: 'student3', grade: 11, permissionSlipCompleted: true }
+        { id: 'student1', grade: 9 },
+        { id: 'student2', grade: 10 },
+        { id: 'student3', grade: 11 }
       ]);
+      vi.mocked(prisma).permissionSlipSubmission.count.mockResolvedValue(2);
 
       const result = await getArchivedEventStats(testEventId);
 

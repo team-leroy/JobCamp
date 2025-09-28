@@ -8,22 +8,23 @@ datasource db {
 }
 
 model Event {
-  id                      String     @id @default(cuid())
+  id                      String                     @id @default(cuid())
   schoolId                String
   date                    DateTime
   displayLotteryResults   Boolean
-  isActive                Boolean    @default(false)
-  isArchived              Boolean    @default(false)
+  isActive                Boolean                    @default(false)
+  isArchived              Boolean                    @default(false)
   name                    String?
-  companyAccountsEnabled  Boolean    @default(false)
-  eventEnabled            Boolean    @default(false)
-  lotteryPublished        Boolean    @default(false)
-  studentAccountsEnabled  Boolean    @default(false)
-  studentSignupsEnabled   Boolean    @default(false)
-  companyDirectoryEnabled Boolean    @default(false)
-  school                  School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  companyAccountsEnabled  Boolean                    @default(false)
+  eventEnabled            Boolean                    @default(false)
+  lotteryPublished        Boolean                    @default(false)
+  studentAccountsEnabled  Boolean                    @default(false)
+  studentSignupsEnabled   Boolean                    @default(false)
+  companyDirectoryEnabled Boolean                    @default(false)
+  school                  School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  lotteryJobs             LotteryJob[]
   positions               Position[]
-  lotteryJobs             LotteryJob[] // NEW: Track lottery jobs for this event
+  permissionSlips         PermissionSlipSubmission[] // Track permission slips for this event
 
   @@index([schoolId, isArchived, date])
 }
@@ -78,21 +79,21 @@ model Attachment {
 }
 
 model Student {
-  id                      String                @id @default(cuid())
-  phone                   String
-  grade                   Int
-  parentEmail             String
-  permissionSlipCompleted Boolean               @default(false)
-  schoolId                String?
-  userId                  String?               @unique
-  lotteryPositionId       String?
-  firstName               String
-  lastName                String
-  manualAssignments       ManualAssignment[]
-  positionsSignedUpFor    PositionsOnStudents[]
-  lotteryResult           Position?             @relation(fields: [lotteryPositionId], references: [id])
-  school                  School?               @relation(fields: [schoolId], references: [id])
-  user                    User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String                     @id @default(cuid())
+  phone                 String
+  grade                 Int
+  parentEmail           String
+  schoolId              String?
+  userId                String?                    @unique
+  lotteryPositionId     String?
+  firstName             String
+  lastName              String
+  manualAssignments     ManualAssignment[]
+  positionsSignedUpFor  PositionsOnStudents[]
+  permissionSlips       PermissionSlipSubmission[]
+  lotteryResult         Position?                  @relation(fields: [lotteryPositionId], references: [id])
+  school                School?                    @relation(fields: [schoolId], references: [id])
+  user                  User?                     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([lotteryPositionId], map: "Student_lotteryPositionId_fkey")
   @@index([schoolId], map: "Student_schoolId_fkey")
@@ -178,8 +179,9 @@ model PermissionSlipCode {
 }
 
 model PermissionSlipSubmission {
-  id                   String  @id @default(cuid())
-  user_id              String  @unique
+  id                   String   @id @default(cuid())
+  studentId            String
+  eventId              String
   parentName           String
   phoenNumber          String
   studentFirstName     String
@@ -188,6 +190,13 @@ model PermissionSlipSubmission {
   dietaryRestrictions  String?
   liability            String
   liabilityDate        String
+  submittedAt          DateTime @default(now())
+  student              Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  event                Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, eventId])
+  @@index([studentId])
+  @@index([eventId])
 }
 
 model LotteryJob {
@@ -196,12 +205,12 @@ model LotteryJob {
   progress    Float            @default(0)
   currentSeed Int              @default(0)
   adminId     String
-  eventId     String           // NEW: Link lottery jobs to specific events
   startedAt   DateTime         @default(now())
   completedAt DateTime?
   error       String?
-  results     LotteryResults[]
+  eventId     String
   event       Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  results     LotteryResults[]
 
   @@index([eventId])
 }

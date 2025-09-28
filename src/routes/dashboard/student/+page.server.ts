@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from "./$types";
 import { prisma } from "$lib/server/prisma";
 import { generatePermissionSlipCode } from "$lib/server/auth";
 import { sendPermissionSlipEmail } from "$lib/server/email";
+import { getPermissionSlipStatus } from "$lib/server/permissionSlips";
 
 export const load: PageServerLoad = async (event) => {
     if (!event.locals.user) {
@@ -45,14 +46,19 @@ export const load: PageServerLoad = async (event) => {
     // Only show lottery results if event is enabled AND lottery is published
     const showLotteryResult = eventEnabled && lotteryPublished;
 
+    // Get permission slip status for the active event
+    const permissionSlipStatus = await getPermissionSlipStatus(student.id, student.schoolId!);
+
     return { 
         lotteryResult: showLotteryResult ? student.lotteryResult : null, 
-        permissionSlipCompleted: student.permissionSlipCompleted, 
+        permissionSlipCompleted: permissionSlipStatus.hasPermissionSlip, 
         parentEmail: student.parentEmail,
         eventEnabled,
         studentAccountsEnabled,
         lotteryPublished,
-        showLotteryResult
+        showLotteryResult,
+        activeEventName: permissionSlipStatus.eventName,
+        hasActiveEvent: permissionSlipStatus.hasActiveEvent
     };
 };
 

@@ -233,10 +233,7 @@ export const actions: Actions = {
     },
 
     deleteEvent: async ({ request, locals }) => {
-        console.log('🗑️ DELETE EVENT ACTION CALLED');
-        
         if (!locals.user) {
-            console.log('❌ Not authenticated');
             return { success: false, message: "Not authenticated" };
         }
 
@@ -248,29 +245,23 @@ export const actions: Actions = {
             });
 
             if (!userInfo?.adminOfSchools?.length) {
-                console.log('❌ Not authorized - no admin schools');
                 return { success: false, message: "Not authorized" };
             }
 
             const schoolId = userInfo.adminOfSchools[0].id;
-            console.log('🏫 School ID:', schoolId);
             
             // Parse form data
             const formData = await request.formData();
             const eventId = formData.get('eventId')?.toString();
-            console.log('📅 Event ID to delete:', eventId);
 
             if (!eventId) {
-                console.log('❌ No event ID provided');
                 return { success: false, message: "Event ID is required" };
             }
 
-            console.log('🔄 Calling deleteEvent function...');
             const result = await deleteEvent(eventId, schoolId);
-            console.log('📊 Delete result:', result);
             return result;
         } catch (error) {
-            console.error('💥 Error deleting event:', error);
+            console.error('Error deleting event:', error);
             return { 
                 success: false, 
                 message: `Failed to delete event: ${error instanceof Error ? error.message : 'Unknown error'}` 

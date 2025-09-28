@@ -406,8 +406,6 @@ export async function updateEvent(
  * Delete an event (only allowed for inactive, non-archived events with no student assignments)
  */
 export async function deleteEvent(eventId: string, schoolId: string): Promise<{ success: boolean; message: string }> {
-  console.log(`🗑️ deleteEvent called with eventId: ${eventId}, schoolId: ${schoolId}`);
-  
   // Check if event exists and belongs to the school
   const event = await prisma.event.findFirst({
     where: { 
@@ -423,10 +421,7 @@ export async function deleteEvent(eventId: string, schoolId: string): Promise<{ 
     }
   });
 
-  console.log(`📅 Found event:`, event ? { id: event.id, name: event.name, isActive: event.isActive, isArchived: event.isArchived } : null);
-
   if (!event) {
-    console.log('❌ Event not found or not authorized');
     return { success: false, message: "Event not found or not authorized" };
   }
 
@@ -528,7 +523,13 @@ export async function getArchivedEventStats(eventId: string) {
     return acc;
   }, {} as Record<number, number>);
 
-  const permissionSlipsCompleted = students.filter(s => s.permissionSlipCompleted).length;
+  // Count permission slips for this specific event
+  const permissionSlipsCompleted = await prisma.permissionSlipSubmission.count({
+    where: {
+      eventId: eventId,
+      studentId: { in: Array.from(allStudentIds) }
+    }
+  });
 
   // Calculate company statistics
   const companies = new Set(

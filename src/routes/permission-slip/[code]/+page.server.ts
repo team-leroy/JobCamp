@@ -1,9 +1,10 @@
-    import { fail, superValidate } from 'sveltekit-superforms';
+import { fail, superValidate } from 'sveltekit-superforms';
 import type { Actions, PageServerLoad } from './$types';
 import { createPermissionSlipSchema } from './schema';
 import { zod } from 'sveltekit-superforms/adapters';
 import { prisma } from '$lib/server/prisma';
 import { redirect } from '@sveltejs/kit';
+import { createPermissionSlipForEvent } from '$lib/server/permissionSlips';
 
 export const load: PageServerLoad = async (event) => {
     const code = event.params.code;
@@ -38,34 +39,51 @@ export const actions: Actions = {
             return fail(400, { form });
         }
 
-        const userId = (await prisma.permissionSlipCode.findFirst({
+        const permissionSlipCode = await prisma.permissionSlipCode.findFirst({
             where: {code: event.params.code}
-        }))?.user_id;
-        if (!userId) {
+        });
+        if (!permissionSlipCode) {
             return fail(400); // TODO: handle fail with message
         }
 
-        await prisma.permissionSlipSubmission.create({
-            data: {
-                user_id: userId,
-                parentName: form.data.parentName,
-                phoenNumber: form.data.phoneNumber,
-                studentFirstName: form.data.studentFirstName,
-                studentLastName: form.data.studentLastName,
-                physicalRestrictions: form.data.physicalRestrictions,
-                dietaryRestrictions: form.data.dietaryRestrictions,
-                liability: form.data.liability,
-                liabilityDate: form.data.liabilityDate
-            }
-        })
+        const userId = permissionSlipCode.user_id;
 
+        // Get the student
+        const student = await prisma.student.findFirst({
+            where: { userId },
+            include: { school: true }
+        });
+        if (!student || !student.school) {
+            return fail(400, { message: "Student or school not found" });
+        }
+
+        // Get the active event for the student's school
+        const activeEvent = await prisma.event.findFirst({
+            where: {
+                schoolId: student.schoolId!,
+                isActive: true
+            }
+        });
+        if (!activeEvent) {
+            return fail(400, { message: "No active event found for this school" });
+        }
+
+        // Create the event-specific permission slip
+        await createPermissionSlipForEvent(student.id, activeEvent.id, {
+            parentName: form.data.parentName,
+            phoneNumber: form.data.phoneNumber,
+            studentFirstName: form.data.studentFirstName,
+            studentLastName: form.data.studentLastName,
+            physicalRestrictions: form.data.physicalRestrictions,
+            dietaryRestrictions: form.data.dietaryRestrictions,
+            liability: form.data.liability,
+            liabilityDate: form.data.liabilityDate
+        });
+
+        // Clean up the permission slip code
         await prisma.permissionSlipCode.deleteMany({
             where: {code: event.params.code}
         });
-
-        await prisma.student.update({ where: {userId: userId}, data: {
-            permissionSlipCompleted: true,
-        }});
         
         redirect(302, "/permission-slip/sucess");
     }
