@@ -336,7 +336,10 @@ export const actions: Actions = {
     },
 
     getGraduationPreview: async ({ locals }) => {
+        console.log("🎓 getGraduationPreview action called");
+        
         if (!locals.user) {
+            console.log("❌ No user in locals");
             return { 
                 success: false, 
                 message: "User not authenticated",
@@ -351,12 +354,22 @@ export const actions: Actions = {
                 include: { adminOfSchools: true }
             });
 
+            console.log("👤 User info:", { 
+                userId: locals.user.id, 
+                adminSchools: userInfo?.adminOfSchools?.length || 0 
+            });
+
             if (!userInfo?.adminOfSchools?.length) {
+                console.log("❌ User not authorized - no admin schools");
                 return { success: false, message: "Not authorized", students: [] };
             }
 
             const schoolId = userInfo.adminOfSchools[0].id;
+            console.log("🏫 School ID:", schoolId);
+            
             const eligibleStudents = await getGraduationEligibleStudents(schoolId);
+            console.log("🎓 Eligible students found:", eligibleStudents.length);
+            console.log("📋 Students:", eligibleStudents.map(s => `${s.firstName} ${s.lastName} (Grade ${s.grade})`));
 
             return { 
                 success: true, 
@@ -364,7 +377,7 @@ export const actions: Actions = {
                 message: `Found ${eligibleStudents.length} Grade 12 students eligible for graduation`
             };
         } catch (error) {
-            console.error('Error getting graduation preview:', error);
+            console.error('❌ Error getting graduation preview:', error);
             return { 
                 success: false, 
                 message: "Failed to get graduation preview",
