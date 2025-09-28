@@ -2,8 +2,6 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import EventManagementWidget from "$lib/components/admin/EventManagementWidget.svelte";
   import EventControlsWidget from "$lib/components/admin/EventControlsWidget.svelte";
-  import { enhance } from "$app/forms";
-  import { goto } from "$app/navigation";
   import type { EventWithStats } from "$lib/server/eventManagement";
 
   export let data;
@@ -59,30 +57,6 @@
         method="POST"
         action="?/createEvent"
         class="space-y-4"
-        use:enhance={() => {
-          return async ({ result, update }) => {
-            console.log('🔄 Event creation form result:', result);
-            if (result.type === "success" && result.data?.success) {
-              console.log('✅ Event created successfully, refreshing data...');
-              // Clear form
-              const form = document.querySelector(
-                'form[action="?/createEvent"]'
-              ) as HTMLFormElement;
-              form?.reset();
-              // Force page reload with data invalidation
-              await goto('/dashboard/admin/event-mgmt', { 
-                replaceState: true, 
-                invalidateAll: true,
-                noScroll: true 
-              });
-              console.log('📊 Page reloaded with data invalidation');
-            } else {
-              console.log('❌ Event creation failed or no success flag');
-              // Still run the default update for error handling
-              await update();
-            }
-          };
-        }}
       >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
