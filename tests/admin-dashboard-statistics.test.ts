@@ -25,6 +25,9 @@ vi.mock('../src/lib/server/prisma', () => ({
     },
     positionsOnStudents: {
       count: vi.fn()
+    },
+    permissionSlipSubmission: {
+      count: vi.fn()
     }
   }
 }));
@@ -126,8 +129,10 @@ describe('Admin Dashboard Statistics', () => {
       // Mock student statistics
       vi.mocked(prisma.student.count)
         .mockResolvedValueOnce(150) // totalStudents
-        .mockResolvedValueOnce(120) // permissionSlipsSigned
         .mockResolvedValueOnce(25)  // studentsWithoutChoices
+      
+      // Mock permission slip submissions for active event
+      vi.mocked(prisma.permissionSlipSubmission.count).mockResolvedValue(120); // permissionSlipsSigned
       
       vi.mocked(prisma.positionsOnStudents.count).mockResolvedValue(75); // totalStudentChoices
       
@@ -279,6 +284,7 @@ describe('Admin Dashboard Statistics', () => {
 
       vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);
       vi.mocked(prisma.student.count).mockResolvedValue(0);
+      vi.mocked(prisma.permissionSlipSubmission.count).mockResolvedValue(0);
       vi.mocked(prisma.positionsOnStudents.count).mockResolvedValue(0);
       vi.mocked(prisma.student.groupBy).mockResolvedValue([
         { grade: 10, _count: { grade: 20 } }

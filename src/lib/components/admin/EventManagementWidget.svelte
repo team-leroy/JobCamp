@@ -8,6 +8,7 @@
     CardTitle,
   } from "$lib/components/ui/card";
   import { goto } from "$app/navigation";
+  import { invalidateAll } from "$app/navigation";
   import type { EventWithStats } from "$lib/server/eventManagement";
 
   interface FormResult {
@@ -45,8 +46,8 @@
         );
 
         if (response.ok) {
-          // Refresh the page to show updated state
-          goto("/dashboard/admin/event-mgmt", { replaceState: true });
+          // Refresh the data to show updated state
+          await invalidateAll();
         } else {
           alert("Failed to activate event. Please try again.");
         }
@@ -79,7 +80,7 @@
   }
 
   // Handle event deletion
-  function handleDeleteEvent(eventId: string, eventName: string) {
+  async function handleDeleteEvent(eventId: string, eventName: string) {
     const confirmMessage = `⚠️ DELETE EVENT: "${eventName}"
 
 This will permanently delete the event and cannot be undone.
@@ -98,21 +99,28 @@ This will permanently delete the event and cannot be undone.
 Continue with deletion?`;
 
     if (confirm(confirmMessage)) {
-      // Create a form and submit it
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '?/deleteEvent';
-      
-      const eventIdInput = document.createElement('input');
-      eventIdInput.type = 'hidden';
-      eventIdInput.name = 'eventId';
-      eventIdInput.value = eventId;
-      
-      form.appendChild(eventIdInput);
-      document.body.appendChild(form);
-      
       isDeleting = true;
-      form.submit();
+      try {
+        const formData = new FormData();
+        formData.append("eventId", eventId);
+
+        const response = await fetch("?/deleteEvent", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          // Refresh the data to show updated state
+          await invalidateAll();
+        } else {
+          alert("Failed to delete event. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        alert("An error occurred while deleting the event.");
+      } finally {
+        isDeleting = false;
+      }
     }
   }
 

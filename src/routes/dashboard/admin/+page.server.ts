@@ -59,14 +59,14 @@ export const load: PageServerLoad = async ({ locals }) => {
             }),
             
             // Permission slips signed for active event
-            activeEvent ? prisma.permissionSlipSubmission.count({
+            prisma.permissionSlipSubmission.count({
                 where: {
-                    eventId: activeEvent.id,
+                    eventId: upcomingEvent.id,
                     student: {
                         schoolId: { in: schoolIds }
                     }
                 }
-            }) : 0,
+            }),
             
             // Students without choices for active event
             prisma.student.count({
