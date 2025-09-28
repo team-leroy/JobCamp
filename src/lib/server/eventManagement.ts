@@ -480,6 +480,150 @@ export async function deleteEvent(eventId: string, schoolId: string): Promise<{ 
 /**
  * Get archived event statistics for dashboard viewing
  */
+/**
+ * Graduate students (soft delete) - typically Grade 12 students when archiving an event
+ */
+export async function graduateStudents(schoolId: string, studentIds: string[]): Promise<{ success: boolean; message: string; graduatedCount: number }> {
+  try {
+    // Verify all students belong to the school and get their details
+    const students = await prisma.student.findMany({
+      where: {
+        id: { in: studentIds },
+        schoolId: schoolId,
+        isActive: true // Only graduate active students
+      }
+    });
+
+    if (students.length === 0) {
+      return { success: false, message: "No eligible students found to graduate", graduatedCount: 0 };
+    }
+
+    if (students.length !== studentIds.length) {
+      return { 
+        success: false, 
+        message: `Only ${students.length} of ${studentIds.length} students are eligible for graduation`, 
+        graduatedCount: 0 
+      };
+    }
+
+    // Mark students as graduated
+    const result = await prisma.student.updateMany({
+      where: {
+        id: { in: studentIds },
+        schoolId: schoolId,
+        isActive: true
+      },
+      data: {
+        isActive: false,
+        graduatedAt: new Date()
+      }
+    });
+
+    return {
+      success: true,
+      message: `Successfully graduated ${result.count} students`,
+      graduatedCount: result.count
+    };
+  } catch (error) {
+    console.error('Error graduating students:', error);
+    return {
+      success: false,
+      message: 'Failed to graduate students',
+      graduatedCount: 0
+    };
+  }
+}
+
+/**
+ * Get Grade 12 students eligible for graduation
+ */
+export async function getGraduationEligibleStudents(schoolId: string) {
+  return await prisma.student.findMany({
+    where: {
+      schoolId: schoolId,
+      grade: 12,
+      isActive: true
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      grade: true,
+      phone: true,
+      parentEmail: true
+    },
+    orderBy: [
+      { lastName: 'asc' },
+      { firstName: 'asc' }
+    ]
+  });
+}
+
+/**
+ * Get graduated students for admin viewing
+ */
+export async function getGraduatedStudents(schoolId: string) {
+  return await prisma.student.findMany({
+    where: {
+      schoolId: schoolId,
+      isActive: false,
+      graduatedAt: { not: null }
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      grade: true,
+      graduatedAt: true,
+      phone: true,
+      parentEmail: true
+    },
+    orderBy: [
+      { graduatedAt: 'desc' },
+      { lastName: 'asc' },
+      { firstName: 'asc' }
+    ]
+  });
+}
+
+/**
+ * Reactivate a graduated student (in case they return)
+ */
+export async function reactivateStudent(studentId: string, schoolId: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const student = await prisma.student.findFirst({
+      where: {
+        id: studentId,
+        schoolId: schoolId,
+        isActive: false
+      }
+    });
+
+    if (!student) {
+      return { success: false, message: "Student not found or already active" };
+    }
+
+    await prisma.student.update({
+      where: { id: studentId },
+      data: {
+        isActive: true,
+        graduatedAt: null
+      }
+    });
+
+    return {
+      success: true,
+      message: `Successfully reactivated ${student.firstName} ${student.lastName}`
+    };
+  } catch (error) {
+    console.error('Error reactivating student:', error);
+    return {
+      success: false,
+      message: 'Failed to reactivate student'
+    };
+  }
+}
+
 export async function getArchivedEventStats(eventId: string) {
   const event = await prisma.event.findUnique({
     where: { id: eventId },

@@ -84,34 +84,94 @@
     }
   }
 
-  // Handle archive event
+  // Handle archive event with graduation workflow
   async function handleArchiveEvent() {
-    if (
-      confirm(
-        "Are you sure you want to archive the current event? This will make it inactive and move it to archived events."
-      )
-    ) {
-      isArchiving = true;
-      try {
-        const response = await fetch("/dashboard/admin?/archiveEvent", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        });
+    // First, get graduation preview
+    try {
+      const previewResponse = await fetch("/dashboard/admin?/getGraduationPreview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
-        if (response.ok) {
+      if (previewResponse.ok) {
+        const previewResult = await previewResponse.json();
+        
+        if (previewResult.success && previewResult.students.length > 0) {
+          // Show graduation dialog
+          const studentList = previewResult.students
+            .map(s => `• ${s.firstName} ${s.lastName} (Grade ${s.grade})`)
+            .join('\n');
+          
+          const graduateStudents = confirm(
+            `Archive Event: "${upcomingEvent?.name || 'Current Event'}"\n\n` +
+            `📚 Graduate Senior Students?\n\n` +
+            `Found ${previewResult.students.length} Grade 12 students:\n${studentList}\n\n` +
+            `✅ Recommended: Graduate seniors to keep clean student lists\n` +
+            `• Preserves their data for historical statistics\n` +
+            `• Removes them from future event management\n` +
+            `• They won't appear in new event creation\n\n` +
+            `Click OK to archive event AND graduate seniors\n` +
+            `Click Cancel to archive event WITHOUT graduating seniors`
+          );
+
+          await performArchive(graduateStudents);
+        } else {
+          // No seniors to graduate, proceed with simple archive
+          if (confirm(
+            "Are you sure you want to archive the current event? This will make it inactive and move it to archived events."
+          )) {
+            await performArchive(false);
+          }
+        }
+      } else {
+        // Fallback to simple archive if preview fails
+        if (confirm(
+          "Are you sure you want to archive the current event? This will make it inactive and move it to archived events."
+        )) {
+          await performArchive(false);
+        }
+      }
+    } catch (error) {
+      console.error("Error getting graduation preview:", error);
+      // Fallback to simple archive
+      if (confirm(
+        "Are you sure you want to archive the current event? This will make it inactive and move it to archived events."
+      )) {
+        await performArchive(false);
+      }
+    }
+  }
+
+  async function performArchive(graduateStudents: boolean) {
+    isArchiving = true;
+    try {
+      const formData = new FormData();
+      formData.append('graduateStudents', graduateStudents.toString());
+
+      const response = await fetch("/dashboard/admin?/archiveEventWithGraduation", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          alert(result.message);
           // Reload the page to show updated state
           window.location.reload();
         } else {
-          alert("Failed to archive event. Please try again.");
+          alert(`Failed to archive event: ${result.message}`);
         }
-      } catch (error) {
-        console.error("Error archiving event:", error);
-        alert("An error occurred while archiving the event.");
-      } finally {
-        isArchiving = false;
+      } else {
+        alert("Failed to archive event. Please try again.");
       }
+    } catch (error) {
+      console.error("Error archiving event:", error);
+      alert("An error occurred while archiving the event.");
+    } finally {
+      isArchiving = false;
     }
   }
 </script>

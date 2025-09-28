@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { archiveEvent } from '$lib/server/eventManagement';
+import { archiveEvent, getGraduationEligibleStudents, graduateStudents } from '$lib/server/eventManagement';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -261,6 +261,114 @@ export const actions: Actions = {
             return { 
                 success: false, 
                 message: "Failed to archive event" 
+            };
+        }
+    },
+
+    archiveEventWithGraduation: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { 
+                success: false, 
+                message: "User not authenticated" 
+            };
+        }
+
+        try {
+            // Get user's school
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const schoolId = userInfo.adminOfSchools[0].id;
+            const formData = await request.formData();
+            const graduateStudentsFlag = formData.get('graduateStudents') === 'true';
+
+            // Get the active event for this school
+            const activeEvent = await prisma.event.findFirst({
+                where: { 
+                    schoolId,
+                    isActive: true 
+                }
+            });
+
+            if (!activeEvent) {
+                return { success: false, message: "No active event found to archive" };
+            }
+
+            // Archive the event first
+            await archiveEvent(activeEvent.id);
+
+            let graduationMessage = "";
+            if (graduateStudentsFlag) {
+                // Get Grade 12 students and graduate them
+                const eligibleStudents = await getGraduationEligibleStudents(schoolId);
+                
+                if (eligibleStudents.length > 0) {
+                    const studentIds = eligibleStudents.map(s => s.id);
+                    const graduationResult = await graduateStudents(schoolId, studentIds);
+                    
+                    if (graduationResult.success) {
+                        graduationMessage = ` and graduated ${graduationResult.graduatedCount} senior students`;
+                    } else {
+                        graduationMessage = ` (graduation failed: ${graduationResult.message})`;
+                    }
+                } else {
+                    graduationMessage = " (no Grade 12 students to graduate)";
+                }
+            }
+
+            return { 
+                success: true, 
+                message: `Event archived successfully${graduationMessage}` 
+            };
+        } catch (error) {
+            console.error('Error archiving event with graduation:', error);
+            return { 
+                success: false, 
+                message: "Failed to archive event" 
+            };
+        }
+    },
+
+    getGraduationPreview: async ({ locals }) => {
+        if (!locals.user) {
+            return { 
+                success: false, 
+                message: "User not authenticated",
+                students: []
+            };
+        }
+
+        try {
+            // Get user's school
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized", students: [] };
+            }
+
+            const schoolId = userInfo.adminOfSchools[0].id;
+            const eligibleStudents = await getGraduationEligibleStudents(schoolId);
+
+            return { 
+                success: true, 
+                students: eligibleStudents,
+                message: `Found ${eligibleStudents.length} Grade 12 students eligible for graduation`
+            };
+        } catch (error) {
+            console.error('Error getting graduation preview:', error);
+            return { 
+                success: false, 
+                message: "Failed to get graduation preview",
+                students: []
             };
         }
     }

@@ -88,6 +88,8 @@ model Student {
   lotteryPositionId     String?
   firstName             String
   lastName              String
+  isActive              Boolean                    @default(true)
+  graduatedAt           DateTime?
   manualAssignments     ManualAssignment[]
   positionsSignedUpFor  PositionsOnStudents[]
   permissionSlips       PermissionSlipSubmission[]
@@ -97,6 +99,7 @@ model Student {
 
   @@index([lotteryPositionId], map: "Student_lotteryPositionId_fkey")
   @@index([schoolId], map: "Student_schoolId_fkey")
+  @@index([schoolId, isActive])
 }
 
 model PositionsOnStudents {
