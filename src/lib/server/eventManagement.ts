@@ -406,7 +406,7 @@ export async function updateEvent(
  * Delete an event (only allowed for inactive, non-archived events with no student assignments)
  */
 export async function deleteEvent(eventId: string, schoolId: string): Promise<{ success: boolean; message: string }> {
-  console.log(`deleteEvent called with eventId: ${eventId}, schoolId: ${schoolId}`);
+  console.log(`🗑️ deleteEvent called with eventId: ${eventId}, schoolId: ${schoolId}`);
   
   // Check if event exists and belongs to the school
   const event = await prisma.event.findFirst({
@@ -423,9 +423,10 @@ export async function deleteEvent(eventId: string, schoolId: string): Promise<{ 
     }
   });
 
-  console.log(`Found event:`, event ? { id: event.id, name: event.name, isActive: event.isActive, isArchived: event.isArchived } : null);
+  console.log(`📅 Found event:`, event ? { id: event.id, name: event.name, isActive: event.isActive, isArchived: event.isArchived } : null);
 
   if (!event) {
+    console.log('❌ Event not found or not authorized');
     return { success: false, message: "Event not found or not authorized" };
   }
 
