@@ -116,7 +116,7 @@
             `Click Cancel to archive event WITHOUT graduating seniors`
           );
 
-          await performArchive(graduateStudents);
+          performArchive(graduateStudents);
         } else {
           // No seniors to graduate, proceed with simple archive
           if (confirm(
@@ -144,35 +144,22 @@
     }
   }
 
-  async function performArchive(graduateStudents: boolean) {
-    isArchiving = true;
-    try {
-      const formData = new FormData();
-      formData.append('graduateStudents', graduateStudents.toString());
-
-      const response = await fetch("/dashboard/admin?/archiveEventWithGraduation", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          alert(result.message);
-          // Reload the page to show updated state
-          window.location.reload();
-        } else {
-          alert(`Failed to archive event: ${result.message}`);
-        }
-      } else {
-        alert("Failed to archive event. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error archiving event:", error);
-      alert("An error occurred while archiving the event.");
-    } finally {
-      isArchiving = false;
-    }
+  function performArchive(graduateStudents: boolean) {
+    // Create and submit a form programmatically
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/dashboard/admin?/archiveEventWithGraduation';
+    
+    const graduateInput = document.createElement('input');
+    graduateInput.type = 'hidden';
+    graduateInput.name = 'graduateStudents';
+    graduateInput.value = graduateStudents.toString();
+    
+    form.appendChild(graduateInput);
+    document.body.appendChild(form);
+    
+    console.log("🔄 Submitting archive form with graduation:", graduateStudents);
+    form.submit();
   }
 </script>
 
