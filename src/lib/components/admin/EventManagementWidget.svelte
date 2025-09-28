@@ -21,6 +21,14 @@
     form = null,
   }: { schoolEvents?: EventWithStats[]; form?: FormResult | null } = $props();
 
+  // Debug: Log when schoolEvents changes
+  $effect(() => {
+    console.log('🏫 EventManagementWidget: schoolEvents updated', {
+      count: schoolEvents.length,
+      events: schoolEvents.map(e => ({ id: e.id, name: e.name, isActive: e.isActive }))
+    });
+  });
+
   let isActivating = $state(false);
   let isDeleting = $state(false);
   let expandedEventId = $state<string | null>(null);
@@ -46,8 +54,10 @@
         );
 
         if (response.ok) {
+          console.log('✅ Event activation successful, refreshing data...');
           // Refresh the data to show updated state
           await invalidateAll();
+          console.log('📊 Data invalidated after activation');
         } else {
           alert("Failed to activate event. Please try again.");
         }

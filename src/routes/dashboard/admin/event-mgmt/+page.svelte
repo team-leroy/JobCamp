@@ -61,7 +61,9 @@
         class="space-y-4"
         use:enhance={() => {
           return async ({ result }) => {
+            console.log('🔄 Event creation form result:', result);
             if (result.type === "success" && result.data?.success) {
+              console.log('✅ Event created successfully, refreshing data...');
               // Clear form
               const form = document.querySelector(
                 'form[action="?/createEvent"]'
@@ -69,6 +71,9 @@
               form?.reset();
               // Refresh data to show new event
               await invalidateAll();
+              console.log('📊 Data invalidated, widget should update');
+            } else {
+              console.log('❌ Event creation failed or no success flag');
             }
           };
         }}
