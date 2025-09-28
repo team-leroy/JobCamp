@@ -34,44 +34,28 @@
   let isDeleting = $state(false);
   let expandedEventId = $state<string | null>(null);
 
-  // Handle event activation
-  async function handleActivateEvent(eventId: string) {
+  // Handle event activation using proper form submission
+  function handleActivateEvent(eventId: string) {
     if (
       confirm(
         "Are you sure you want to activate this event? This will deactivate any currently active event."
       )
     ) {
-      isActivating = true;
-      try {
-        const formData = new FormData();
-        formData.append("eventId", eventId);
-
-        const response = await fetch(
-          "/dashboard/admin/event-mgmt?/activateEvent",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-        if (response.ok) {
-          console.log("✅ Event activation successful, refreshing data...");
-          // Force page reload with data invalidation
-          await goto('/dashboard/admin/event-mgmt', { 
-            replaceState: true, 
-            invalidateAll: true,
-            noScroll: true 
-          });
-          console.log("📊 Page reloaded with data invalidation after activation");
-        } else {
-          alert("Failed to activate event. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error activating event:", error);
-        alert("An error occurred while activating the event.");
-      } finally {
-        isActivating = false;
-      }
+      // Create and submit a form programmatically
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '?/activateEvent';
+      
+      const eventIdInput = document.createElement('input');
+      eventIdInput.type = 'hidden';
+      eventIdInput.name = 'eventId';
+      eventIdInput.value = eventId;
+      
+      form.appendChild(eventIdInput);
+      document.body.appendChild(form);
+      
+      console.log("🔄 Submitting activation form for event:", eventId);
+      form.submit();
     }
   }
 
@@ -94,8 +78,8 @@
     return { text: "Inactive", variant: "outline" as const };
   }
 
-  // Handle event deletion
-  async function handleDeleteEvent(eventId: string, eventName: string) {
+  // Handle event deletion using proper form submission
+  function handleDeleteEvent(eventId: string, eventName: string) {
     const confirmMessage = `⚠️ DELETE EVENT: "${eventName}"
 
 This will permanently delete the event and cannot be undone.
@@ -114,34 +98,21 @@ This will permanently delete the event and cannot be undone.
 Continue with deletion?`;
 
     if (confirm(confirmMessage)) {
-      isDeleting = true;
-      try {
-        const formData = new FormData();
-        formData.append("eventId", eventId);
-
-        const response = await fetch("?/deleteEvent", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (response.ok) {
-          console.log("✅ Event deletion successful, refreshing data...");
-          // Force page reload with data invalidation
-          await goto('/dashboard/admin/event-mgmt', { 
-            replaceState: true, 
-            invalidateAll: true,
-            noScroll: true 
-          });
-          console.log("📊 Page reloaded with data invalidation after deletion");
-        } else {
-          alert("Failed to delete event. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error deleting event:", error);
-        alert("An error occurred while deleting the event.");
-      } finally {
-        isDeleting = false;
-      }
+      // Create and submit a form programmatically
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '?/deleteEvent';
+      
+      const eventIdInput = document.createElement('input');
+      eventIdInput.type = 'hidden';
+      eventIdInput.name = 'eventId';
+      eventIdInput.value = eventId;
+      
+      form.appendChild(eventIdInput);
+      document.body.appendChild(form);
+      
+      console.log("🔄 Submitting deletion form for event:", eventId);
+      form.submit();
     }
   }
 
