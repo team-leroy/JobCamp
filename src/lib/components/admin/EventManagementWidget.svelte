@@ -8,7 +8,6 @@
     CardTitle,
   } from "$lib/components/ui/card";
   import { goto } from "$app/navigation";
-  import { invalidateAll } from "$app/navigation";
   import type { EventWithStats } from "$lib/server/eventManagement";
 
   interface FormResult {
@@ -57,9 +56,13 @@
 
         if (response.ok) {
           console.log("✅ Event activation successful, refreshing data...");
-          // Refresh the data to show updated state
-          await invalidateAll();
-          console.log("📊 Data invalidated after activation");
+          // Force page reload with data invalidation
+          await goto('/dashboard/admin/event-mgmt', { 
+            replaceState: true, 
+            invalidateAll: true,
+            noScroll: true 
+          });
+          console.log("📊 Page reloaded with data invalidation after activation");
         } else {
           alert("Failed to activate event. Please try again.");
         }
@@ -122,8 +125,14 @@ Continue with deletion?`;
         });
 
         if (response.ok) {
-          // Refresh the data to show updated state
-          await invalidateAll();
+          console.log("✅ Event deletion successful, refreshing data...");
+          // Force page reload with data invalidation
+          await goto('/dashboard/admin/event-mgmt', { 
+            replaceState: true, 
+            invalidateAll: true,
+            noScroll: true 
+          });
+          console.log("📊 Page reloaded with data invalidation after deletion");
         } else {
           alert("Failed to delete event. Please try again.");
         }
