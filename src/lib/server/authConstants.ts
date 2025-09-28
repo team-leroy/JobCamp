@@ -26,6 +26,5 @@ export interface DatabaseUserAttributes {
     host: Host | null;
 	adminOfSchools: School[];
     school: School | null;
-	accountSetupFinished: boolean;
     lastLogin: Date;
 }
