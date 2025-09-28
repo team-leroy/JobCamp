@@ -10,7 +10,7 @@ import { sendEmailVerificationEmail } from '$lib/server/email';
 import { fail, redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async (event) => {
-    userAccountSetupFlow(event.locals, PageType.AccountCreation);
+    await userAccountSetupFlow(event.locals, PageType.AccountCreation);
 
     // Check if season is active for signups
     const activeEvent = await prisma.event.findFirst({
