@@ -46,9 +46,6 @@
     isOpen = false;
   }
 
-  function handleCheckboxChange() {
-    console.log("📋 Checkbox changed to:", graduateStudents);
-  }
 
   // Debug: Watch for changes to graduateStudents
   $: console.log("🔄 graduateStudents reactive change:", graduateStudents);
@@ -140,7 +137,6 @@
               <Checkbox
                 id="graduate-seniors"
                 bind:checked={graduateStudents}
-                on:click={handleCheckboxChange}
                 class="mt-1"
               />
               <div class="flex-1">

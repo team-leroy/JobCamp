@@ -5,7 +5,6 @@
   import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
   } from "$lib/components/ui/card";
@@ -43,10 +42,10 @@
     <Card>
       <CardHeader>
         <CardTitle>Administrator Access</CardTitle>
-        <CardDescription>
+        <p class="text-sm text-gray-600">
           Login with your administrator credentials to access the admin
           dashboard.
-        </CardDescription>
+        </p>
       </CardHeader>
       <CardContent>
         {#if form?.message}

@@ -22,24 +22,24 @@ export const load : PageServerLoad = async ({ locals }) => {
         }
     });
 
-    const eventEnabled = activeEvent?.eventEnabled ?? false;
-    const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
-    const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
+    const eventEnabled = Boolean(activeEvent?.eventEnabled);
+    const studentAccountsEnabled = Boolean(activeEvent?.studentAccountsEnabled);
+    const companyAccountsEnabled = Boolean(activeEvent?.companyAccountsEnabled);
     const seasonActive = activeEvent && eventEnabled;
 
     // Determine if signup/login should be shown
     const showSignupLogin = seasonActive && (studentAccountsEnabled || companyAccountsEnabled);
 
     return { 
-        isHost, 
-        loggedIn, 
-        isAdmin,
-        seasonActive,
-        eventEnabled,
-        hasActiveEvent: !!activeEvent,
+        isHost: Boolean(isHost), 
+        loggedIn: Boolean(loggedIn), 
+        isAdmin: Boolean(isAdmin),
+        seasonActive: Boolean(seasonActive),
+        eventEnabled: Boolean(eventEnabled),
+        hasActiveEvent: Boolean(activeEvent),
         eventName: activeEvent?.name || null,
-        studentAccountsEnabled,
-        companyAccountsEnabled,
-        showSignupLogin
+        studentAccountsEnabled: Boolean(studentAccountsEnabled),
+        companyAccountsEnabled: Boolean(companyAccountsEnabled),
+        showSignupLogin: Boolean(showSignupLogin)
     };
 };

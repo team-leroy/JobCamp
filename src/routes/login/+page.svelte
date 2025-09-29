@@ -28,7 +28,6 @@
   {showSignupLogin}
   studentAccountsEnabled={data.studentAccountsEnabled}
   companyAccountsEnabled={data.companyAccountsEnabled}
-  eventName={data.eventName}
 />
 
 <div class="w-full h-screen flex flex-col sm:gap-8 justify-center items-center">

@@ -25,7 +25,6 @@
   {showSignupLogin}
   {studentAccountsEnabled}
   {companyAccountsEnabled}
-  {eventName}
 />
 
 <div

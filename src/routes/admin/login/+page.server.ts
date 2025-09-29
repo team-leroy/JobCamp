@@ -14,8 +14,8 @@ export const load: PageServerLoad = async () => {
 
     const hasActiveEvent = !!activeEvent;
     const eventName = activeEvent?.name || null;
-    const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
-    const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
+    const studentAccountsEnabled = Boolean(activeEvent?.studentAccountsEnabled);
+    const companyAccountsEnabled = Boolean(activeEvent?.companyAccountsEnabled);
 
     return {
         hasActiveEvent,

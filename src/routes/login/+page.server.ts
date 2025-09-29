@@ -19,19 +19,19 @@ export const load: PageServerLoad = async (event) => {
         }
     });
 
-    const eventEnabled = activeEvent?.eventEnabled ?? false;
-    const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
-    const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
+    const eventEnabled = Boolean(activeEvent?.eventEnabled);
+    const studentAccountsEnabled = Boolean(activeEvent?.studentAccountsEnabled);
+    const companyAccountsEnabled = Boolean(activeEvent?.companyAccountsEnabled);
     const seasonActive = activeEvent && eventEnabled;
 
     const form = await superValidate(zod(schema));
     return { 
         form,
-        seasonActive,
-        eventEnabled,
-        hasActiveEvent: !!activeEvent,
-        studentAccountsEnabled,
-        companyAccountsEnabled,
+        seasonActive: Boolean(seasonActive),
+        eventEnabled: Boolean(eventEnabled),
+        hasActiveEvent: Boolean(activeEvent),
+        studentAccountsEnabled: Boolean(studentAccountsEnabled),
+        companyAccountsEnabled: Boolean(companyAccountsEnabled),
         eventName: activeEvent?.name || null
     };
 };
