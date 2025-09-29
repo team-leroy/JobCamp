@@ -7,6 +7,7 @@ import { generateEmailVerificationCode, generatePermissionSlipCode, schoolEmailC
 import { prisma } from '$lib/server/prisma';
 import { AuthError } from '$lib/server/authConstants';
 import { sendEmailVerificationEmail, sendPermissionSlipEmail } from '$lib/server/email';
+import { getNavbarData } from '$lib/server/navbarData';
 
 
 export const load: PageServerLoad = async (event) => {
@@ -34,7 +35,10 @@ export const load: PageServerLoad = async (event) => {
 
     const form = await superValidate(zod(createStudentSchema()));
 
-    return { form, schoolMapping };
+    // Get navbar data
+    const navbarData = await getNavbarData();
+
+    return { form, schoolMapping, ...navbarData };
 };
 
 export const actions: Actions = {

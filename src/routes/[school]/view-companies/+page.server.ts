@@ -1,6 +1,7 @@
 import { prisma } from '$lib/server/prisma';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { getNavbarData } from '$lib/server/navbarData';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
     const loggedIn = locals.user != null;
@@ -51,6 +52,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         });
     }
 
+    // Get navbar data
+    const navbarData = await getNavbarData();
+
     return { 
         positionData, 
         isHost, 
@@ -60,6 +64,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         eventEnabled,
         companyDirectoryEnabled,
         directoryAccessible,
-        eventName: activeEvent?.name || null
+        eventName: activeEvent?.name || null,
+        ...navbarData
     };
 }

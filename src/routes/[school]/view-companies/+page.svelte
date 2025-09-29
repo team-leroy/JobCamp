@@ -46,7 +46,15 @@
   };
 </script>
 
-<Navbar isHost={data.isHost} loggedIn={data.loggedIn} isAdmin={data.isAdmin} />
+<Navbar 
+  isHost={data.isHost} 
+  loggedIn={data.loggedIn} 
+  isAdmin={data.isAdmin}
+  showSignupLogin={data.showSignupLogin}
+  studentAccountsEnabled={data.studentAccountsEnabled}
+  companyAccountsEnabled={data.companyAccountsEnabled}
+  eventName={data.eventName}
+/>
 
 {#if !data.directoryAccessible}
   <!-- Directory Not Available Message -->

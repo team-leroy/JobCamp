@@ -8,6 +8,7 @@ import { prisma } from '$lib/server/prisma';
 import { AuthError } from '$lib/server/authConstants';
 import { sendEmailVerificationEmail } from '$lib/server/email';
 import { fail, redirect } from '@sveltejs/kit';
+import { getNavbarData } from '$lib/server/navbarData';
 
 export const load: PageServerLoad = async (event) => {
     await userAccountSetupFlow(event.locals, PageType.AccountCreation);
@@ -28,7 +29,11 @@ export const load: PageServerLoad = async (event) => {
     }
 
     const form = await superValidate(zod(createCompanySchema()));
-    return { form, isAdmin: false };
+    
+    // Get navbar data
+    const navbarData = await getNavbarData();
+    
+    return { form, isAdmin: false, ...navbarData };
 };
 
 export const actions: Actions = {

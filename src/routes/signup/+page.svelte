@@ -2,6 +2,13 @@
   import { goto } from "$app/navigation";
   import Button from "$lib/components/ui/button/button.svelte";
   import Navbar from "$lib/components/navbar/Navbar.svelte";
+  import type { PageData } from "./$types";
+
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
 
   const studentSignup = () => {
     goto("/signup/student");
@@ -12,7 +19,15 @@
   };
 </script>
 
-<Navbar isHost={false} loggedIn={false} isAdmin={false} />
+<Navbar 
+  isHost={false} 
+  loggedIn={false} 
+  isAdmin={false}
+  showSignupLogin={data.showSignupLogin}
+  studentAccountsEnabled={data.studentAccountsEnabled}
+  companyAccountsEnabled={data.companyAccountsEnabled}
+  eventName={data.eventName}
+/>
 
 <div
   class="w-full min-h-screen flex flex-col gap-8 justify-center items-center"

@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from "./$types";
 import { prisma } from '$lib/server/prisma';
+import { getNavbarData } from '$lib/server/navbarData';
 
 export const load: PageServerLoad = async (event) => {
     if (event.locals.user) {
@@ -22,5 +23,8 @@ export const load: PageServerLoad = async (event) => {
         redirect(302, "/");
     }
     
-    return { isAdmin: false };
+    // Get navbar data
+    const navbarData = await getNavbarData();
+    
+    return { isAdmin: false, ...navbarData };
 };

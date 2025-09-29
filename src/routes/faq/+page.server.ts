@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/prisma';
+import { getNavbarData } from '$lib/server/navbarData';
 
 export const load : PageServerLoad = async ({ locals }) => {
     const loggedIn = locals.user != null;
@@ -18,5 +19,8 @@ export const load : PageServerLoad = async ({ locals }) => {
         }
     }
 
-    return { isHost, loggedIn, isAdmin };
+    // Get navbar data
+    const navbarData = await getNavbarData();
+
+    return { isHost, loggedIn, isAdmin, ...navbarData };
 };

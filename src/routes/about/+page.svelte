@@ -6,7 +6,15 @@
   const { isHost, loggedIn, isAdmin } = data;
 </script>
 
-<Navbar {isHost} {loggedIn} {isAdmin} />
+<Navbar 
+  {isHost} 
+  {loggedIn} 
+  {isAdmin}
+  showSignupLogin={data.showSignupLogin}
+  studentAccountsEnabled={data.studentAccountsEnabled}
+  companyAccountsEnabled={data.companyAccountsEnabled}
+  eventName={data.eventName}
+/>
 
 <div class="flex flex-col w-full items-center mt-24">
   <div class="flex flex-col justify-center items-center my-3 mx-2">

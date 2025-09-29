@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { getNavbarData } from '$lib/server/navbarData';
 
 export const load : PageServerLoad = async ({ locals }) => {
     const loggedIn = locals.user != null;
@@ -10,5 +11,8 @@ export const load : PageServerLoad = async ({ locals }) => {
         isAdmin = locals.user.adminOfSchools?.length > 0 || false;
     }
 
-    return { isHost, loggedIn, isAdmin };
+    // Get navbar data
+    const navbarData = await getNavbarData();
+
+    return { isHost, loggedIn, isAdmin, ...navbarData };
 };

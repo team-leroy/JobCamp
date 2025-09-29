@@ -5,7 +5,15 @@
   const { isHost, loggedIn, isAdmin } = data;
 </script>
 
-<Navbar {isHost} {loggedIn} {isAdmin} />
+<Navbar 
+  {isHost} 
+  {loggedIn} 
+  {isAdmin}
+  showSignupLogin={data.showSignupLogin}
+  studentAccountsEnabled={data.studentAccountsEnabled}
+  companyAccountsEnabled={data.companyAccountsEnabled}
+  eventName={data.eventName}
+/>
 
 <main class="w-full mt-20 p-4 flex flex-col gap-2">
   <h1 class="text-4xl text-center my-3">Host Tips</h1>
