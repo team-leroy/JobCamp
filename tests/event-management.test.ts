@@ -276,7 +276,14 @@ describe('Event Management Functions', () => {
         isActive: false,
         isArchived: false,
         displayLotteryResults: true,
-        schoolId: testSchoolId
+        schoolId: testSchoolId,
+        // Event Controls - new events start in draft mode (all disabled)
+        eventEnabled: false,
+        companyAccountsEnabled: false,
+        studentAccountsEnabled: false,
+        studentSignupsEnabled: false,
+        lotteryPublished: false,
+        companyDirectoryEnabled: false
       };
 
       const mockEventWithStats = {
@@ -298,13 +305,13 @@ describe('Event Management Functions', () => {
         isArchived: false,
         displayLotteryResults: true,
         schoolId: testSchoolId,
-        // Event Controls - temporarily undefined due to Prisma client issue
-        eventEnabled: undefined,
-        companyAccountsEnabled: undefined,
-        studentAccountsEnabled: undefined,
-        studentSignupsEnabled: undefined,
-        lotteryPublished: undefined,
-        companyDirectoryEnabled: false, // Fallback value handled in return statement
+        // Event Controls - new events start in draft mode (all disabled)
+        eventEnabled: false,
+        companyAccountsEnabled: false,
+        studentAccountsEnabled: false,
+        studentSignupsEnabled: false,
+        lotteryPublished: false,
+        companyDirectoryEnabled: false,
         stats: {
           totalPositions: 0,
           totalSlots: 0,
@@ -325,8 +332,8 @@ describe('Event Management Functions', () => {
           companyAccountsEnabled: false,
           studentAccountsEnabled: false,
           studentSignupsEnabled: false,
-          lotteryPublished: false
-          // companyDirectoryEnabled temporarily removed due to Prisma client issue
+          lotteryPublished: false,
+          companyDirectoryEnabled: false
         }
       });
     });
@@ -372,8 +379,8 @@ describe('Event Management Functions', () => {
           companyAccountsEnabled: false,
           studentAccountsEnabled: false,
           studentSignupsEnabled: false,
-          lotteryPublished: false
-          // companyDirectoryEnabled temporarily removed due to Prisma client issue
+          lotteryPublished: false,
+          companyDirectoryEnabled: false
         }
       });
     });
@@ -842,7 +849,7 @@ describe('Event Management Functions', () => {
             studentAccountsEnabled: false,
             studentSignupsEnabled: false,
             lotteryPublished: false,
-            // companyDirectoryEnabled: false // TEMP: Removed due to Prisma client issue
+            companyDirectoryEnabled: false
           }
         });
       });

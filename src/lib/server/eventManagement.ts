@@ -164,7 +164,7 @@ export async function createEvent(
       studentAccountsEnabled: eventData.studentAccountsEnabled ?? false,
       studentSignupsEnabled: eventData.studentSignupsEnabled ?? false,
       lotteryPublished: eventData.lotteryPublished ?? false,
-      // companyDirectoryEnabled: eventData.companyDirectoryEnabled ?? false // TEMP: Removed to fix Prisma issue
+      companyDirectoryEnabled: eventData.companyDirectoryEnabled ?? false
     }
   });
 
@@ -245,7 +245,7 @@ export async function createEvent(
     studentAccountsEnabled: eventWithStats!.studentAccountsEnabled,
     studentSignupsEnabled: eventWithStats!.studentSignupsEnabled,
     lotteryPublished: eventWithStats!.lotteryPublished,
-    companyDirectoryEnabled: eventWithStats!.companyDirectoryEnabled ?? false, // TEMP: Handle missing field
+    companyDirectoryEnabled: eventWithStats!.companyDirectoryEnabled,
     stats: {
       totalPositions: eventWithStats!.positions.length,
       totalSlots: eventWithStats!.positions.reduce((sum, pos) => sum + pos.slots, 0),
