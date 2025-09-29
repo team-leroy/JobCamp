@@ -33,7 +33,7 @@
 >
   <h1 class="text-7xl md:text-9xl text-black px-4">JobCamp</h1>
 
-  {#if !seasonActive}
+  {#if !seasonActive || !showSignupLogin}
     <!-- Season Over / Preparation Mode -->
     <div
       class="mt-8 max-w-lg mx-4 p-6 bg-white/90 rounded-lg shadow-2xl text-center"
@@ -46,6 +46,14 @@
         </p>
         <p class="text-lg font-semibold text-blue-600">See you next year! 🎉</p>
       {:else if !eventEnabled}
+        <h2 class="text-2xl font-bold text-gray-800 mb-3">Coming Soon</h2>
+        <p class="text-gray-700 mb-4">
+          {eventName || "JobCamp"} is currently in preparation.
+        </p>
+        <p class="text-lg font-semibold text-blue-600">
+          Check back soon for registration! 🚀
+        </p>
+      {:else if !showSignupLogin}
         <h2 class="text-2xl font-bold text-gray-800 mb-3">Coming Soon</h2>
         <p class="text-gray-700 mb-4">
           {eventName || "JobCamp"} is currently in preparation.
