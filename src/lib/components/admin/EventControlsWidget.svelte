@@ -90,17 +90,17 @@
     console.log("🔍 Starting archive event with graduation workflow...");
     
     try {
-      // Call the server action to get actual graduation-eligible students
-      const response = await fetch("/dashboard/admin?/getGraduationPreview", {
+      // Call the API endpoint to get actual graduation-eligible students
+      const response = await fetch("/api/graduation-preview", {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
         },
       });
 
       if (response.ok) {
         const result = await response.json();
-        console.log("🎓 Server response:", result);
+        console.log("🎓 API response:", result);
         
         if (result.success && result.students) {
           graduationStudents = result.students;
@@ -108,19 +108,16 @@
           showGraduationDialog = true;
         } else {
           console.log("❌ No eligible students found or server error:", result.message);
-          // Show dialog with empty list
           graduationStudents = [];
           showGraduationDialog = true;
         }
       } else {
         console.error("❌ Failed to fetch graduation preview:", response.status);
-        // Fallback to empty list
         graduationStudents = [];
         showGraduationDialog = true;
       }
     } catch (error) {
       console.error("❌ Error fetching graduation preview:", error);
-      // Fallback to empty list
       graduationStudents = [];
       showGraduationDialog = true;
     }
