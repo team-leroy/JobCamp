@@ -100,14 +100,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
     logOut: async ({ locals, cookies }) => {
-        // Debug: Check what's in locals.user
-        console.log("🔍 Logout debug - locals.user:", locals.user);
-        console.log("🔍 Logout debug - adminOfSchools:", locals.user?.adminOfSchools);
-        console.log("🔍 Logout debug - adminOfSchools length:", locals.user?.adminOfSchools?.length);
-        
-        // Check if user is an admin BEFORE invalidating session
-        const isAdmin = locals.user?.adminOfSchools?.length > 0;
-        console.log("🔍 Logout debug - isAdmin:", isAdmin);
+        // Load user data with admin relationship BEFORE invalidating session
+        let isAdmin = false;
+        if (locals.user) {
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+            isAdmin = userInfo?.adminOfSchools?.length > 0;
+            console.log("🔍 Logout debug - userInfo:", userInfo);
+            console.log("🔍 Logout debug - adminOfSchools:", userInfo?.adminOfSchools);
+            console.log("🔍 Logout debug - isAdmin:", isAdmin);
+        }
         
         if (locals.session) {
             const session = await lucia.validateSession(locals.session.id);
