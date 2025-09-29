@@ -10,6 +10,9 @@
 
   const { upcomingEvent }: Props = $props();
 
+  // Check if there's an active event
+  const hasActiveEvent = upcomingEvent && upcomingEvent.isActive;
+
   // Event control states - initialize from props
   let eventEnabled = $state(upcomingEvent?.eventEnabled ?? false);
   let companyAccountsEnabled = $state(
@@ -159,18 +162,37 @@
 
 <div class="bg-white rounded-lg shadow p-6">
   <h2 class="text-xl font-bold mb-2">Event Controls</h2>
-  <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-    <p class="text-sm text-blue-700">
-      <strong>Active Event:</strong> An event must be "active" to be the primary
-      event for your school.
-      <br />
-      <strong>Event Controls:</strong> These access controls determine what users
-      can do within the active event. You can keep controls disabled while preparing
-      your active event, then enable them when ready.
-    </p>
-  </div>
+  
+  {#if !hasActiveEvent}
+    <!-- No Active Event Message -->
+    <div class="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+      <div class="flex items-start">
+        <svg class="w-5 h-5 text-yellow-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+        </svg>
+        <div>
+          <h3 class="text-sm font-medium text-yellow-800">No Active Event</h3>
+          <p class="text-sm text-yellow-700 mt-1">
+            You need an active event to configure event controls. Create a new event above and activate it to access these controls.
+          </p>
+        </div>
+      </div>
+    </div>
+  {:else}
+    <!-- Active Event Info -->
+    <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+      <p class="text-sm text-blue-700">
+        <strong>Active Event:</strong> {upcomingEvent.name} ({upcomingEvent.date.toLocaleDateString()})
+        <br />
+        <strong>Event Controls:</strong> These access controls determine what users
+        can do within the active event. You can keep controls disabled while preparing
+        your active event, then enable them when ready.
+      </p>
+    </div>
+  {/if}
 
-  <div class="space-y-4">
+  {#if hasActiveEvent}
+    <div class="space-y-4">
     <!-- Event Control -->
     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
       <div class="flex items-center space-x-3">
@@ -341,7 +363,8 @@
         {isArchiving ? "Archiving..." : "Archive Event"}
       </button>
     </div>
-  </div>
+    </div>
+  {/if}
 </div>
 
 <!-- Graduation Dialog -->
