@@ -20,6 +20,8 @@ export const load: PageServerLoad = async (event) => {
     });
 
     const eventEnabled = activeEvent?.eventEnabled ?? false;
+    const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
+    const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
     const seasonActive = activeEvent && eventEnabled;
 
     const form = await superValidate(zod(schema));
@@ -27,7 +29,10 @@ export const load: PageServerLoad = async (event) => {
         form,
         seasonActive,
         eventEnabled,
-        hasActiveEvent: !!activeEvent
+        hasActiveEvent: !!activeEvent,
+        studentAccountsEnabled,
+        companyAccountsEnabled,
+        eventName: activeEvent?.name || null
     };
 };
 
@@ -48,6 +53,8 @@ export const actions: Actions = {
         });
 
         const eventEnabled = activeEvent?.eventEnabled ?? false;
+        const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
+        const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
         const seasonActive = activeEvent && eventEnabled;
 
         const res = await login(form.data.email, form.data.password, event);
@@ -77,6 +84,20 @@ export const actions: Actions = {
                 return message(form, "JobCamp season has ended. Please check back next year!");
             } else if (!eventEnabled) {
                 return message(form, "JobCamp is currently in preparation mode. Please check back later!");
+            }
+        }
+
+        // Check specific account type restrictions for active events
+        if (!isAdmin && seasonActive) {
+            const isStudent = user.student !== null;
+            const isCompany = user.host !== null;
+            
+            if (isStudent && !studentAccountsEnabled) {
+                return message(form, `Student accounts are currently disabled for ${activeEvent?.name || "this event"}. Please check back later or contact an administrator.`);
+            }
+            
+            if (isCompany && !companyAccountsEnabled) {
+                return message(form, `Company accounts are currently disabled for ${activeEvent?.name || "this event"}. Please check back later or contact an administrator.`);
             }
         }
 

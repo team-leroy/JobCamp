@@ -12,10 +12,21 @@
     hasActiveEvent,
     eventEnabled,
     eventName,
+    studentAccountsEnabled,
+    companyAccountsEnabled,
+    showSignupLogin,
   } = data;
 </script>
 
-<Navbar {isHost} {loggedIn} {isAdmin} />
+<Navbar 
+  {isHost} 
+  {loggedIn} 
+  {isAdmin} 
+  {showSignupLogin}
+  {studentAccountsEnabled}
+  {companyAccountsEnabled}
+  {eventName}
+/>
 
 <div
   class="w-screen h-screen bg-cover bg-center flex flex-col justify-center items-center"

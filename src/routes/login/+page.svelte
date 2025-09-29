@@ -16,9 +16,20 @@
 
   let showPassword = $state(false);
   let passwordEntryType = $derived(showPassword ? "text" : "password");
+
+  // Determine if signup/login should be shown
+  const showSignupLogin = data.seasonActive && (data.studentAccountsEnabled || data.companyAccountsEnabled);
 </script>
 
-<Navbar isHost={false} loggedIn={false} isAdmin={false} />
+<Navbar 
+  isHost={false} 
+  loggedIn={false} 
+  isAdmin={false}
+  {showSignupLogin}
+  studentAccountsEnabled={data.studentAccountsEnabled}
+  companyAccountsEnabled={data.companyAccountsEnabled}
+  eventName={data.eventName}
+/>
 
 <div class="w-full h-screen flex flex-col sm:gap-8 justify-center items-center">
   {#if !data.seasonActive}
@@ -47,6 +58,40 @@
           Administrators can still log in to manage events.
         </p>
       {/if}
+    </div>
+  {:else if !data.studentAccountsEnabled && !data.companyAccountsEnabled}
+    <!-- Both Account Types Disabled -->
+    <div
+      class="max-w-md mx-4 mb-6 p-6 bg-orange-50 border-l-4 border-orange-400 rounded-lg"
+    >
+      <h2 class="text-lg font-semibold text-orange-800 mb-2">
+        Account Access Temporarily Disabled
+      </h2>
+      <p class="text-orange-700 text-sm">
+        Student and company accounts are currently disabled for {data.eventName || "this event"}. 
+        This may be during event preparation or maintenance.
+      </p>
+      <p class="text-orange-600 text-xs mt-2">
+        Administrators can still access the system.
+      </p>
+    </div>
+  {:else if !data.studentAccountsEnabled || !data.companyAccountsEnabled}
+    <!-- One Account Type Disabled -->
+    <div
+      class="max-w-md mx-4 mb-6 p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg"
+    >
+      <h2 class="text-lg font-semibold text-blue-800 mb-2">
+        Limited Account Access
+      </h2>
+      <p class="text-blue-700 text-sm">
+        {#if !data.studentAccountsEnabled}
+          Student accounts are currently disabled for {data.eventName || "this event"}.
+        {/if}
+        {#if !data.companyAccountsEnabled}
+          Company accounts are currently disabled for {data.eventName || "this event"}.
+        {/if}
+        Please check back later or contact an administrator if you need access.
+      </p>
     </div>
   {/if}
 
@@ -96,5 +141,9 @@
     >
   </form>
   <a href="/reset-password" class="underline text-blue-500">Forgot Password?</a>
-  <a href="/signup" class="underline text-blue-500">Do you want to signup?</a>
+  {#if showSignupLogin}
+    <a href="/signup" class="underline text-blue-500">Do you want to signup?</a>
+  {:else}
+    <a href="/admin/login" class="underline text-blue-500">Administrator Login</a>
+  {/if}
 </div>

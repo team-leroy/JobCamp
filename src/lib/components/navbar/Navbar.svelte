@@ -9,7 +9,14 @@
   import { buttonVariants } from "../ui/button";
   import logo from "$lib/assets/favicon.png";
 
-  const { loggedIn, isHost, isAdmin } = $props();
+  const { 
+    loggedIn, 
+    isHost, 
+    isAdmin,
+    showSignupLogin = true,
+    studentAccountsEnabled = true,
+    companyAccountsEnabled = true
+  } = $props();
 
   let collapsed = $state(false);
   let form = $state<HTMLFormElement | undefined>(undefined);
@@ -103,12 +110,32 @@
             >FAQ</Button
           >
           {#if !loggedIn}
-            <Button href="/signup" variant="link" class="text-white text-xl"
-              >Sign Up</Button
-            >
-            <Button href="/login" variant="link" class="text-white text-xl"
-              >Login</Button
-            >
+            {#if showSignupLogin}
+              <Button 
+                href="/signup" 
+                variant="link" 
+                class="text-white text-xl"
+                disabled={!studentAccountsEnabled && !companyAccountsEnabled}
+              >
+                Sign Up
+              </Button>
+              <Button 
+                href="/login" 
+                variant="link" 
+                class="text-white text-xl"
+                disabled={!studentAccountsEnabled && !companyAccountsEnabled}
+              >
+                Login
+              </Button>
+            {:else}
+              <Button 
+                href="/admin/login" 
+                variant="link" 
+                class="text-white text-xl"
+              >
+                Admin Login
+              </Button>
+            {/if}
           {:else}
             <Button href="/dashboard" variant="link" class="text-white text-xl"
               >Dashboard</Button
@@ -234,12 +261,32 @@
         >
 
         {#if !loggedIn}
-          <Button href="/signup" variant="link" class="text-white text-xl"
-            >Sign Up</Button
-          >
-          <Button href="/login" variant="link" class="text-white text-xl"
-            >Login</Button
-          >
+          {#if showSignupLogin}
+            <Button 
+              href="/signup" 
+              variant="link" 
+              class="text-white text-xl"
+              disabled={!studentAccountsEnabled && !companyAccountsEnabled}
+            >
+              Sign Up
+            </Button>
+            <Button 
+              href="/login" 
+              variant="link" 
+              class="text-white text-xl"
+              disabled={!studentAccountsEnabled && !companyAccountsEnabled}
+            >
+              Login
+            </Button>
+          {:else}
+            <Button 
+              href="/admin/login" 
+              variant="link" 
+              class="text-white text-xl"
+            >
+              Admin Login
+            </Button>
+          {/if}
         {:else}
           <Button href="/dashboard" variant="link" class="text-white text-xl"
             >Dashboard</Button

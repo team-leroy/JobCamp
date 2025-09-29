@@ -23,7 +23,12 @@ export const load : PageServerLoad = async ({ locals }) => {
     });
 
     const eventEnabled = activeEvent?.eventEnabled ?? false;
+    const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
+    const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
     const seasonActive = activeEvent && eventEnabled;
+
+    // Determine if signup/login should be shown
+    const showSignupLogin = seasonActive && (studentAccountsEnabled || companyAccountsEnabled);
 
     return { 
         isHost, 
@@ -32,6 +37,9 @@ export const load : PageServerLoad = async ({ locals }) => {
         seasonActive,
         eventEnabled,
         hasActiveEvent: !!activeEvent,
-        eventName: activeEvent?.name || null
+        eventName: activeEvent?.name || null,
+        studentAccountsEnabled,
+        companyAccountsEnabled,
+        showSignupLogin
     };
 };
