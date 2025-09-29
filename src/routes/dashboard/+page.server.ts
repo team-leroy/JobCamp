@@ -114,14 +114,19 @@ export const actions: Actions = {
         if (isAdmin) {
             // Check if regular user signup/login is enabled
             const navbarData = await getNavbarData();
-            console.log("🔍 Admin logout debug:", {
+            const debugInfo = {
                 isAdmin,
                 showSignupLogin: navbarData.showSignupLogin,
                 hasActiveEvent: navbarData.hasActiveEvent,
                 eventEnabled: navbarData.eventEnabled,
                 studentAccountsEnabled: navbarData.studentAccountsEnabled,
                 companyAccountsEnabled: navbarData.companyAccountsEnabled
-            });
+            };
+            
+            console.log("🔍 Admin logout debug:", debugInfo);
+            
+            // TEMPORARY: Alert to pause and show debug info
+            alert(`Admin Logout Debug:\n${JSON.stringify(debugInfo, null, 2)}`);
             
             if (!navbarData.showSignupLogin) {
                 console.log("✅ Redirecting admin to /admin/login");
@@ -132,6 +137,8 @@ export const actions: Actions = {
             }
         } else {
             console.log("✅ Redirecting non-admin to /login");
+            // TEMPORARY: Alert for non-admin too
+            alert("Non-admin logout - redirecting to /login");
         }
         
         redirect(302, "/login");
