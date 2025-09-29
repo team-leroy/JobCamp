@@ -1,19 +1,11 @@
 <script lang="ts">
   import { Switch } from "$lib/components/ui/switch";
   import { Label } from "$lib/components/ui/label";
-
-  // Props
-  interface EventControls {
-    eventEnabled: boolean;
-    companyAccountsEnabled: boolean;
-    studentAccountsEnabled: boolean;
-    studentSignupsEnabled: boolean;
-    lotteryPublished: boolean;
-    companyDirectoryEnabled: boolean;
-  }
+  import GraduationDialog from "./GraduationDialog.svelte";
+  import type { EventWithStats } from "$lib/server/eventManagement";
 
   interface Props {
-    upcomingEvent?: EventControls | null;
+    upcomingEvent?: EventWithStats | null;
   }
 
   const { upcomingEvent }: Props = $props();
@@ -35,6 +27,15 @@
   );
   let isArchiving = $state(false);
   let isUpdating = $state(false);
+  
+  // State for graduation dialog
+  let showGraduationDialog = $state(false);
+  let graduationStudents: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    grade: number;
+  }> = $state([]);
 
   // Handle control changes
   async function handleControlChange(control: string, currentValue: boolean) {
@@ -85,25 +86,36 @@
   }
 
   // Handle archive event with graduation workflow
-  function handleArchiveEvent() {
-    // Show graduation dialog (we know there are Grade 12 students from server logs)
-    const graduateStudents = confirm(
-      `Archive Event: "${upcomingEvent?.name || "Current Event"}"\n\n` +
-        `📚 Graduate Senior Students?\n\n` +
-        `Found Grade 12 students in your school:\n` +
-        `• Olivia Garcia (Grade 12)\n` +
-        `• Alexander Lee (Grade 12)\n` +
-        `• Mia Smith (Grade 12)\n` +
-        `• Emma Wilson (Grade 12)\n\n` +
-        `✅ Recommended: Graduate seniors to keep clean student lists\n` +
-        `• Preserves their data for historical statistics\n` +
-        `• Removes them from future event management\n` +
-        `• They won't appear in new event creation\n\n` +
-        `Click OK to archive event AND graduate seniors\n` +
-        `Click Cancel to archive event WITHOUT graduating seniors`
-    );
+  async function handleArchiveEvent() {
+    try {
+      // Fetch graduation preview to get the actual student list
+      const previewResponse = await fetch("/dashboard/admin?/getGraduationPreview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
-    performArchive(graduateStudents);
+      if (previewResponse.ok) {
+        const previewResult = await previewResponse.json();
+        
+        if (previewResult.success && previewResult.students?.length > 0) {
+          // Show graduation dialog with actual student data
+          graduationStudents = previewResult.students;
+          showGraduationDialog = true;
+        } else {
+          // No seniors to graduate, proceed with simple archive
+          performArchive(false);
+        }
+      } else {
+        // Fallback to simple archive if preview fails
+        performArchive(false);
+      }
+    } catch (error) {
+      console.error("Error getting graduation preview:", error);
+      // Fallback to simple archive
+      performArchive(false);
+    }
   }
 
   function performArchive(graduateStudents: boolean) {
@@ -125,6 +137,16 @@
       graduateStudents
     );
     form.submit();
+  }
+
+  // Handle graduation dialog events
+  function handleGraduationConfirm(event: CustomEvent<{ graduateStudents: boolean }>) {
+    performArchive(event.detail.graduateStudents);
+  }
+
+  function handleGraduationCancel() {
+    showGraduationDialog = false;
+    graduationStudents = [];
   }
 </script>
 
@@ -314,3 +336,12 @@
     </div>
   </div>
 </div>
+
+<!-- Graduation Dialog -->
+<GraduationDialog
+  bind:isOpen={showGraduationDialog}
+  eventName={upcomingEvent?.name || "Current Event"}
+  students={graduationStudents}
+  on:confirm={handleGraduationConfirm}
+  on:cancel={handleGraduationCancel}
+/>
