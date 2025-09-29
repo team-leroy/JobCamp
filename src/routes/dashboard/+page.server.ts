@@ -105,7 +105,21 @@ export const actions: Actions = {
             await lucia.invalidateSession(locals.session.id);
             cookies.delete(lucia.sessionCookieName, { path: "." });
         }
-        redirect(302, "/login")
+        
+        // Check if user is an admin and redirect accordingly
+        if (locals.user?.adminOfSchools?.length > 0) {
+            // Check if there's an active event
+            const activeEvent = await prisma.event.findFirst({
+                where: { isActive: true }
+            });
+            
+            if (!activeEvent) {
+                // No active event - redirect admin to admin login
+                redirect(302, "/admin/login");
+            }
+        }
+        
+        redirect(302, "/login");
     },
     deletePosition: async ({ url }) => {
         const positionId = url.searchParams.get("posId")?.toString();

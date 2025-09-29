@@ -129,26 +129,6 @@
           <Button type="submit" class="w-full">Sign In as Administrator</Button>
         </form>
 
-        <div class="mt-6 text-center">
-          <p class="text-sm text-gray-600">
-            Regular users can
-            <a
-              href="/login"
-              class="font-medium text-blue-600 hover:text-blue-500"
-            >
-              login here
-            </a>
-            {#if hasActiveEvent && (studentAccountsEnabled || companyAccountsEnabled)}
-              or
-              <a
-                href="/signup"
-                class="font-medium text-blue-600 hover:text-blue-500"
-              >
-                sign up
-              </a>
-            {/if}
-          </p>
-        </div>
       </CardContent>
     </Card>
   </div>

@@ -94,55 +94,73 @@
     </div>
   {/if}
 
-  <form
-    method="POST"
-    class="max-w-full flex flex-col justify-between items-center gap-4 py-10 px-10 sm:border-2 sm:rounded-lg sm:shadow-2xl"
-    use:enhance
-  >
-    <h1 class="text-4xl">Login</h1>
-    {#if $message}<span class="text-sm text-red-500">{$message}</span>{/if}
-
-    <div class="flex max-w-full w-96 justify-between items-center">
-      <label for="email">Email</label>
-      <Input
-        class="px-2 py-0.5 rounded w-52 min-w-52"
-        type="text"
-        name="email"
-        bind:value={$form.email}
-      />
-    </div>
-    {#if $errors.email}<span class="text-sm text-red-500">{$errors.email}</span
-      >{/if}
-
-    <div class="flex max-w-full w-96 justify-between items-center">
-      <label for="password">Password</label>
-      <Input
-        class="px-2 py-0.5 rounded w-52 min-w-52"
-        {...{ type: passwordEntryType }}
-        name="password"
-        bind:value={$form.password}
-      />
-    </div>
-    {#if $errors.password}<span class="text-sm text-red-500"
-        >{$errors.password}</span
-      >{/if}
-
-    <div class="flex max-w-full w-96 justify-center">
-      <label
-        ><input type="checkbox" bind:checked={showPassword} /> Show Password</label
-      >
-    </div>
-
-    <button
-      type="submit"
-      class="mt-2 w-24 h-8 rounded bg-blue-500 text-white hover:bg-blue-600"
-      >Login</button
-    >
-  </form>
-  <a href="/reset-password" class="underline text-blue-500">Forgot Password?</a>
   {#if showSignupLogin}
+    <!-- Login Form - Only show when signup/login is enabled -->
+    <form
+      method="POST"
+      class="max-w-full flex flex-col justify-between items-center gap-4 py-10 px-10 sm:border-2 sm:rounded-lg sm:shadow-2xl"
+      use:enhance
+    >
+      <h1 class="text-4xl">Login</h1>
+      {#if $message}<span class="text-sm text-red-500">{$message}</span>{/if}
+
+      <div class="flex max-w-full w-96 justify-between items-center">
+        <label for="email">Email</label>
+        <Input
+          class="px-2 py-0.5 rounded w-52 min-w-52"
+          type="text"
+          name="email"
+          bind:value={$form.email}
+        />
+      </div>
+      {#if $errors.email}<span class="text-sm text-red-500">{$errors.email}</span
+        >{/if}
+
+      <div class="flex max-w-full w-96 justify-between items-center">
+        <label for="password">Password</label>
+        <Input
+          class="px-2 py-0.5 rounded w-52 min-w-52"
+          {...{ type: passwordEntryType }}
+          name="password"
+          bind:value={$form.password}
+        />
+      </div>
+      {#if $errors.password}<span class="text-sm text-red-500"
+          >{$errors.password}</span
+        >{/if}
+
+      <div class="flex max-w-full w-96 justify-center">
+        <label
+          ><input type="checkbox" bind:checked={showPassword} /> Show Password</label
+        >
+      </div>
+
+      <button
+        type="submit"
+        class="mt-2 w-24 h-8 rounded bg-blue-500 text-white hover:bg-blue-600"
+        >Login</button
+      >
+    </form>
+    <a href="/reset-password" class="underline text-blue-500">Forgot Password?</a>
     <a href="/signup" class="underline text-blue-500">Do you want to signup?</a>
   {:else}
-    <a href="/admin/login" class="underline text-blue-500">Administrator Login</a>
+    <!-- No Login Available - Show appropriate message -->
+    <div class="max-w-md mx-4 p-6 bg-gray-50 border-l-4 border-gray-400 rounded-lg text-center">
+      <h2 class="text-lg font-semibold text-gray-800 mb-2">
+        Login Not Available
+      </h2>
+      <p class="text-gray-700 text-sm mb-4">
+        {#if !data.hasActiveEvent}
+          There is currently no active JobCamp event. Please check back when the next event is announced.
+        {:else if !data.eventEnabled}
+          {data.eventName || "JobCamp"} is currently in preparation. Student and company access will be available soon.
+        {:else if !data.studentAccountsEnabled && !data.companyAccountsEnabled}
+          Student and company accounts are currently disabled for {data.eventName || "this event"}. This may be during event preparation or maintenance.
+        {/if}
+      </p>
+      <p class="text-gray-600 text-xs">
+        Administrators can still access the system.
+      </p>
+    </div>
   {/if}
 </div>
