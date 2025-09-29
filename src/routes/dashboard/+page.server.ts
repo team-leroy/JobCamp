@@ -100,6 +100,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
     logOut: async ({ locals, cookies }) => {
+        // Check if user is an admin BEFORE invalidating session
+        const isAdmin = locals.user?.adminOfSchools?.length > 0;
+        
         if (locals.session) {
             const session = await lucia.validateSession(locals.session.id);
             if (!session) return fail(401);
@@ -108,7 +111,7 @@ export const actions: Actions = {
         }
         
         // Check if user is an admin and redirect accordingly
-        if (locals.user?.adminOfSchools?.length > 0) {
+        if (isAdmin) {
             // Check if regular user signup/login is enabled
             const navbarData = await getNavbarData();
             
