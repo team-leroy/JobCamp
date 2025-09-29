@@ -28,6 +28,11 @@
     isOpen = false;
   }
 
+  function handleArchiveButtonClick() {
+    console.log("🔴 Archive button clicked!");
+    handleConfirm();
+  }
+
   function handleCancel() {
     console.log("❌ Graduation dialog cancelled");
     dispatch('cancel');
@@ -159,7 +164,7 @@
               Cancel
             </Button>
             <Button 
-              on:click={handleConfirm}
+              on:click={handleArchiveButtonClick}
               class="px-6 bg-red-600 hover:bg-red-700 text-white"
             >
               Archive Event
