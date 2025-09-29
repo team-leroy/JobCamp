@@ -1,8 +1,8 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { lucia } from '$lib/server/auth';
-import { Argon2id } from 'oslo/password';
+import { login } from '$lib/server/auth';
+import { AuthError } from '$lib/server/authConstants';
 
 export const load: PageServerLoad = async () => {
     // Check if there's an active event and its controls
@@ -44,44 +44,37 @@ export const actions: Actions = {
         }
 
         try {
-            // Find user by email
-            const user = await prisma.user.findUnique({
-                where: { email },
-                include: { adminOfSchools: true }
-            });
-
-            if (!user) {
+            // Create a mock RequestEvent for the login function
+            const mockEvent = {
+                cookies: {
+                    set: (name: string, value: string, options: Record<string, unknown>) => {
+                        cookies.set(name, value, options);
+                    }
+                }
+            };
+            
+            // Use the existing login function to verify credentials
+            const loginResult = await login(email, password, mockEvent as Parameters<typeof login>[2]);
+            
+            if (loginResult === AuthError.IncorrectCredentials) {
                 return {
                     success: false,
                     message: 'Invalid email or password'
                 };
             }
 
-            // Check if user is an admin
-            if (!user.adminOfSchools || user.adminOfSchools.length === 0) {
+            // Get the user to check admin privileges
+            const user = await prisma.user.findUnique({
+                where: { id: loginResult },
+                include: { adminOfSchools: true }
+            });
+
+            if (!user || !user.adminOfSchools || user.adminOfSchools.length === 0) {
                 return {
                     success: false,
                     message: 'Access denied. Administrator privileges required.'
                 };
             }
-
-            // Verify password
-            const validPassword = await new Argon2id().verify(user.passwordHash, password);
-            if (!validPassword) {
-                return {
-                    success: false,
-                    message: 'Invalid email or password'
-                };
-            }
-
-            // Create session
-            const session = await lucia.createSession(user.id, {});
-            const sessionCookie = lucia.createSessionCookie(session.id);
-            
-            cookies.set(sessionCookie.name, sessionCookie.value, {
-                path: '.',
-                ...sessionCookie.attributes
-            });
 
             return {
                 success: true,
