@@ -89,25 +89,41 @@
   async function handleArchiveEvent() {
     console.log("🔍 Starting archive event with graduation workflow...");
     
-    // For now, let's use the hardcoded list we know exists from the database
-    // We added 12 seniors, so let's show the dialog with them
-    graduationStudents = [
-      { id: '1', firstName: 'Emma', lastName: 'Johnson', grade: 12 },
-      { id: '2', firstName: 'Liam', lastName: 'Williams', grade: 12 },
-      { id: '3', firstName: 'Olivia', lastName: 'Brown', grade: 12 },
-      { id: '4', firstName: 'Noah', lastName: 'Davis', grade: 12 },
-      { id: '5', firstName: 'Ava', lastName: 'Miller', grade: 12 },
-      { id: '6', firstName: 'Ethan', lastName: 'Wilson', grade: 12 },
-      { id: '7', firstName: 'Sophia', lastName: 'Moore', grade: 12 },
-      { id: '8', firstName: 'Mason', lastName: 'Taylor', grade: 12 },
-      { id: '9', firstName: 'Isabella', lastName: 'Anderson', grade: 12 },
-      { id: '10', firstName: 'William', lastName: 'Thomas', grade: 12 },
-      { id: '11', firstName: 'Charlotte', lastName: 'Jackson', grade: 12 },
-      { id: '12', firstName: 'James', lastName: 'White', grade: 12 }
-    ];
-    
-    console.log(`🎓 Showing graduation dialog with ${graduationStudents.length} seniors...`);
-    showGraduationDialog = true;
+    try {
+      // Call the server action to get actual graduation-eligible students
+      const response = await fetch("/dashboard/admin?/getGraduationPreview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("🎓 Server response:", result);
+        
+        if (result.success && result.students) {
+          graduationStudents = result.students;
+          console.log(`🎓 Found ${graduationStudents.length} eligible seniors from database`);
+          showGraduationDialog = true;
+        } else {
+          console.log("❌ No eligible students found or server error:", result.message);
+          // Show dialog with empty list
+          graduationStudents = [];
+          showGraduationDialog = true;
+        }
+      } else {
+        console.error("❌ Failed to fetch graduation preview:", response.status);
+        // Fallback to empty list
+        graduationStudents = [];
+        showGraduationDialog = true;
+      }
+    } catch (error) {
+      console.error("❌ Error fetching graduation preview:", error);
+      // Fallback to empty list
+      graduationStudents = [];
+      showGraduationDialog = true;
+    }
   }
 
   function performArchive(graduateStudents: boolean) {
