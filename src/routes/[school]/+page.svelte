@@ -62,15 +62,6 @@
             Admin Dashboard
           </Button>
         </div>
-      {:else if !loggedIn}
-        <div class="mt-4 pt-4 border-t border-gray-200">
-          <p class="text-sm text-gray-600">
-            Administrator? <a
-              href="/login"
-              class="text-blue-600 hover:underline">Login here</a
-            >
-          </p>
-        </div>
       {/if}
     </div>
   {:else}

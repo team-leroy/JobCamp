@@ -127,14 +127,6 @@
               >
                 Login
               </Button>
-            {:else}
-              <Button 
-                href="/admin/login" 
-                variant="link" 
-                class="text-white text-xl"
-              >
-                Admin Login
-              </Button>
             {/if}
           {:else}
             <Button href="/dashboard" variant="link" class="text-white text-xl"
@@ -277,14 +269,6 @@
               disabled={!studentAccountsEnabled && !companyAccountsEnabled}
             >
               Login
-            </Button>
-          {:else}
-            <Button 
-              href="/admin/login" 
-              variant="link" 
-              class="text-white text-xl"
-            >
-              Admin Login
             </Button>
           {/if}
         {:else}
