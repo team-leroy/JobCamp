@@ -23,6 +23,7 @@
 
   function handleConfirm() {
     console.log("✅ Graduation dialog confirmed with graduateStudents:", graduateStudents);
+    console.log("✅ Type of graduateStudents:", typeof graduateStudents);
     dispatch('confirm', { graduateStudents });
     isOpen = false;
   }
@@ -36,6 +37,9 @@
   function handleCheckboxChange() {
     console.log("📋 Checkbox changed to:", graduateStudents);
   }
+
+  // Debug: Watch for changes to graduateStudents
+  $: console.log("🔄 graduateStudents reactive change:", graduateStudents);
 
   // Close on Escape key
   function handleKeydown(event: KeyboardEvent) {
@@ -107,7 +111,7 @@
               <Checkbox 
                 id="graduate-seniors" 
                 bind:checked={graduateStudents}
-                on:change={handleCheckboxChange}
+                on:click={handleCheckboxChange}
                 class="mt-1"
               />
               <div class="flex-1">
