@@ -22,18 +22,31 @@
   }>();
 
   function handleConfirm() {
+    console.log("✅ Graduation dialog confirmed with graduateStudents:", graduateStudents);
     dispatch('confirm', { graduateStudents });
     isOpen = false;
   }
 
   function handleCancel() {
+    console.log("❌ Graduation dialog cancelled");
     dispatch('cancel');
     isOpen = false;
+  }
+
+  function handleCheckboxChange() {
+    console.log("📋 Checkbox changed to:", graduateStudents);
   }
 
   // Close on Escape key
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
+      handleCancel();
+    }
+  }
+
+  // Close on backdrop click (only if clicking directly on backdrop)
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.target === event.currentTarget) {
       handleCancel();
     }
   }
@@ -45,7 +58,7 @@
   <!-- Modal backdrop -->
   <div 
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-    on:click={handleCancel}
+    on:click={handleBackdropClick}
     on:keydown={handleKeydown}
     role="dialog"
     aria-modal="true"
@@ -94,6 +107,7 @@
               <Checkbox 
                 id="graduate-seniors" 
                 bind:checked={graduateStudents}
+                on:change={handleCheckboxChange}
                 class="mt-1"
               />
               <div class="flex-1">

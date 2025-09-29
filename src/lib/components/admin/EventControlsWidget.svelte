@@ -133,10 +133,12 @@
 
   // Handle graduation dialog events
   function handleGraduationConfirm(event: CustomEvent<{ graduateStudents: boolean }>) {
+    console.log("🎓 EventControlsWidget received confirm event:", event.detail);
     performArchive(event.detail.graduateStudents);
   }
 
   function handleGraduationCancel() {
+    console.log("❌ EventControlsWidget received cancel event");
     showGraduationDialog = false;
     graduationStudents = [];
   }
