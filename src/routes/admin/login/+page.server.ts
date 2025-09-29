@@ -1,8 +1,8 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { login } from '$lib/server/auth';
-import { AuthError } from '$lib/server/authConstants';
+import { scrypt } from '$lib/server/hash';
+import { lucia } from '$lib/server/auth';
 
 export const load: PageServerLoad = async () => {
     // Check if there's an active event and its controls
@@ -44,43 +44,55 @@ export const actions: Actions = {
         }
 
         try {
-            // Create a mock RequestEvent for the login function
-            const mockEvent = {
-                cookies: {
-                    set: (name: string, value: string, options: Record<string, unknown>) => {
-                        cookies.set(name, value, options);
-                    }
-                }
-            };
-            
-            // Use the existing login function to verify credentials
-            const loginResult = await login(email, password, mockEvent as Parameters<typeof login>[2]);
-            
-            if (loginResult === AuthError.IncorrectCredentials) {
+            // Find user by email
+            const user = await prisma.user.findUnique({
+                where: { email },
+                include: { adminOfSchools: true }
+            });
+
+            if (!user) {
                 return {
                     success: false,
                     message: 'Invalid email or password'
                 };
             }
 
-            // Get the user to check admin privileges
-            const user = await prisma.user.findUnique({
-                where: { id: loginResult },
-                include: { adminOfSchools: true }
-            });
-
-            if (!user || !user.adminOfSchools || user.adminOfSchools.length === 0) {
+            // Check if user is an admin
+            if (!user.adminOfSchools || user.adminOfSchools.length === 0) {
                 return {
                     success: false,
                     message: 'Access denied. Administrator privileges required.'
                 };
             }
 
-            return {
-                success: true,
-                message: 'Login successful'
-            };
+            // Verify password using the same method as the auth system
+            const validPassword = await scrypt.verify(password, user.passwordSalt, user.passwordHash);
+            
+            if (!validPassword) {
+                return {
+                    success: false,
+                    message: 'Invalid email or password'
+                };
+            }
+
+            // Create session
+            const session = await lucia.createSession(user.id, {});
+            const sessionCookie = lucia.createSessionCookie(session.id);
+            
+            cookies.set(sessionCookie.name, sessionCookie.value, {
+                path: '.',
+                ...sessionCookie.attributes
+            });
+
+            // Redirect to admin dashboard after successful login
+            redirect(302, '/dashboard');
         } catch (error) {
+            // Check if this is a redirect (which is expected behavior)
+            if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
+                // This is a redirect, not an error - re-throw it
+                throw error;
+            }
+            
             console.error('Admin login error:', error);
             return {
                 success: false,
