@@ -20,6 +20,20 @@
 - Prefer concise code fixes when possible
 - Maintain existing code structure and patterns
 
+## Research Before Implementation
+
+- ALWAYS research existing code patterns before implementing new functionality
+- Look for similar implementations in the codebase (e.g., authentication, password handling, API calls)
+- Check imports and dependencies to understand what libraries/modules are already being used
+- Search for existing utility functions, helper methods, or established patterns
+- When fixing bugs, first understand how the existing code works rather than reinventing mechanisms
+- Examples of things to research first:
+  - Password hashing/verification (use existing scrypt implementation)
+  - Database queries (follow existing Prisma patterns)
+  - API calls and form handling (use existing SvelteKit patterns)
+  - Authentication flows (follow existing auth.ts patterns)
+  - Error handling (use existing error patterns and constants)
+
 ## Database
 
 - Use Prisma for database operations
