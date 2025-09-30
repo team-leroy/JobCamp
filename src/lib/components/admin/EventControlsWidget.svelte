@@ -57,7 +57,7 @@
 
       console.log(`📤 Sending request for ${control} = ${newValue}`);
 
-      const response = await fetch("/dashboard/admin?/updateEventControls", {
+      const response = await fetch("/dashboard/admin/event-mgmt?/updateEventControls", {
         method: "POST",
         body: formData,
       });
