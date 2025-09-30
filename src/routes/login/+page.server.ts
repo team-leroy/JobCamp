@@ -57,13 +57,9 @@ export const actions: Actions = {
         const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
         const seasonActive = activeEvent && eventEnabled;
 
-        const res = await login(form.data.email, form.data.password, event);
-        if (res == AuthError.IncorrectCredentials) {
-            return message(form, "Incorrect Email or Password.");
-        }
-        
-        const user = await prisma.user.findFirst({
-            where: { id: res },
+        // First validate credentials without logging in
+        const existingUser = await prisma.user.findFirst({ 
+            where: { email: form.data.email },
             include: { 
                 adminOfSchools: true,
                 host: true,
@@ -71,12 +67,19 @@ export const actions: Actions = {
             }
         });
         
-        if (!user) {
-            return message(form, "Error creating account. Please try again or contact support at admin@jobcamp.org.");
+        if (!existingUser) {
+            return message(form, "Incorrect Email or Password.");
+        }
+
+        // Check password without logging in
+        const { scrypt } = await import('node:crypto');
+        const validPassword = await scrypt.verify(form.data.password, existingUser.passwordSalt, existingUser.passwordHash);
+        if (!validPassword) {
+            return message(form, "Incorrect Email or Password.");
         }
 
         // Check if user is admin - admins can always login
-        const isAdmin = user.adminOfSchools && user.adminOfSchools.length > 0;
+        const isAdmin = existingUser.adminOfSchools && existingUser.adminOfSchools.length > 0;
         
         // Block student/company login if season is not active
         if (!isAdmin && !seasonActive) {
@@ -87,10 +90,10 @@ export const actions: Actions = {
             }
         }
 
-        // Check specific account type restrictions for active events
+        // Check specific account type restrictions for active events BEFORE logging in
         if (!isAdmin && seasonActive) {
-            const isStudent = user.student !== null;
-            const isCompany = user.host !== null;
+            const isStudent = existingUser.student !== null;
+            const isCompany = existingUser.host !== null;
             
             if (isStudent && !studentAccountsEnabled) {
                 return message(form, `Student accounts are currently disabled for ${activeEvent?.name || "this event"}. Please check back later or contact an administrator.`);
@@ -101,7 +104,13 @@ export const actions: Actions = {
             }
         }
 
-        if (!user.emailVerified) {
+        // If we get here, the user is allowed to login - now actually log them in
+        const res = await login(form.data.email, form.data.password, event);
+        if (res == AuthError.IncorrectCredentials) {
+            return message(form, "Incorrect Email or Password.");
+        }
+
+        if (!existingUser.emailVerified) {
             redirect(302, "/verify-email");
         }
 
