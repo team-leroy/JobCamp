@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Switch } from "$lib/components/ui/switch";
   import { Label } from "$lib/components/ui/label";
+  import { invalidateAll } from "$app/navigation";
   import GraduationDialog from "./GraduationDialog.svelte";
   import type { EventWithStats } from "$lib/server/eventManagement";
 
@@ -92,6 +93,9 @@
             companyDirectoryEnabled = newValue;
             break;
         }
+        
+        // Invalidate all data to refresh the page data
+        await invalidateAll();
       } else {
         const errorText = await response.text();
         console.error(`❌ Failed to update event control: ${response.status} - ${errorText}`);

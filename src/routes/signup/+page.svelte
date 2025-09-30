@@ -15,6 +15,16 @@
     companySignupsEnabled,
   } = data;
 
+  // Debug logging
+  console.log('Signup page data:', {
+    studentAccountsEnabled,
+    companyAccountsEnabled,
+    companySignupsEnabled,
+    eventEnabled: data.eventEnabled,
+    hasActiveEvent: data.hasActiveEvent,
+    eventName: data.eventName
+  });
+
   const studentSignup = () => {
     goto("/signup/student");
   };
