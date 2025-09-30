@@ -47,6 +47,20 @@
 - Run `pnpm prisma generate` after schema/migration changes
 - Check for linting errors with `pnpm run lint` before commits
 
+## Testing After Fixes
+
+- After making ANY fix, you MUST either:
+  1. Add a unit test to address the new functionality, OR
+  2. Go back and revisit why existing unit tests did not catch the issue and fix the test
+- Never commit a fix without ensuring it's properly tested
+- If a bug was missed by existing tests, analyze why and improve test coverage
+- Examples of when to add/fix tests:
+  - Bug fixes that weren't caught by existing tests
+  - New functionality or features
+  - Changes to existing behavior
+  - Error handling improvements
+  - Edge cases that were previously untested
+
 ## Project Context
 
 - This is a SvelteKit application for managing job shadowing events at schools
