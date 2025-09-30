@@ -67,7 +67,16 @@ export const actions: Actions = {
             }
         });
 
+        console.log('🏢 Company signup - Host creation:', {
+            userId: user.id,
+            userEmail: user.email,
+            hostCreated: !!user.host,
+            hostId: user.host?.id,
+            hostName: user.host?.name
+        });
+
         if (!user.host) {
+            console.error('❌ Failed to create host for company user:', userId);
             redirect(302, "/");
         }
         

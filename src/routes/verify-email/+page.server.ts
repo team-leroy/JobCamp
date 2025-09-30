@@ -5,6 +5,14 @@ import { generateEmailVerificationCode, setNewLuciaSession, updateLastLoginToNow
 import { sendEmailVerificationEmail } from '$lib/server/email';
 
 export const load: PageServerLoad = async (event) => {
+    console.log('🚀 VERIFY-EMAIL ROUTE HIT:', {
+        url: event.url.href,
+        code: event.url.searchParams.get('code'),
+        uid: event.url.searchParams.get('uid'),
+        hasUser: !!event.locals.user,
+        userEmailVerified: event.locals.user?.emailVerified
+    });
+    
     if (event.locals.user && event.locals.user.emailVerified) {
         redirect(302, "/dashboard")
     }
@@ -43,6 +51,7 @@ export const load: PageServerLoad = async (event) => {
             await setNewLuciaSession(userId, event);
         }
 
+        console.log('✅ Email verification successful, redirecting to dashboard for user:', userId);
         redirect(302, "/dashboard")
     }
 
