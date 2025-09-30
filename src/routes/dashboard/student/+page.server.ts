@@ -41,7 +41,6 @@ export const load: PageServerLoad = async (event) => {
 
     const eventEnabled = activeEvent?.eventEnabled ?? false;
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
-    const studentSignupsEnabled = activeEvent?.studentSignupsEnabled ?? false;
     const lotteryPublished = activeEvent?.lotteryPublished ?? false;
 
     // Only show lottery results if event is enabled AND lottery is published
@@ -50,46 +49,16 @@ export const load: PageServerLoad = async (event) => {
     // Get permission slip status for the active event
     const permissionSlipStatus = await getPermissionSlipStatus(student.id, student.schoolId!);
 
-    // Load current position selections if student signups are enabled
-    let currentSelections = [];
-    if (studentSignupsEnabled && activeEvent) {
-        const positionsOnStudents = await prisma.positionsOnStudents.findMany({ 
-            where: { studentId: student.id },
-            include: {
-                position: {
-                    include: {
-                        host: {
-                            include: {
-                                company: true
-                            }
-                        }
-                    }
-                }
-            },
-            orderBy: { rank: 'asc' }
-        });
-        
-        currentSelections = positionsOnStudents.map(pos => ({
-            id: pos.position.id,
-            title: pos.position.title,
-            career: pos.position.career,
-            companyName: pos.position.host?.company?.companyName,
-            rank: pos.rank
-        }));
-    }
-
     return { 
         lotteryResult: showLotteryResult ? student.lotteryResult : null, 
         permissionSlipCompleted: permissionSlipStatus.hasPermissionSlip, 
         parentEmail: student.parentEmail,
         eventEnabled,
         studentAccountsEnabled,
-        studentSignupsEnabled,
         lotteryPublished,
         showLotteryResult,
         activeEventName: permissionSlipStatus.eventName,
-        hasActiveEvent: permissionSlipStatus.hasActiveEvent,
-        currentSelections
+        hasActiveEvent: permissionSlipStatus.hasActiveEvent
     };
 };
 
