@@ -95,7 +95,14 @@
               <AlertCircle class="h-4 w-4 mr-2 text-blue-600" />
               <div>
                 <strong class="text-blue-800">Event Active:</strong>
-                {eventName} is currently active with user signups enabled.
+                {eventName} is currently active with 
+                {#if studentAccountsEnabled && companyAccountsEnabled}
+                  student and company signups enabled.
+                {:else if studentAccountsEnabled}
+                  student signups enabled.
+                {:else if companyAccountsEnabled}
+                  company signups enabled.
+                {/if}
               </div>
             </div>
           </div>
