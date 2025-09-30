@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Switch } from "$lib/components/ui/switch";
   import { Label } from "$lib/components/ui/label";
-  import { invalidateAll } from "$app/navigation";
   import GraduationDialog from "./GraduationDialog.svelte";
   import type { EventWithStats } from "$lib/server/eventManagement";
 
@@ -32,6 +31,8 @@
   let companyDirectoryEnabled = $state(
     upcomingEvent?.companyDirectoryEnabled ?? false
   );
+
+
   let isArchiving = $state(false);
   let isUpdating = $state(false);
 
@@ -44,69 +45,33 @@
     grade: number;
   }> = $state([]);
 
-  // Handle control changes
-  async function handleControlChange(control: string, currentValue: boolean) {
-    const newValue = !currentValue;
-    isUpdating = true;
+        // Handle control changes using native form submission
+        function handleControlChange(control: string, currentValue: boolean) {
+          const newValue = !currentValue;
+          isUpdating = true;
 
-    console.log(`🔄 Attempting to change ${control} from ${currentValue} to ${newValue}`);
+          console.log(`🔄 Attempting to change ${control} from ${currentValue} to ${newValue}`);
 
-    try {
-      const formData = new FormData();
-      formData.append("controlType", control);
-      formData.append("enabled", newValue.toString());
-
-      console.log(`📤 Sending request for ${control} = ${newValue}`);
-
-      const response = await fetch("/dashboard/admin/event-mgmt?/updateEventControls", {
-        method: "POST",
-        body: formData,
-      });
-
-      console.log(`📥 Response status: ${response.status}`);
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log(`✅ Update successful:`, result);
-        
-        // Update local state to reflect the change
-        switch (control) {
-          case "event":
-            eventEnabled = newValue;
-            break;
-          case "companyAccounts":
-            companyAccountsEnabled = newValue;
-            break;
-          case "companySignups":
-            companySignupsEnabled = newValue;
-            break;
-          case "studentAccounts":
-            studentAccountsEnabled = newValue;
-            break;
-          case "studentSignups":
-            studentSignupsEnabled = newValue;
-            break;
-          case "lotteryPublished":
-            lotteryPublished = newValue;
-            break;
-          case "companyDirectory":
-            companyDirectoryEnabled = newValue;
-            break;
+          // Create a form and submit it natively
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '/dashboard/admin/event-mgmt?/updateEventControls';
+          
+          const controlTypeInput = document.createElement('input');
+          controlTypeInput.type = 'hidden';
+          controlTypeInput.name = 'controlType';
+          controlTypeInput.value = control;
+          form.appendChild(controlTypeInput);
+          
+          const enabledInput = document.createElement('input');
+          enabledInput.type = 'hidden';
+          enabledInput.name = 'enabled';
+          enabledInput.value = newValue.toString();
+          form.appendChild(enabledInput);
+          
+          document.body.appendChild(form);
+          form.submit();
         }
-        
-        // Invalidate all data to refresh the page data
-        await invalidateAll();
-      } else {
-        const errorText = await response.text();
-        console.error(`❌ Failed to update event control: ${response.status} - ${errorText}`);
-        // Optionally show error message to user
-      }
-    } catch (error) {
-      console.error("❌ Error updating event control:", error);
-    } finally {
-      isUpdating = false;
-    }
-  }
 
   // Handle archive event with graduation workflow
   async function handleArchiveEvent() {
