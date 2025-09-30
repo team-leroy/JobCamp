@@ -38,10 +38,19 @@ const grabUserData = async (locals: App.Locals): Promise<UserData> => {
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
+    console.log('🔍 Dashboard load - User check:', {
+        hasUser: !!locals.user,
+        userId: locals.user?.id,
+        email: locals.user?.email,
+        emailVerified: locals.user?.emailVerified
+    });
+    
     if (!locals.user) {
+        console.log('❌ No user found, redirecting to login');
         redirect(302, "/login");
     }
     if (!locals.user.emailVerified) {
+        console.log('❌ User email not verified, redirecting to verify-email');
         redirect(302, "/verify-email");
     }
 

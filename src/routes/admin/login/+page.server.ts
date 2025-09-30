@@ -44,6 +44,8 @@ export const actions: Actions = {
         }
 
         try {
+            console.log('🔐 Admin login attempt for:', email);
+            
             // Find user by email
             const user = await prisma.user.findUnique({
                 where: { email },
@@ -51,14 +53,23 @@ export const actions: Actions = {
             });
 
             if (!user) {
+                console.log('❌ User not found for email:', email);
                 return {
                     success: false,
                     message: 'Invalid email or password'
                 };
             }
 
+            console.log('👤 User found:', {
+                id: user.id,
+                email: user.email,
+                emailVerified: user.emailVerified,
+                isAdmin: user.adminOfSchools?.length > 0
+            });
+
             // Check if user is an admin
             if (!user.adminOfSchools || user.adminOfSchools.length === 0) {
+                console.log('❌ User is not an admin');
                 return {
                     success: false,
                     message: 'Access denied. Administrator privileges required.'
@@ -69,11 +80,14 @@ export const actions: Actions = {
             const validPassword = await scrypt.verify(password, user.passwordSalt, user.passwordHash);
             
             if (!validPassword) {
+                console.log('❌ Invalid password for user:', user.email);
                 return {
                     success: false,
                     message: 'Invalid email or password'
                 };
             }
+
+            console.log('✅ Admin login successful, creating session for:', user.email);
 
             // Create session
             const session = await lucia.createSession(user.id, {});
@@ -84,6 +98,7 @@ export const actions: Actions = {
                 ...sessionCookie.attributes
             });
 
+            console.log('🔄 Redirecting to dashboard for admin:', user.email);
             // Redirect to admin dashboard after successful login
             redirect(302, '/dashboard');
         } catch (error) {
