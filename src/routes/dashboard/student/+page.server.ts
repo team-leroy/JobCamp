@@ -41,6 +41,7 @@ export const load: PageServerLoad = async (event) => {
 
     const eventEnabled = activeEvent?.eventEnabled ?? false;
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
+    const studentSignupsEnabled = activeEvent?.studentSignupsEnabled ?? false;
     const lotteryPublished = activeEvent?.lotteryPublished ?? false;
 
     // Only show lottery results if event is enabled AND lottery is published
@@ -55,6 +56,7 @@ export const load: PageServerLoad = async (event) => {
         parentEmail: student.parentEmail,
         eventEnabled,
         studentAccountsEnabled,
+        studentSignupsEnabled,
         lotteryPublished,
         showLotteryResult,
         activeEventName: permissionSlipStatus.eventName,

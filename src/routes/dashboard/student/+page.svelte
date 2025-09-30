@@ -155,20 +155,33 @@
               for more information.
             </p>
           </div>
-        {:else if !data.lotteryPublished}
+        {:else if !data.studentAccountsEnabled}
+          <div class="p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
+            <p class="text-red-700">
+              <strong>Student accounts are currently disabled.</strong><br />
+              Please check back later or contact your administrator for updates.
+            </p>
+          </div>
+        {:else if !data.studentSignupsEnabled}
           <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
             <p class="text-blue-700">
-              <strong>Job assignments have not been published yet.</strong><br
-              />
+              <strong>Job assignments are not yet available.</strong><br />
               Please check back later or contact your administrator for updates.
             </p>
           </div>
         {:else}
-          <div class="p-4 bg-gray-50 border-l-4 border-gray-400 rounded-lg">
-            <p class="text-gray-700">
-              No job assignment found. Please contact your administrator if you
-              believe this is an error.
+          <!-- Position selection is available - redirect to pick page -->
+          <div class="p-4 bg-green-50 border-l-4 border-green-400 rounded-lg">
+            <p class="text-green-700 mb-4">
+              <strong>Position selection is now available!</strong><br />
+              You can now select your preferred job positions.
             </p>
+            <a 
+              href="/dashboard/student/pick" 
+              class="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
+            >
+              Select Job Positions
+            </a>
           </div>
         {/if}
       </div>
