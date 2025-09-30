@@ -173,9 +173,9 @@ export const actions: Actions = {
 
         await prisma.positionsOnStudents.delete({
             where: {
-                studentId_positionId: {
-                    studentId: studentId,
-                    positionId: posId
+                positionId_studentId: {
+                    positionId: posId,
+                    studentId: studentId
                 }
             }
         });
@@ -190,9 +190,9 @@ export const actions: Actions = {
             remainingPositions.map((pos, index) =>
                 prisma.positionsOnStudents.update({
                     where: {
-                        studentId_positionId: {
-                            studentId: studentId,
-                            positionId: pos.positionId
+                        positionId_studentId: {
+                            positionId: pos.positionId,
+                            studentId: studentId
                         }
                     },
                     data: { rank: index }
@@ -236,18 +236,18 @@ export const actions: Actions = {
         await prisma.$transaction([
             prisma.positionsOnStudents.update({
                 where: {
-                    studentId_positionId: {
-                        studentId: studentId,
-                        positionId: positions[currentIndex].positionId
+                    positionId_studentId: {
+                        positionId: positions[currentIndex].positionId,
+                        studentId: studentId
                     }
                 },
                 data: { rank: newIndex }
             }),
             prisma.positionsOnStudents.update({
                 where: {
-                    studentId_positionId: {
-                        studentId: studentId,
-                        positionId: positions[newIndex].positionId
+                    positionId_studentId: {
+                        positionId: positions[newIndex].positionId,
+                        studentId: studentId
                     }
                 },
                 data: { rank: currentIndex }

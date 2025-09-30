@@ -13,18 +13,26 @@
   let positions = $state({ posList: data.positions });
 
   const deletePosition = async (posID: string) => {
+    // Optimistically update UI
     positions.posList = positions.posList.filter((val) => val.id != posID);
 
-    const fdata = new FormData();
-    fdata.append("id", posID);
-
-    await fetch("?/deletePosition", {
-      method: "post",
-      body: fdata,
-    });
+    // Submit form natively to trigger data invalidation
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '?/deletePosition';
+    
+    const posIdInput = document.createElement('input');
+    posIdInput.type = 'hidden';
+    posIdInput.name = 'id';
+    posIdInput.value = posID;
+    form.appendChild(posIdInput);
+    
+    document.body.appendChild(form);
+    form.submit();
   };
 
   const moveUp = async (posID: string) => {
+    // Optimistically update UI
     let posRankIndex = 0;
     for (let i = 0; i < positions.posList.length; i++) {
       if (positions.posList[i].id == posID) {
@@ -36,17 +44,29 @@
     positions.posList[posRankIndex + 1] = positions.posList[posRankIndex];
     positions.posList[posRankIndex] = temp;
 
-    const fdata = new FormData();
-    fdata.append("id", posID);
-    fdata.append("dir", "down");
-
-    await fetch("?/move", {
-      method: "post",
-      body: fdata,
-    });
+    // Submit form natively to trigger data invalidation
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '?/move';
+    
+    const posIdInput = document.createElement('input');
+    posIdInput.type = 'hidden';
+    posIdInput.name = 'id';
+    posIdInput.value = posID;
+    form.appendChild(posIdInput);
+    
+    const dirInput = document.createElement('input');
+    dirInput.type = 'hidden';
+    dirInput.name = 'dir';
+    dirInput.value = 'down';
+    form.appendChild(dirInput);
+    
+    document.body.appendChild(form);
+    form.submit();
   };
 
   const moveDown = async (posID: string) => {
+    // Optimistically update UI
     let posRankIndex = 0;
     for (let i = 0; i < positions.posList.length; i++) {
       if (positions.posList[i].id == posID) {
@@ -58,18 +78,33 @@
     positions.posList[posRankIndex - 1] = positions.posList[posRankIndex];
     positions.posList[posRankIndex] = temp;
 
-    const fdata = new FormData();
-    fdata.append("id", posID);
-    fdata.append("dir", "up");
-
-    await fetch("?/move", {
-      method: "post",
-      body: fdata,
-    });
+    // Submit form natively to trigger data invalidation
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '?/move';
+    
+    const posIdInput = document.createElement('input');
+    posIdInput.type = 'hidden';
+    posIdInput.name = 'id';
+    posIdInput.value = posID;
+    form.appendChild(posIdInput);
+    
+    const dirInput = document.createElement('input');
+    dirInput.type = 'hidden';
+    dirInput.name = 'dir';
+    dirInput.value = 'up';
+    form.appendChild(dirInput);
+    
+    document.body.appendChild(form);
+    form.submit();
   };
 
   let leftWidth = $derived(
-    data.lotteryResult ? " w-full" : positions.posList.length == 0 ? " w-72" : " min-w-[32rem] w-full"
+    data.lotteryResult
+      ? " w-full"
+      : positions.posList.length == 0
+        ? " w-72"
+        : " min-w-[32rem] w-full"
   );
 </script>
 
