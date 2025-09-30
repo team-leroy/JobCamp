@@ -72,11 +72,8 @@ export const actions: Actions = {
         }
 
         // Check password without logging in
-        const { scrypt } = await import('node:crypto');
-        const { promisify } = await import('node:util');
-        const scryptAsync = promisify(scrypt);
-        const passwordHash = await scryptAsync(form.data.password, existingUser.passwordSalt, 64);
-        const validPassword = passwordHash.equals(Buffer.from(existingUser.passwordHash, 'hex'));
+        const { scrypt } = await import('$lib/server/hash.js');
+        const validPassword = await scrypt.verify(form.data.password, existingUser.passwordSalt, existingUser.passwordHash);
         if (!validPassword) {
             return message(form, "Incorrect Email or Password.");
         }
