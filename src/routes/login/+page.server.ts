@@ -73,7 +73,9 @@ export const actions: Actions = {
 
         // Check password without logging in
         const { scrypt } = await import('node:crypto');
-        const passwordHash = await scrypt(form.data.password, existingUser.passwordSalt, 64);
+        const { promisify } = await import('node:util');
+        const scryptAsync = promisify(scrypt);
+        const passwordHash = await scryptAsync(form.data.password, existingUser.passwordSalt, 64);
         const validPassword = passwordHash.equals(Buffer.from(existingUser.passwordHash, 'hex'));
         if (!validPassword) {
             return message(form, "Incorrect Email or Password.");
