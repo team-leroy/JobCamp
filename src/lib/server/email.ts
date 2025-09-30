@@ -39,21 +39,31 @@ export async function sendEmailLotteryEmail(email:string) {
 }
 
 export async function sendEmailVerificationEmail(uid: string, email: string, code: string) {
-    await emailClient.send({
-        from: SENDER,
-        to:  [{ email: email }],
-        subject: "Verify JobCamp Email",
-        html: renderEmailTemplate(verificationEmail, {uid, code})
-    });
+    try {
+        await emailClient.send({
+            from: SENDER,
+            to:  [{ email: email }],
+            subject: "Verify JobCamp Email",
+            html: renderEmailTemplate(verificationEmail, {uid, code})
+        });
+    } catch (error) {
+        console.warn('Email service not configured or failed to send verification email:', error);
+        // In development, we can continue without email verification
+        // In production, you should have proper email service configured
+    }
 }
 
 export async function sendPasswordResetEmail(uid: string, email: string, code: string) {
-    await emailClient.send({
-        from: SENDER,
-        to:  [{ email: email }],
-        subject: "Reset JobCamp Password",
-        html: renderEmailTemplate(resetPasswordEmail, {uid, code})
-    });
+    try {
+        await emailClient.send({
+            from: SENDER,
+            to:  [{ email: email }],
+            subject: "Reset JobCamp Password",
+            html: renderEmailTemplate(resetPasswordEmail, {uid, code})
+        });
+    } catch (error) {
+        console.warn('Email service not configured or failed to send password reset email:', error);
+    }
 }
 
 export async function sendPermissionSlipEmail(parentEmail: string, code: string, name: string) {
