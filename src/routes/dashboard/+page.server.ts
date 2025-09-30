@@ -34,15 +34,6 @@ const grabUserData = async (locals: App.Locals): Promise<UserData> => {
     const hostInfo = await prisma.host.findFirst({
         where: { userId: userInfo.id }
     });
-    
-    console.log('🔍 Dashboard Debug:', {
-        userId: userInfo.id,
-        userEmail: userInfo.email,
-        hasHostInfo: !!hostInfo,
-        hostId: hostInfo?.id,
-        isAdmin: userInfo.adminOfSchools?.length > 0
-    });
-    
     return { userInfo, hostInfo }
 }
 
