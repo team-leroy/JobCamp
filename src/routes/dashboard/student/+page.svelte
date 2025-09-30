@@ -1,75 +1,76 @@
 <script lang="ts">
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import * as Accordion from "$lib/components/ui/accordion/index.js";
+  import { ArrowBigDown, ArrowBigUp, Trash2Icon } from "lucide-svelte";
   import { dates } from "./important-dates.json";
   import { Label } from "$lib/components/ui/label";
   import { Input } from "$lib/components/ui/input";
   import { enhance } from "$app/forms";
+  import Button from "$lib/components/ui/button/button.svelte";
 
   let { data, form } = $props();
 
-  // const deletePosition = async (posID: string) => {
-  //     positions.posList = positions.posList.filter((val) => val.id != posID);
+  let positions = $state({ posList: data.positions });
 
-  //     let posIds = positions.posList.map(val => val.id);
-  //     console.log(posIds);
+  const deletePosition = async (posID: string) => {
+    positions.posList = positions.posList.filter((val) => val.id != posID);
 
-  //     const fdata = new FormData();
-  //     fdata.append("posIds", JSON.stringify({ positions: posIds }));
+    const fdata = new FormData();
+    fdata.append("id", posID);
 
-  //     await fetch("?/update", {
-  //         method: "post",
-  //         body: fdata
-  //     });
-  // }
+    await fetch("?/deletePosition", {
+      method: "post",
+      body: fdata,
+    });
+  };
 
-  // const moveUp = async (posID: string) => {
-  //     let posRankIndex = 0;
-  //     for (let i = 0; i < positions.posList.length; i++) {
-  //         if (positions.posList[i].id == posID) {
-  //             posRankIndex = i;
-  //         }
-  //     }
+  const moveUp = async (posID: string) => {
+    let posRankIndex = 0;
+    for (let i = 0; i < positions.posList.length; i++) {
+      if (positions.posList[i].id == posID) {
+        posRankIndex = i;
+      }
+    }
 
-  //     var temp = positions.posList[posRankIndex + 1];
-  //     positions.posList[posRankIndex + 1] = positions.posList[posRankIndex];
-  //     positions.posList[posRankIndex] = temp;
+    var temp = positions.posList[posRankIndex + 1];
+    positions.posList[posRankIndex + 1] = positions.posList[posRankIndex];
+    positions.posList[posRankIndex] = temp;
 
-  //     let posIds = positions.posList.map(val => val.id);
+    const fdata = new FormData();
+    fdata.append("id", posID);
+    fdata.append("dir", "down");
 
-  //     const fdata = new FormData();
-  //     fdata.append("posIds", JSON.stringify({ positions: posIds }));
+    await fetch("?/move", {
+      method: "post",
+      body: fdata,
+    });
+  };
 
-  //     await fetch("?/update", {
-  //         method: "post",
-  //         body: fdata
-  //     });
-  // }
+  const moveDown = async (posID: string) => {
+    let posRankIndex = 0;
+    for (let i = 0; i < positions.posList.length; i++) {
+      if (positions.posList[i].id == posID) {
+        posRankIndex = i;
+      }
+    }
 
-  // const moveDown = async (posID: string) => {
-  //     let posRankIndex = 0;
-  //     for (let i = 0; i < positions.posList.length; i++) {
-  //         if (positions.posList[i].id == posID) {
-  //             posRankIndex = i;
-  //         }
-  //     }
+    var temp = positions.posList[posRankIndex - 1];
+    positions.posList[posRankIndex - 1] = positions.posList[posRankIndex];
+    positions.posList[posRankIndex] = temp;
 
-  //     var temp = positions.posList[posRankIndex - 1];
-  //     positions.posList[posRankIndex - 1] = positions.posList[posRankIndex];
-  //     positions.posList[posRankIndex] = temp;
+    const fdata = new FormData();
+    fdata.append("id", posID);
+    fdata.append("dir", "up");
 
-  //     let posIds = positions.posList.map(val => val.id);
+    await fetch("?/move", {
+      method: "post",
+      body: fdata,
+    });
+  };
 
-  //     const fdata = new FormData();
-  //     fdata.append("posIds", JSON.stringify({ positions: posIds }));
-
-  //     await fetch("?/update", {
-  //         method: "post",
-  //         body: fdata
-  //     });
-  // }
-
-  let leftWidth = $derived(data.lotteryResult ? " w-full" : " w-72");
+  let leftWidth = $derived(
+    data.lotteryResult ? " w-full" : positions.posList.length == 0 ? " w-72" : " min-w-[32rem] w-full"
+  );
 </script>
 
 <Navbar loggedIn={true} isHost={false} isAdmin={false} />
@@ -142,8 +143,90 @@
           </Accordion.Content>
         </Accordion.Item>
       </Accordion.Root>
+    {:else if positions.posList.length != 0}
+      <!-- Show student's position selections -->
+      <h1 class="text-2xl pb-4 w-full px-4">My Favorite Jobs</h1>
+      <Button href="/dashboard/student/pick" class="mb-4 mx-4">
+        Browse All Positions
+      </Button>
+      <Accordion.Root type="multiple" class="w-full px-4">
+        {#each positions.posList as position, i}
+          <Accordion.Item value={position.id} class="my-2 relative">
+            {#if data.studentSignupsEnabled}
+              {#if i != positions.posList.length - 1}
+                <ArrowBigDown
+                  class={"absolute left-5 hover:cursor-pointer" +
+                    (i == 0 ? " top-12" : " top-20")}
+                  size={32}
+                  onclick={() => moveUp(position.id)}
+                />
+              {/if}
+              {#if i != 0}
+                <ArrowBigUp
+                  class="absolute top-12 left-5 hover:cursor-pointer"
+                  size={32}
+                  onclick={() => moveDown(position.id)}
+                />
+              {/if}
+              <Trash2Icon
+                class="absolute left-[20px] top-3 hover:cursor-pointer"
+                onclick={() => deletePosition(position.id)}
+                size={32}
+              />
+            {/if}
+            <Accordion.Trigger
+              class={"text-xl text-left bg-slate-100 hover:bg-slate-200 rounded-t-sm px-5" +
+                (i == positions.posList.length - 1 || i == 0
+                  ? " h-[90px]"
+                  : " h-[120px]")}
+            >
+              <span class="pl-12 pr-2"
+                >{position.host?.company?.companyName} - {position.title}</span
+              >
+            </Accordion.Trigger>
+            <Accordion.Content class="px-5">
+              <p class="mt-1">Career: {position.career}</p>
+              <br />
+              <p class="mt-1">
+                Description: {position.host?.company?.companyDescription}
+              </p>
+              <p class="mt-1">URL: {position.host?.company?.companyUrl}</p>
+              <p class=""># of slots for students: {position.slots}</p>
+
+              <hr class="my-2" />
+
+              <p class=" whitespace-pre-line">
+                Address:
+                {position.address}
+
+                Summary:
+                {position.summary}
+
+                Instructions For Students:
+                {position.instructions}
+
+                Attire:
+                {position.attire}
+              </p>
+
+              <hr class="my-2" />
+
+              <p class="">Arrival: {position.arrival}</p>
+              <p class="">Start: {position.start}</p>
+              <p class="">End: {position.end}</p>
+            </Accordion.Content>
+          </Accordion.Item>
+        {/each}
+      </Accordion.Root>
     {:else}
       <div class="text-center mt-4 md:mt-0 px-4">
+        <h1 class="text-2xl pb-4">My Favorite Jobs</h1>
+        <p class="text-gray-600 mb-4">No favorite jobs selected yet.</p>
+        {#if data.studentSignupsEnabled && data.permissionSlipCompleted}
+          <Button href="/dashboard/student/pick">Browse Positions</Button>
+        {/if}
+      </div>
+      <div class="text-center mt-8 md:mt-0 px-4">
         <h1 class="text-xl font-semibold text-gray-800 mb-4">
           Job Assignment Status
         </h1>

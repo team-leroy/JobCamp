@@ -41,6 +41,7 @@ export const load: PageServerLoad = async (event) => {
 
     const eventEnabled = activeEvent?.eventEnabled ?? false;
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
+    const studentSignupsEnabled = activeEvent?.studentSignupsEnabled ?? false;
     const lotteryPublished = activeEvent?.lotteryPublished ?? false;
 
     // Only show lottery results if event is enabled AND lottery is published
@@ -49,16 +50,37 @@ export const load: PageServerLoad = async (event) => {
     // Get permission slip status for the active event
     const permissionSlipStatus = await getPermissionSlipStatus(student.id, student.schoolId!);
 
+    // Load student's position selections
+    const positionsOnStudents = await prisma.positionsOnStudents.findMany({
+        where: { studentId: student.id },
+        orderBy: { rank: "asc" },
+        include: {
+            position: {
+                include: {
+                    host: {
+                        include: {
+                            company: true
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const positions = positionsOnStudents.map(pos => pos.position);
+
     return { 
         lotteryResult: showLotteryResult ? student.lotteryResult : null, 
         permissionSlipCompleted: permissionSlipStatus.hasPermissionSlip, 
         parentEmail: student.parentEmail,
         eventEnabled,
         studentAccountsEnabled,
+        studentSignupsEnabled,
         lotteryPublished,
         showLotteryResult,
         activeEventName: permissionSlipStatus.eventName,
-        hasActiveEvent: permissionSlipStatus.hasActiveEvent
+        hasActiveEvent: permissionSlipStatus.hasActiveEvent,
+        positions
     };
 };
 
@@ -130,4 +152,106 @@ export const actions: Actions = {
             })
         ]);
     },
-}
+    deletePosition: async({ request, locals }) => {
+        const data = await request.formData();
+
+        const posId = data.get("id")?.toString();
+        if (!posId) {
+            redirect(302, "/about");
+        }
+
+        const id = locals.user?.id;
+        if (!id) {
+            redirect(302, "/login");
+        }
+
+        const student = await prisma.student.findFirst({where: {userId: id}});
+        const studentId = student?.id;
+        if (!studentId) {
+            redirect(302, "/login");
+        }
+
+        await prisma.positionsOnStudents.delete({
+            where: {
+                studentId_positionId: {
+                    studentId: studentId,
+                    positionId: posId
+                }
+            }
+        });
+
+        // Update ranks
+        const remainingPositions = await prisma.positionsOnStudents.findMany({
+            where: { studentId: studentId },
+            orderBy: { rank: "asc" }
+        });
+
+        await prisma.$transaction(
+            remainingPositions.map((pos, index) =>
+                prisma.positionsOnStudents.update({
+                    where: {
+                        studentId_positionId: {
+                            studentId: studentId,
+                            positionId: pos.positionId
+                        }
+                    },
+                    data: { rank: index }
+                })
+            )
+        );
+    },
+    move: async({ request, locals }) => {
+        const data = await request.formData();
+
+        const posId = data.get("id")?.toString();
+        const dir = data.get("dir")?.toString();
+        
+        if (!posId || !dir) {
+            redirect(302, "/about");
+        }
+
+        const id = locals.user?.id;
+        if (!id) {
+            redirect(302, "/login");
+        }
+
+        const student = await prisma.student.findFirst({where: {userId: id}});
+        const studentId = student?.id;
+        if (!studentId) {
+            redirect(302, "/login");
+        }
+
+        const positions = await prisma.positionsOnStudents.findMany({
+            where: { studentId: studentId },
+            orderBy: { rank: "asc" }
+        });
+
+        const currentIndex = positions.findIndex(p => p.positionId === posId);
+        if (currentIndex === -1) return;
+
+        const newIndex = dir === "up" ? currentIndex - 1 : currentIndex + 1;
+        if (newIndex < 0 || newIndex >= positions.length) return;
+
+        // Swap ranks
+        await prisma.$transaction([
+            prisma.positionsOnStudents.update({
+                where: {
+                    studentId_positionId: {
+                        studentId: studentId,
+                        positionId: positions[currentIndex].positionId
+                    }
+                },
+                data: { rank: newIndex }
+            }),
+            prisma.positionsOnStudents.update({
+                where: {
+                    studentId_positionId: {
+                        studentId: studentId,
+                        positionId: positions[newIndex].positionId
+                    }
+                },
+                data: { rank: currentIndex }
+            })
+        ]);
+    },
+};
