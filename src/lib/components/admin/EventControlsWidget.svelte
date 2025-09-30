@@ -48,17 +48,26 @@
     const newValue = !currentValue;
     isUpdating = true;
 
+    console.log(`🔄 Attempting to change ${control} from ${currentValue} to ${newValue}`);
+
     try {
       const formData = new FormData();
       formData.append("controlType", control);
       formData.append("enabled", newValue.toString());
 
-      const response = await fetch("?/updateEventControls", {
+      console.log(`📤 Sending request for ${control} = ${newValue}`);
+
+      const response = await fetch("/dashboard/admin?/updateEventControls", {
         method: "POST",
         body: formData,
       });
 
+      console.log(`📥 Response status: ${response.status}`);
+
       if (response.ok) {
+        const result = await response.json();
+        console.log(`✅ Update successful:`, result);
+        
         // Update local state to reflect the change
         switch (control) {
           case "event":
@@ -84,11 +93,12 @@
             break;
         }
       } else {
-        console.error("Failed to update event control");
+        const errorText = await response.text();
+        console.error(`❌ Failed to update event control: ${response.status} - ${errorText}`);
         // Optionally show error message to user
       }
     } catch (error) {
-      console.error("Error updating event control:", error);
+      console.error("❌ Error updating event control:", error);
     } finally {
       isUpdating = false;
     }
