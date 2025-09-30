@@ -143,8 +143,10 @@
     </form>
     <a href="/reset-password" class="underline text-blue-500">Forgot Password?</a>
     <a href="/signup" class="underline text-blue-500">Do you want to signup?</a>
+  {:else if !data.studentAccountsEnabled && !data.companyAccountsEnabled}
+    <!-- Both account types disabled - don't show additional message since we already have one above -->
   {:else}
-    <!-- No Login Available - Show appropriate message -->
+    <!-- No Login Available - Show appropriate message for other cases -->
     <div class="max-w-md mx-4 p-6 bg-gray-50 border-l-4 border-gray-400 rounded-lg text-center">
       <h2 class="text-lg font-semibold text-gray-800 mb-2">
         Login Not Available
@@ -154,8 +156,6 @@
           There is currently no active JobCamp event. Please check back when the next event is announced.
         {:else if !data.eventEnabled}
           {data.eventName || "JobCamp"} is currently in preparation. Student and company access will be available soon.
-        {:else if !data.studentAccountsEnabled && !data.companyAccountsEnabled}
-          Student and company accounts are currently disabled for {data.eventName || "this event"}. This may be during event preparation or maintenance.
         {/if}
       </p>
       <p class="text-gray-600 text-xs">
