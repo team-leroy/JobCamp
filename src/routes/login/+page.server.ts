@@ -95,13 +95,13 @@ export const actions: Actions = {
             const isStudent = existingUser.student !== null;
             const isCompany = existingUser.host !== null;
             
-            if (isStudent && !studentAccountsEnabled) {
-                return message(form, `Student accounts are currently disabled for ${activeEvent?.name || "this event"}. Please check back later or contact an administrator.`);
-            }
-            
-            if (isCompany && !companyAccountsEnabled) {
-                return message(form, `Company accounts are currently disabled for ${activeEvent?.name || "this event"}. Please check back later or contact an administrator.`);
-            }
+                    if (isStudent && !studentAccountsEnabled) {
+                        return message(form, `Student accounts are currently disabled for ${activeEvent?.name || "this event"}. Please check back later.`);
+                    }
+                    
+                    if (isCompany && !companyAccountsEnabled) {
+                        return message(form, `Company accounts are currently disabled for ${activeEvent?.name || "this event"}. Please check back later.`);
+                    }
         }
 
         // If we get here, the user is allowed to login - now actually log them in
