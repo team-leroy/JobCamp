@@ -170,19 +170,47 @@
             </p>
           </div>
         {:else}
-          <!-- Position selection is available - redirect to pick page -->
-          <div class="p-4 bg-green-50 border-l-4 border-green-400 rounded-lg">
+          <!-- Position selection is available - show current selections and pick interface -->
+          <div class="p-4 bg-green-50 border-l-4 border-green-400 rounded-lg mb-4">
             <p class="text-green-700 mb-4">
               <strong>Position selection is now available!</strong><br />
-              You can now select your preferred job positions.
+              You can select and reorder your preferred job positions.
             </p>
             <a 
               href="/dashboard/student/pick" 
               class="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
             >
-              Select Job Positions
+              Select/Reorder Job Positions
             </a>
           </div>
+          
+          <!-- Show current selections if any -->
+          {#if data.currentSelections && data.currentSelections.length > 0}
+            <div class="mt-4">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Your Current Position Selections:</h3>
+              <div class="space-y-2">
+                {#each data.currentSelections as selection, index}
+                  <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                    <div class="flex items-center space-x-3">
+                      <span class="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
+                        #{index + 1}
+                      </span>
+                      <div>
+                        <p class="font-medium text-gray-900">{selection.title}</p>
+                        <p class="text-sm text-gray-600">{selection.companyName} • {selection.career}</p>
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {:else}
+            <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p class="text-yellow-800 text-sm">
+                <strong>No positions selected yet.</strong> Click the button above to start selecting your preferred job positions.
+              </p>
+            </div>
+          {/if}
         {/if}
       </div>
     {/if}

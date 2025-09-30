@@ -50,6 +50,34 @@ export const load: PageServerLoad = async (event) => {
     // Get permission slip status for the active event
     const permissionSlipStatus = await getPermissionSlipStatus(student.id, student.schoolId!);
 
+    // Load current position selections if student signups are enabled
+    let currentSelections = [];
+    if (studentSignupsEnabled && activeEvent) {
+        const positionsOnStudents = await prisma.positionsOnStudents.findMany({ 
+            where: { studentId: student.id },
+            include: {
+                position: {
+                    include: {
+                        host: {
+                            include: {
+                                company: true
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: { rank: 'asc' }
+        });
+        
+        currentSelections = positionsOnStudents.map(pos => ({
+            id: pos.position.id,
+            title: pos.position.title,
+            career: pos.position.career,
+            companyName: pos.position.host?.company?.companyName,
+            rank: pos.rank
+        }));
+    }
+
     return { 
         lotteryResult: showLotteryResult ? student.lotteryResult : null, 
         permissionSlipCompleted: permissionSlipStatus.hasPermissionSlip, 
@@ -60,7 +88,8 @@ export const load: PageServerLoad = async (event) => {
         lotteryPublished,
         showLotteryResult,
         activeEventName: permissionSlipStatus.eventName,
-        hasActiveEvent: permissionSlipStatus.hasActiveEvent
+        hasActiveEvent: permissionSlipStatus.hasActiveEvent,
+        currentSelections
     };
 };
 
