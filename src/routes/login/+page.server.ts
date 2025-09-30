@@ -73,7 +73,8 @@ export const actions: Actions = {
 
         // Check password without logging in
         const { scrypt } = await import('node:crypto');
-        const validPassword = await scrypt.verify(form.data.password, existingUser.passwordSalt, existingUser.passwordHash);
+        const passwordHash = await scrypt(form.data.password, existingUser.passwordSalt, 64);
+        const validPassword = passwordHash.equals(Buffer.from(existingUser.passwordHash, 'hex'));
         if (!validPassword) {
             return message(form, "Incorrect Email or Password.");
         }
