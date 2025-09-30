@@ -27,6 +27,7 @@ describe('getNavbarData Function', () => {
         eventEnabled: false,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
+        companySignupsEnabled: false,
         showSignupLogin: false,
         eventName: null
       });
@@ -50,6 +51,7 @@ describe('getNavbarData Function', () => {
         eventEnabled: false,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true,
+        companySignupsEnabled: false,
         showSignupLogin: false,
         eventName: 'Test Event'
       });
@@ -73,6 +75,7 @@ describe('getNavbarData Function', () => {
         eventEnabled: true,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
+        companySignupsEnabled: false,
         showSignupLogin: false,
         eventName: 'Test Event'
       });
@@ -96,6 +99,7 @@ describe('getNavbarData Function', () => {
         eventEnabled: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: false,
+        companySignupsEnabled: false,
         showSignupLogin: true,
         eventName: 'Test Event'
       });
@@ -119,6 +123,7 @@ describe('getNavbarData Function', () => {
         eventEnabled: true,
         studentAccountsEnabled: false,
         companyAccountsEnabled: true,
+        companySignupsEnabled: false,
         showSignupLogin: true,
         eventName: 'Test Event'
       });
@@ -142,6 +147,7 @@ describe('getNavbarData Function', () => {
         eventEnabled: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true,
+        companySignupsEnabled: false,
         showSignupLogin: true,
         eventName: 'Test Event'
       });
@@ -167,6 +173,7 @@ describe('getNavbarData Function', () => {
         eventEnabled: false,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
+        companySignupsEnabled: false,
         showSignupLogin: false,
         eventName: 'Test Event'
       });
@@ -190,6 +197,7 @@ describe('getNavbarData Function', () => {
         eventEnabled: false,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
+        companySignupsEnabled: false,
         showSignupLogin: false,
         eventName: 'Test Event'
       });

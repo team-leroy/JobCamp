@@ -93,6 +93,7 @@ export const actions: Actions = {
         const fieldMap: Record<string, string> = {
             'event': 'eventEnabled',
             'companyAccounts': 'companyAccountsEnabled',
+            'companySignups': 'companySignupsEnabled',
             'studentAccounts': 'studentAccountsEnabled',
             'studentSignups': 'studentSignupsEnabled',
             'lotteryPublished': 'lotteryPublished',

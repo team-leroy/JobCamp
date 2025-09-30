@@ -16,6 +16,7 @@ model Event {
   isArchived              Boolean                    @default(false)
   name                    String?
   companyAccountsEnabled  Boolean                    @default(false)
+  companySignupsEnabled   Boolean                    @default(false)
   eventEnabled            Boolean                    @default(false)
   lotteryPublished        Boolean                    @default(false)
   studentAccountsEnabled  Boolean                    @default(false)

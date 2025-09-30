@@ -8,6 +8,7 @@ export interface EventData {
   // Event Controls
   eventEnabled?: boolean;
   companyAccountsEnabled?: boolean;
+  companySignupsEnabled?: boolean;
   studentAccountsEnabled?: boolean;
   studentSignupsEnabled?: boolean;
   lotteryPublished?: boolean;
@@ -25,6 +26,7 @@ export interface EventWithStats {
   // Event Controls
   eventEnabled: boolean;
   companyAccountsEnabled: boolean;
+  companySignupsEnabled: boolean;
   studentAccountsEnabled: boolean;
   studentSignupsEnabled: boolean;
   lotteryPublished: boolean;
@@ -161,6 +163,7 @@ export async function createEvent(
       // Event Controls - new events start in draft mode (all disabled)
       eventEnabled: eventData.eventEnabled ?? false,
       companyAccountsEnabled: eventData.companyAccountsEnabled ?? false,
+      companySignupsEnabled: eventData.companySignupsEnabled ?? false,
       studentAccountsEnabled: eventData.studentAccountsEnabled ?? false,
       studentSignupsEnabled: eventData.studentSignupsEnabled ?? false,
       lotteryPublished: eventData.lotteryPublished ?? false,
@@ -242,6 +245,7 @@ export async function createEvent(
     // Event Controls
     eventEnabled: eventWithStats!.eventEnabled,
     companyAccountsEnabled: eventWithStats!.companyAccountsEnabled,
+    companySignupsEnabled: eventWithStats!.companySignupsEnabled,
     studentAccountsEnabled: eventWithStats!.studentAccountsEnabled,
     studentSignupsEnabled: eventWithStats!.studentSignupsEnabled,
     lotteryPublished: eventWithStats!.lotteryPublished,

@@ -11,6 +11,7 @@ export async function getNavbarData() {
     const eventEnabled = Boolean(activeEvent?.eventEnabled);
     const studentAccountsEnabled = Boolean(activeEvent?.studentAccountsEnabled);
     const companyAccountsEnabled = Boolean(activeEvent?.companyAccountsEnabled);
+    const companySignupsEnabled = Boolean(activeEvent?.companySignupsEnabled);
     const seasonActive = activeEvent && eventEnabled;
 
     // Determine if signup/login should be shown
@@ -22,6 +23,7 @@ export async function getNavbarData() {
         eventEnabled: Boolean(eventEnabled),
         studentAccountsEnabled: Boolean(studentAccountsEnabled),
         companyAccountsEnabled: Boolean(companyAccountsEnabled),
+        companySignupsEnabled: Boolean(companySignupsEnabled),
         showSignupLogin: Boolean(showSignupLogin)
     };
 }

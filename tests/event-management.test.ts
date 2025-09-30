@@ -280,6 +280,7 @@ describe('Event Management Functions', () => {
         // Event Controls - new events start in draft mode (all disabled)
         eventEnabled: false,
         companyAccountsEnabled: false,
+        companySignupsEnabled: false,
         studentAccountsEnabled: false,
         studentSignupsEnabled: false,
         lotteryPublished: false,
@@ -308,6 +309,7 @@ describe('Event Management Functions', () => {
         // Event Controls - new events start in draft mode (all disabled)
         eventEnabled: false,
         companyAccountsEnabled: false,
+        companySignupsEnabled: false,
         studentAccountsEnabled: false,
         studentSignupsEnabled: false,
         lotteryPublished: false,
@@ -330,6 +332,7 @@ describe('Event Management Functions', () => {
           // Event Controls - new events start in draft mode (all disabled)
           eventEnabled: false,
           companyAccountsEnabled: false,
+          companySignupsEnabled: false,
           studentAccountsEnabled: false,
           studentSignupsEnabled: false,
           lotteryPublished: false,
@@ -377,6 +380,7 @@ describe('Event Management Functions', () => {
           // Event Controls - new events start in draft mode (all disabled)
           eventEnabled: false,
           companyAccountsEnabled: false,
+          companySignupsEnabled: false,
           studentAccountsEnabled: false,
           studentSignupsEnabled: false,
           lotteryPublished: false,
@@ -846,6 +850,7 @@ describe('Event Management Functions', () => {
             // Event Controls - new events start in draft mode (all disabled)
             eventEnabled: false,
             companyAccountsEnabled: false,
+            companySignupsEnabled: false,
             studentAccountsEnabled: false,
             studentSignupsEnabled: false,
             lotteryPublished: false,

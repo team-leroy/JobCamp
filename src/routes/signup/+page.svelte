@@ -9,6 +9,11 @@
   }
 
   let { data }: Props = $props();
+  const {
+    studentAccountsEnabled,
+    companyAccountsEnabled,
+    companySignupsEnabled,
+  } = data;
 
   const studentSignup = () => {
     goto("/signup/student");
@@ -19,9 +24,9 @@
   };
 </script>
 
-<Navbar 
-  isHost={false} 
-  loggedIn={false} 
+<Navbar
+  isHost={false}
+  loggedIn={false}
   isAdmin={false}
   showSignupLogin={data.showSignupLogin}
   studentAccountsEnabled={data.studentAccountsEnabled}
@@ -37,13 +42,25 @@
   >
     <h1 class="text-5xl">Sign Up</h1>
     <div class="flex flex-col justify-center items-center gap-2">
-      <Button class="w-32 text-lg" onclick={studentSignup}>Student</Button>
-      <Button disabled class="w-32 text-lg" onclick={companySignup}
-        >Company</Button
+      <Button
+        class="w-32 text-lg"
+        onclick={studentSignup}
+        disabled={!studentAccountsEnabled}
       >
-      <span class="text-sm italic w-40 text-center"
-        >*The company signup window has past.</span
+        Student
+      </Button>
+      <Button
+        class="w-32 text-lg"
+        onclick={companySignup}
+        disabled={!companyAccountsEnabled || !companySignupsEnabled}
       >
+        Company
+      </Button>
+      {#if !companySignupsEnabled && companyAccountsEnabled}
+        <span class="text-sm italic w-40 text-center text-gray-600">
+          Company signups are currently disabled
+        </span>
+      {/if}
     </div>
     <a href="/login" class="text-lg">I already have an account</a>
   </div>
