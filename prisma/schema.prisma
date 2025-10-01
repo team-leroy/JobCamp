@@ -53,6 +53,7 @@ model Position {
   address           String                @db.VarChar(1024)
   instructions      String                @db.VarChar(1024)
   attire            String                @db.VarChar(1024)
+  createdAt         DateTime              @default(now())
   arrival           String
   start             String
   end               String
@@ -107,6 +108,7 @@ model PositionsOnStudents {
   positionId String
   studentId  String
   rank       Int
+  createdAt  DateTime @default(now())
   position   Position @relation(fields: [positionId], references: [id])
   student    Student  @relation(fields: [studentId], references: [id])
 
@@ -132,6 +134,7 @@ model Host {
   name      String
   companyId String?
   userId    String     @unique
+  createdAt DateTime   @default(now())
   company   Company?   @relation(fields: [companyId], references: [id])
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   positions Position[]
@@ -146,6 +149,7 @@ model User {
   passwordSalt   String
   emailVerified  Boolean   @default(false)
   lastLogin      DateTime
+  createdAt      DateTime  @default(now())
   host           Host?
   sessions       Session[]
   student        Student?
