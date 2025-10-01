@@ -261,35 +261,6 @@
           <Button href="/dashboard/student/pick">Browse Positions</Button>
         {/if}
       </div>
-      <div class="text-center mt-8 md:mt-0 px-4">
-        <h1 class="text-xl font-semibold text-gray-800 mb-4">
-          Job Assignment Status
-        </h1>
-        {#if !data.eventEnabled}
-          <div class="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
-            <p class="text-yellow-700">
-              <strong>Event is currently in draft mode.</strong><br />
-              Job assignments are not yet available. Please contact your administrator
-              for more information.
-            </p>
-          </div>
-        {:else if !data.lotteryPublished}
-          <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
-            <p class="text-blue-700">
-              <strong>Job assignments have not been published yet.</strong><br
-              />
-              Please check back later or contact your administrator for updates.
-            </p>
-          </div>
-        {:else}
-          <div class="p-4 bg-gray-50 border-l-4 border-gray-400 rounded-lg">
-            <p class="text-gray-700">
-              No job assignment found. Please contact your administrator if you
-              believe this is an error.
-            </p>
-          </div>
-        {/if}
-      </div>
     {/if}
   </div>
   <div class="flex flex-col w-full md:border-l-2 md:border-l-slate-950">
