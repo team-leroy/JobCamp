@@ -119,7 +119,9 @@ describe('Admin Dashboard Statistics', () => {
       isActive: true,
       isArchived: false,
       displayLotteryResults: true,
-      schoolId: 'school-1'
+      schoolId: 'school-1',
+      createdAt: new Date('2024-01-01T08:00:00Z'),
+      activatedAt: new Date('2024-01-01T08:00:00Z')
     };
 
     beforeEach(() => {
@@ -220,7 +222,7 @@ describe('Admin Dashboard Statistics', () => {
           host: {
             user: {
               lastLogin: {
-                gte: new Date(currentYear, 0, 1)
+                gte: mockActiveEvent.activatedAt
               }
             }
           }
@@ -240,7 +242,7 @@ describe('Admin Dashboard Statistics', () => {
           host: {
             user: {
               lastLogin: {
-                gte: new Date(currentYear, 0, 1)
+                gte: mockActiveEvent.activatedAt
               }
             }
           }
@@ -259,7 +261,9 @@ describe('Admin Dashboard Statistics', () => {
         isActive: true,
         isArchived: false,
         displayLotteryResults: true,
-        schoolId: 'school-1'
+        schoolId: 'school-1',
+        createdAt: new Date('2024-01-01T08:00:00Z'),
+        activatedAt: new Date('2024-01-01T08:00:00Z')
       };
 
       vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);
@@ -283,7 +287,9 @@ describe('Admin Dashboard Statistics', () => {
         isActive: true,
         isArchived: false,
         displayLotteryResults: true,
-        schoolId: 'school-1'
+        schoolId: 'school-1',
+        createdAt: new Date('2024-01-01T08:00:00Z'),
+        activatedAt: new Date('2024-01-01T08:00:00Z')
       };
 
       vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);

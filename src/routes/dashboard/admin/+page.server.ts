@@ -140,11 +140,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     // Company Statistics (only if there's an active event)
     if (upcomingEvent) {
+        // Use event activation date if available, otherwise use event creation date
+        const eventStartDate = upcomingEvent.activatedAt || upcomingEvent.createdAt;
+        
         const [
             totalCompanies,
-            companiesLoggedInThisYear,
-            positionsThisYear,
-            slotsThisYear
+            companiesLoggedInThisEvent,
+            positionsThisEvent,
+            slotsThisEvent
         ] = await Promise.all([
             // Total companies present in the DB
             prisma.company.count({
@@ -153,7 +156,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Companies logged in during the current calendar year (Jan-Dec of this year)
+            // Companies logged in since event activation
             prisma.company.count({
                 where: { 
                     schoolId: { in: schoolIds },
@@ -161,7 +164,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                         some: {
                             user: {
                                 lastLogin: {
-                                    gte: new Date(currentYear, 0, 1)
+                                    gte: eventStartDate
                                 }
                             }
                         }
@@ -169,28 +172,28 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Positions for active event (only for companies logged in this year)
+            // Positions for active event (only for companies logged in since event activation)
             prisma.position.count({
                 where: {
                     eventId: upcomingEvent.id,
                     host: {
                         user: {
                             lastLogin: {
-                                gte: new Date(currentYear, 0, 1)
+                                gte: eventStartDate
                             }
                         }
                     }
                 }
             }),
             
-            // Slots for active event (only for companies logged in this year)
+            // Slots for active event (only for companies logged in since event activation)
             prisma.position.aggregate({
                 where: {
                     eventId: upcomingEvent.id,
                     host: {
                         user: {
                             lastLogin: {
-                                gte: new Date(currentYear, 0, 1)
+                                gte: eventStartDate
                             }
                         }
                     }
@@ -201,9 +204,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
         companyStats = {
             totalCompanies,
-            companiesLoggedInThisYear,
-            positionsThisYear,
-            slotsThisYear
+            companiesLoggedInThisYear: companiesLoggedInThisEvent,
+            positionsThisYear: positionsThisEvent,
+            slotsThisYear: slotsThisEvent
         };
     } else {
         // No active event - return empty stats

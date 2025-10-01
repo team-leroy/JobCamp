@@ -23,6 +23,8 @@ export interface EventWithStats {
   isArchived: boolean;
   displayLotteryResults: boolean;
   schoolId: string;
+  createdAt: Date;
+  activatedAt: Date | null;
   // Event Controls
   eventEnabled: boolean;
   companyAccountsEnabled: boolean;
@@ -72,9 +74,12 @@ export async function getSchoolEvents(
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
     schoolId: event.schoolId,
+    createdAt: event.createdAt,
+    activatedAt: event.activatedAt,
     // Event Controls
     eventEnabled: event.eventEnabled,
     companyAccountsEnabled: event.companyAccountsEnabled,
+    companySignupsEnabled: event.companySignupsEnabled,
     studentAccountsEnabled: event.studentAccountsEnabled,
     studentSignupsEnabled: event.studentSignupsEnabled,
     lotteryPublished: event.lotteryPublished,
@@ -123,9 +128,12 @@ export async function getActiveEvent(schoolId: string): Promise<EventWithStats |
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
     schoolId: event.schoolId,
+    createdAt: event.createdAt,
+    activatedAt: event.activatedAt,
     // Event Controls
     eventEnabled: event.eventEnabled,
     companyAccountsEnabled: event.companyAccountsEnabled,
+    companySignupsEnabled: event.companySignupsEnabled,
     studentAccountsEnabled: event.studentAccountsEnabled,
     studentSignupsEnabled: event.studentSignupsEnabled,
     lotteryPublished: event.lotteryPublished,
@@ -242,6 +250,8 @@ export async function createEvent(
     isArchived: eventWithStats!.isArchived,
     displayLotteryResults: eventWithStats!.displayLotteryResults,
     schoolId: eventWithStats!.schoolId,
+    createdAt: eventWithStats!.createdAt,
+    activatedAt: eventWithStats!.activatedAt,
     // Event Controls
     eventEnabled: eventWithStats!.eventEnabled,
     companyAccountsEnabled: eventWithStats!.companyAccountsEnabled,
@@ -280,7 +290,10 @@ export async function activateEvent(eventId: string, schoolId: string): Promise<
   // Then activate the specified event
   const event = await prisma.event.update({
     where: { id: eventId },
-    data: { isActive: true },
+    data: { 
+      isActive: true,
+      activatedAt: new Date()
+    },
     include: {
       positions: {
         select: {
@@ -302,6 +315,16 @@ export async function activateEvent(eventId: string, schoolId: string): Promise<
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
     schoolId: event.schoolId,
+    createdAt: event.createdAt,
+    activatedAt: event.activatedAt,
+    // Event Controls
+    eventEnabled: event.eventEnabled,
+    companyAccountsEnabled: event.companyAccountsEnabled,
+    companySignupsEnabled: event.companySignupsEnabled,
+    studentAccountsEnabled: event.studentAccountsEnabled,
+    studentSignupsEnabled: event.studentSignupsEnabled,
+    lotteryPublished: event.lotteryPublished,
+    companyDirectoryEnabled: event.companyDirectoryEnabled,
     stats: {
       totalPositions: event.positions.length,
       totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
@@ -345,6 +368,16 @@ export async function archiveEvent(eventId: string): Promise<EventWithStats> {
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
     schoolId: event.schoolId,
+    createdAt: event.createdAt,
+    activatedAt: event.activatedAt,
+    // Event Controls
+    eventEnabled: event.eventEnabled,
+    companyAccountsEnabled: event.companyAccountsEnabled,
+    companySignupsEnabled: event.companySignupsEnabled,
+    studentAccountsEnabled: event.studentAccountsEnabled,
+    studentSignupsEnabled: event.studentSignupsEnabled,
+    lotteryPublished: event.lotteryPublished,
+    companyDirectoryEnabled: event.companyDirectoryEnabled,
     stats: {
       totalPositions: event.positions.length,
       totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),
@@ -394,6 +427,16 @@ export async function updateEvent(
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
     schoolId: event.schoolId,
+    createdAt: event.createdAt,
+    activatedAt: event.activatedAt,
+    // Event Controls
+    eventEnabled: event.eventEnabled,
+    companyAccountsEnabled: event.companyAccountsEnabled,
+    companySignupsEnabled: event.companySignupsEnabled,
+    studentAccountsEnabled: event.studentAccountsEnabled,
+    studentSignupsEnabled: event.studentSignupsEnabled,
+    lotteryPublished: event.lotteryPublished,
+    companyDirectoryEnabled: event.companyDirectoryEnabled,
     stats: {
       totalPositions: event.positions.length,
       totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0),

@@ -22,6 +22,8 @@ model Event {
   studentAccountsEnabled  Boolean                    @default(false)
   studentSignupsEnabled   Boolean                    @default(false)
   companyDirectoryEnabled Boolean                    @default(false)
+  createdAt               DateTime                   @default(now())
+  activatedAt             DateTime?
   school                  School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   lotteryJobs             LotteryJob[]
   positions               Position[]

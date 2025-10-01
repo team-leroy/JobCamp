@@ -568,7 +568,10 @@ describe('Event Management Functions', () => {
 
       expect(vi.mocked(prisma).event.update).toHaveBeenCalledWith({
         where: { id: testEventId },
-        data: { isActive: true },
+        data: { 
+          isActive: true,
+          activatedAt: expect.any(Date)
+        },
         include: {
           positions: {
             select: {
@@ -922,7 +925,10 @@ describe('Event Management Functions', () => {
 
         expect(vi.mocked(prisma).event.update).toHaveBeenCalledWith({
           where: { id: testEventId },
-          data: { isActive: true },
+          data: { 
+            isActive: true,
+            activatedAt: expect.any(Date)
+          },
           include: {
             positions: {
               select: {
