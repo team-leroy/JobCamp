@@ -14,18 +14,7 @@ export const load: PageServerLoad = async (event) => {
     }
 
     const student = await prisma.student.findFirst({ 
-        where: { userId: event.locals.user.id },
-        include: { 
-            lotteryResult: {
-                include: {
-                    host: {
-                        include: {
-                            company: true
-                        }
-                    }
-                }
-            },
-        }
+        where: { userId: event.locals.user.id }
     });
     
     if (!student) {
@@ -47,6 +36,43 @@ export const load: PageServerLoad = async (event) => {
     // Only show lottery results if event is enabled AND lottery is published
     const showLotteryResult = eventEnabled && lotteryPublished;
 
+    // Load lottery result from the new event-specific LotteryResults table
+    let lotteryResult = null;
+    if (showLotteryResult && activeEvent) {
+        // Find the most recent lottery job for this event
+        const lotteryJob = await prisma.lotteryJob.findFirst({
+            where: { eventId: activeEvent.id },
+            orderBy: { completedAt: 'desc' }
+        });
+
+        if (lotteryJob) {
+            // Find this student's result in that lottery job
+            const result = await prisma.lotteryResults.findFirst({
+                where: {
+                    studentId: student.id,
+                    lotteryJobId: lotteryJob.id
+                },
+                include: {
+                    lotteryJob: true
+                }
+            });
+
+            if (result) {
+                // Load the full position details
+                lotteryResult = await prisma.position.findUnique({
+                    where: { id: result.positionId },
+                    include: {
+                        host: {
+                            include: {
+                                company: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
     // Get permission slip status for the active event
     const permissionSlipStatus = await getPermissionSlipStatus(student.id, student.schoolId!);
 
@@ -54,7 +80,7 @@ export const load: PageServerLoad = async (event) => {
     const positionsOnStudents = await prisma.positionsOnStudents.findMany({
         where: { studentId: student.id },
         orderBy: { rank: "asc" },
-        include: {
+        include: { 
             position: {
                 include: {
                     host: {
@@ -70,7 +96,7 @@ export const load: PageServerLoad = async (event) => {
     const positions = positionsOnStudents.map(pos => pos.position);
 
     return { 
-        lotteryResult: showLotteryResult ? student.lotteryResult : null, 
+        lotteryResult, 
         permissionSlipCompleted: permissionSlipStatus.hasPermissionSlip, 
         parentEmail: student.parentEmail,
         eventEnabled,

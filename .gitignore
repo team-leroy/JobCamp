@@ -24,3 +24,5 @@ vite.config.ts.timestamp-*
 prisma/dev.sqlite
 # Development SSL certificates
 *.pem
+staging-backup-*.sql
+migrate-lottery-to-event-specific.sql
