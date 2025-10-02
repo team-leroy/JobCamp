@@ -174,9 +174,13 @@ export const actions: Actions = {
             }
 
             // Create the event (displayLotteryResults removed, defaulting to false)
+            // Parse the date as local time to avoid timezone issues
+            const [year, month, day] = eventDate.split('-').map(Number);
+            const localDate = new Date(year, month - 1, day); // month is 0-indexed
+            
             const eventData = {
                 name: eventName.trim(),
-                date: new Date(eventDate),
+                date: localDate,
                 displayLotteryResults: false, // Always false - controlled by Event Controls
                 carryForwardData
             };
@@ -189,11 +193,12 @@ export const actions: Actions = {
             };
         } catch (error) {
             console.error('Error creating event:', error);
-            console.error('Error details:', error.message);
-            console.error('Error stack:', error.stack);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error('Error details:', errorMessage);
+            console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
             return { 
                 success: false, 
-                message: `Failed to create event: ${error.message}` 
+                message: `Failed to create event: ${errorMessage}` 
             };
         }
     },

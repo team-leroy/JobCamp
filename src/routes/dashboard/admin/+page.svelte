@@ -41,6 +41,7 @@
                     year: "numeric",
                     month: "long",
                     day: "numeric",
+                    timeZone: "UTC"
                   }
                 )}`}
             </h3>
@@ -50,6 +51,7 @@
                 year: "numeric",
                 month: "long",
                 day: "numeric",
+                timeZone: "UTC"
               })}
             </p>
           </div>
@@ -82,6 +84,10 @@
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full {upcomingEvent.lotteryPublished ? 'bg-green-500' : 'bg-red-500'}"></span>
                   <span class="text-xs">Lottery {upcomingEvent.lotteryPublished ? 'Published' : 'Hidden'}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full {upcomingEvent.companyDirectoryEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                  <span class="text-xs">Company Directory {upcomingEvent.companyDirectoryEnabled ? 'Enabled' : 'Disabled'}</span>
                 </div>
               </div>
             </div>
