@@ -85,7 +85,7 @@ export const actions: Actions = {
             });
 
             // Redirect to admin dashboard after successful login
-            redirect(302, '/dashboard');
+            redirect(302, '/dashboard/admin');
         } catch (error) {
             // Check if this is a redirect (which is expected behavior)
             if (error && typeof error === 'object' && 'status' in error && 'location' in error) {

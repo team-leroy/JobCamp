@@ -3,7 +3,6 @@ import type { Actions } from "./$types";
 import { lucia } from "$lib/server/auth";
 import type { PageServerLoad } from "./$types";
 import { prisma } from "$lib/server/prisma";
-import { getNavbarData } from '$lib/server/navbarData';
 
 interface UserData {
     userInfo: {
@@ -107,7 +106,7 @@ export const actions: Actions = {
                 where: { id: locals.user.id },
                 include: { adminOfSchools: true }
             });
-            isAdmin = userInfo?.adminOfSchools?.length > 0;
+            isAdmin = (userInfo?.adminOfSchools?.length ?? 0) > 0;
         }
         
         if (locals.session) {
@@ -119,13 +118,8 @@ export const actions: Actions = {
         
         // Check if user is an admin and redirect accordingly
         if (isAdmin) {
-            // Check if regular user signup/login is enabled
-            const navbarData = await getNavbarData();
-            
-            if (!navbarData.showSignupLogin) {
-                // Regular signup/login disabled - redirect admin to admin login
-                redirect(302, "/admin/login");
-            }
+            // Always redirect admins to admin login, regardless of event controls
+            redirect(302, "/admin/login");
         }
         
         redirect(302, "/login");

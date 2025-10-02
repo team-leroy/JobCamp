@@ -958,11 +958,38 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             };
         }
 
+        // Get the event to determine activation date for filtering
+        const eventData = await prisma.event.findUnique({
+            where: { id: activeEventId },
+            select: { isActive: true, activatedAt: true, createdAt: true }
+        });
+        
+        const eventStartDate = eventData?.activatedAt || eventData?.createdAt;
+
         // Get all students with their choice data (for active event only)
+        // For active events, only include students who have logged in since event creation
+        const studentWhereClause: {
+            schoolId: { in: string[] };
+            user?: {
+                lastLogin: {
+                    gte: Date;
+                };
+            };
+        } = {
+            schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
+        };
+        
+        // Only filter by login date for active events
+        if (eventData?.isActive && eventStartDate) {
+            studentWhereClause.user = {
+                lastLogin: {
+                    gte: eventStartDate
+                }
+            };
+        }
+
         const students = await prisma.student.findMany({
-            where: {
-                schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
-            },
+            where: studentWhereClause,
             include: {
                 user: true,
                 positionsSignedUpFor: {
@@ -980,10 +1007,37 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         });
 
         // Get all companies with their activity data
+        // For active events, only include companies that have logged in since event creation
+        const companyWhereClause: {
+            schoolId: { in: string[] };
+            hosts?: {
+                some: {
+                    user: {
+                        lastLogin: {
+                            gte: Date;
+                        };
+                    };
+                };
+            };
+        } = {
+            schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
+        };
+        
+        // Only filter by login date for active events
+        if (eventData?.isActive && eventStartDate) {
+            companyWhereClause.hosts = {
+                some: {
+                    user: {
+                        lastLogin: {
+                            gte: eventStartDate
+                        }
+                    }
+                }
+            };
+        }
+
         const companies = await prisma.company.findMany({
-            where: {
-                schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
-            },
+            where: companyWhereClause,
             include: {
                 hosts: {
                     include: {
@@ -995,10 +1049,33 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         });
 
         // Get all positions from the active event
+        // For active events, only include positions from companies that have logged in since event creation
+        const positionWhereClause: {
+            eventId: string;
+            host?: {
+                user: {
+                    lastLogin: {
+                        gte: Date;
+                    };
+                };
+            };
+        } = {
+            eventId: activeEventId
+        };
+        
+        // Only filter by login date for active events
+        if (eventData?.isActive && eventStartDate) {
+            positionWhereClause.host = {
+                user: {
+                    lastLogin: {
+                        gte: eventStartDate
+                    }
+                }
+            };
+        }
+
         const positions = await prisma.position.findMany({
-            where: {
-                eventId: activeEventId
-            },
+            where: positionWhereClause,
             include: {
                 host: {
                     include: {
@@ -1023,12 +1100,10 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         const timelineStart = new Date(eventDate);
         timelineStart.setMonth(timelineStart.getMonth() - 3);
         
-        const daysBeforeEvent = Math.floor((eventDate.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
-        
-        const registrationStats: TimelineStats[] = [];
-        const choiceStats: TimelineStats[] = [];
-        const companyStats: TimelineStats[] = [];
-        const positionStats: TimelineStats[] = [];
+        let registrationStats: TimelineStats[] = [];
+        let choiceStats: TimelineStats[] = [];
+        let companyStats: TimelineStats[] = [];
+        let positionStats: TimelineStats[] = [];
 
         // Generate timeline data based on real student activity
         const studentUsers = students.filter(s => s.user);
@@ -1040,28 +1115,12 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             .filter(date => date && date >= timelineStart && date <= eventDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
-        // If no registration dates found in the timeline period, create realistic timeline
-        // based on the event date and student count
+        // If no registration dates found in the timeline period, return empty timeline
+        // Don't create fake data for active events with no activity
         if (registrationDates.length === 0) {
-            // Create a realistic registration timeline leading up to the event
-            const totalStudents = studentUsers.length;
-            const registrationPeriodDays = 90; // 3 months before event
-            let remainingStudents = totalStudents;
-            
-            for (let i = registrationPeriodDays; i >= 0; i--) {
-                const date = new Date(eventDate);
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                // More registrations closer to the event date
-                const registrationsToday = Math.floor(Math.random() * 3) + (i < 30 ? 2 : 0);
-                const actualRegistrations = Math.min(registrationsToday, remainingStudents);
-                
-                if (actualRegistrations > 0) {
-                    registrationStats.push({ date: dateStr, count: actualRegistrations });
-                    remainingStudents -= actualRegistrations;
-                }
-            }
+            // For active events with no registrations, return empty timeline
+            // For archived events, we might want to show some data, but for now keep it empty
+            registrationStats = [];
         } else {
             // Group registrations by date
             const registrationByDate = new Map();
@@ -1098,23 +1157,9 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 choiceStats.push({ date, count });
             });
         } else {
-            // Distribute choices across the timeline leading up to the event
-            let remainingChoices = totalChoices;
-            
-            for (let i = daysBeforeEvent; i >= 0; i--) {
-                const date = new Date(eventDate);
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                // More choices closer to the event date
-                const choicesToday = Math.floor(Math.random() * 5) + (i < 10 ? 3 : 0);
-                const actualChoices = Math.min(choicesToday, remainingChoices);
-                
-                if (actualChoices > 0) {
-                    choiceStats.push({ date: dateStr, count: actualChoices });
-                    remainingChoices -= actualChoices;
-                }
-            }
+            // For active events with no choices, return empty timeline
+            // Don't create fake data
+            choiceStats = [];
         }
 
         // Company engagement timeline (based on host createdAt dates)
@@ -1123,26 +1168,11 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             .filter(date => date && date >= timelineStart && date <= eventDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
-        // If no host activity dates found, create realistic company engagement timeline
+        // If no host activity dates found, return empty timeline
+        // Don't create fake data for active events with no activity
         if (hostActivityDates.length === 0) {
-            const totalCompanies = companies.length;
-            const companyPeriodDays = 120; // 4 months before event
-            let remainingCompanies = totalCompanies;
-            
-            for (let i = companyPeriodDays; i >= 0; i--) {
-                const date = new Date(eventDate);
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                // Companies typically engage earlier than students
-                const companiesToday = Math.floor(Math.random() * 2) + (i > companyPeriodDays - 60 ? 1 : 0);
-                const actualCompanies = Math.min(companiesToday, remainingCompanies);
-                
-                if (actualCompanies > 0) {
-                    companyStats.push({ date: dateStr, count: actualCompanies });
-                    remainingCompanies -= actualCompanies;
-                }
-            }
+            // For active events with no company activity, return empty timeline
+            companyStats = [];
         } else {
             const companyByDate = new Map();
             hostActivityDates.forEach(date => {
@@ -1173,24 +1203,9 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 positionStats.push({ date, count });
             });
         } else {
-            // Position creation timeline (based on event date)
-            const totalPositions = positions.length;
-            let remainingPositions = totalPositions;
-            
-            for (let i = daysBeforeEvent; i >= 0; i--) {
-                const date = new Date(eventDate);
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                // More positions created earlier in the timeline
-                const positionsToday = Math.floor(Math.random() * 3) + (i > daysBeforeEvent - 30 ? 1 : 0);
-                const actualPositions = Math.min(positionsToday, remainingPositions);
-                
-                if (actualPositions > 0) {
-                    positionStats.push({ date: dateStr, count: actualPositions });
-                    remainingPositions -= actualPositions;
-                }
-            }
+            // For active events with no positions, return empty timeline
+            // Don't create fake data
+            positionStats = [];
         }
 
         // Lottery timeline (based on actual lottery job dates)
