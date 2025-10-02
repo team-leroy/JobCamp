@@ -34,7 +34,7 @@
           <div>
             <h3 class="text-lg font-medium text-gray-900">
               {upcomingEvent.name ||
-                `Event ${new Date(upcomingEvent.date).toLocaleDateString(
+                `Event ${upcomingEvent.date.toLocaleDateString(
                   "en-US",
                   {
                     weekday: "long",
@@ -45,23 +45,46 @@
                 )}`}
             </h3>
             <p class="text-sm text-gray-600">
-              {new Date(upcomingEvent.date).toLocaleDateString("en-US", {
+              {upcomingEvent.date.toLocaleDateString("en-US", {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
                 day: "numeric",
               })}
             </p>
-            {#if upcomingEvent.displayLotteryResults}
-              <p class="text-sm text-green-600 mt-1">
-                ✓ Lottery results will be displayed
-              </p>
-            {:else}
-              <p class="text-sm text-gray-500 mt-1">Lottery results hidden</p>
-            {/if}
           </div>
           <div class="text-right">
-            <p class="text-sm text-gray-500">Event ID: {upcomingEvent.id}</p>
+            <div class="text-sm text-gray-600">
+              <div class="mb-1">
+                <span class="font-medium">Event Controls:</span>
+              </div>
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full {upcomingEvent.eventEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                  <span class="text-xs">Event {upcomingEvent.eventEnabled ? 'Enabled' : 'Disabled'}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full {upcomingEvent.studentAccountsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                  <span class="text-xs">Student Accounts {upcomingEvent.studentAccountsEnabled ? 'Enabled' : 'Disabled'}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full {upcomingEvent.companyAccountsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                  <span class="text-xs">Company Accounts {upcomingEvent.companyAccountsEnabled ? 'Enabled' : 'Disabled'}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full {upcomingEvent.studentSignupsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                  <span class="text-xs">Student Assignments {upcomingEvent.studentSignupsEnabled ? 'Enabled' : 'Disabled'}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full {upcomingEvent.companySignupsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                  <span class="text-xs">Company Signups {upcomingEvent.companySignupsEnabled ? 'Enabled' : 'Disabled'}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full {upcomingEvent.lotteryPublished ? 'bg-green-500' : 'bg-red-500'}"></span>
+                  <span class="text-xs">Lottery {upcomingEvent.lotteryPublished ? 'Published' : 'Hidden'}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       {:else}
