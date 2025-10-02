@@ -26,7 +26,8 @@
   let {
     schoolEvents = [],
     form = null,
-  }: { schoolEvents?: EventWithFilteredStats[]; form?: FormResult | null } = $props();
+  }: { schoolEvents?: EventWithFilteredStats[]; form?: FormResult | null } =
+    $props();
 
   // Debug: Log schoolEvents on component load/update
   console.log("🏫 EventManagementWidget rendered with schoolEvents:", {
@@ -50,18 +51,18 @@
       )
     ) {
       // Create and submit a form programmatically
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '?/activateEvent';
-      
-      const eventIdInput = document.createElement('input');
-      eventIdInput.type = 'hidden';
-      eventIdInput.name = 'eventId';
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "?/activateEvent";
+
+      const eventIdInput = document.createElement("input");
+      eventIdInput.type = "hidden";
+      eventIdInput.name = "eventId";
       eventIdInput.value = eventId;
-      
+
       form.appendChild(eventIdInput);
       document.body.appendChild(form);
-      
+
       console.log("🔄 Submitting activation form for event:", eventId);
       form.submit();
     }
@@ -75,10 +76,9 @@
       year: "numeric",
       month: "long",
       day: "numeric",
-      timeZone: "UTC"
+      timeZone: "UTC",
     });
   }
-
 
   // Handle event deletion using proper form submission
   function handleDeleteEvent(eventId: string, eventName: string) {
@@ -101,18 +101,18 @@ Continue with deletion?`;
 
     if (confirm(confirmMessage)) {
       // Create and submit a form programmatically
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '?/deleteEvent';
-      
-      const eventIdInput = document.createElement('input');
-      eventIdInput.type = 'hidden';
-      eventIdInput.name = 'eventId';
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "?/deleteEvent";
+
+      const eventIdInput = document.createElement("input");
+      eventIdInput.type = "hidden";
+      eventIdInput.name = "eventId";
       eventIdInput.value = eventId;
-      
+
       form.appendChild(eventIdInput);
       document.body.appendChild(form);
-      
+
       console.log("🔄 Submitting deletion form for event:", eventId);
       form.submit();
     }
@@ -125,9 +125,11 @@ Continue with deletion?`;
 
   // Get dynamic title based on event states
   function getWidgetTitle() {
-    const activeEvents = schoolEvents.filter(e => e.isActive);
-    const draftEvents = schoolEvents.filter(e => !e.isActive && !e.isArchived);
-    
+    const activeEvents = schoolEvents.filter((e) => e.isActive);
+    const draftEvents = schoolEvents.filter(
+      (e) => !e.isActive && !e.isArchived
+    );
+
     if (activeEvents.length > 0) {
       return "Active Event";
     } else if (draftEvents.length > 0) {
@@ -141,8 +143,10 @@ Continue with deletion?`;
   function getEnhancedEventStatus(event: EventWithFilteredStats) {
     if (event.isActive) {
       return {
-        text: `Activated - ${event.eventEnabled ? 'Enabled' : 'Disabled'}`,
-        variant: event.eventEnabled ? "default" as const : "destructive" as const
+        text: `Activated - ${event.eventEnabled ? "Enabled" : "Disabled"}`,
+        variant: event.eventEnabled
+          ? ("default" as const)
+          : ("destructive" as const),
       };
     }
     if (event.isArchived) {
@@ -272,8 +276,12 @@ Continue with deletion?`;
                 <div class="space-y-3 text-sm">
                   <div class="flex justify-between">
                     <span class="text-gray-600">Event Status:</span>
-                    <span class="font-medium {event.eventEnabled ? 'text-green-600' : 'text-red-600'}">
-                      Activated - {event.eventEnabled ? 'Enabled' : 'Disabled'}
+                    <span
+                      class="font-medium {event.eventEnabled
+                        ? 'text-green-600'
+                        : 'text-red-600'}"
+                    >
+                      Activated - {event.eventEnabled ? "Enabled" : "Disabled"}
                     </span>
                   </div>
                   <div class="flex justify-between">
@@ -357,18 +365,43 @@ Continue with deletion?`;
       </div>
     {/if}
 
-    <!-- Quick Actions -->
-    <div class="mt-6 pt-6 border-t">
-      <h4 class="font-medium mb-3">Quick Actions</h4>
-      <div class="flex gap-2 flex-wrap">
-        <Button
-          variant="outline"
-          size="sm"
-          onclick={() => goto("/dashboard/admin/archived")}
-        >
-          View Event History
-        </Button>
+    <!-- Archive Event Section -->
+    {#if schoolEvents.some(e => e.isActive)}
+      <div class="mt-6 pt-6 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-medium text-gray-900">
+              Archive Current Event
+            </h3>
+            <p class="text-xs text-gray-500">
+              Move the current active event to archived status
+            </p>
+          </div>
+          <button
+            onclick={() => {
+              const activeEvent = schoolEvents.find(e => e.isActive);
+              if (activeEvent && confirm(`Are you sure you want to archive "${activeEvent.name || 'this event'}"? This will make it inactive and move it to archived status.`)) {
+                // Create and submit archive form
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = "?/archiveEvent";
+                
+                const eventIdInput = document.createElement("input");
+                eventIdInput.type = "hidden";
+                eventIdInput.name = "eventId";
+                eventIdInput.value = activeEvent.id;
+                
+                form.appendChild(eventIdInput);
+                document.body.appendChild(form);
+                form.submit();
+              }
+            }}
+            class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition-colors text-sm font-medium"
+          >
+            Archive Event
+          </button>
+        </div>
       </div>
-    </div>
+    {/if}
   </CardContent>
 </Card>

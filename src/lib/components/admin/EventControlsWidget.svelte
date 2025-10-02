@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Switch } from "$lib/components/ui/switch";
   import { Label } from "$lib/components/ui/label";
-  import GraduationDialog from "./GraduationDialog.svelte";
   import type { EventWithStats } from "$lib/server/eventManagement";
 
   interface Props {
@@ -33,17 +32,8 @@
   );
 
 
-  let isArchiving = $state(false);
   let isUpdating = $state(false);
 
-  // State for graduation dialog
-  let showGraduationDialog = $state(false);
-  let graduationStudents: Array<{
-    id: string;
-    firstName: string;
-    lastName: string;
-    grade: number;
-  }> = $state([]);
 
         // Handle control changes using native form submission
         function handleControlChange(control: string, currentValue: boolean) {
@@ -73,86 +63,7 @@
           form.submit();
         }
 
-  // Handle archive event with graduation workflow
-  async function handleArchiveEvent() {
-    console.log("🔍 Starting archive event with graduation workflow...");
 
-    try {
-      // Call the API endpoint to get actual graduation-eligible students
-      const response = await fetch("/api/graduation-preview", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log("🎓 API response:", result);
-
-        if (result.success && result.students) {
-          graduationStudents = result.students;
-          console.log(
-            `🎓 Found ${graduationStudents.length} eligible seniors from database`
-          );
-          showGraduationDialog = true;
-        } else {
-          console.log(
-            "❌ No eligible students found or server error:",
-            result.message
-          );
-          graduationStudents = [];
-          showGraduationDialog = true;
-        }
-      } else {
-        console.error(
-          "❌ Failed to fetch graduation preview:",
-          response.status
-        );
-        graduationStudents = [];
-        showGraduationDialog = true;
-      }
-    } catch (error) {
-      console.error("❌ Error fetching graduation preview:", error);
-      graduationStudents = [];
-      showGraduationDialog = true;
-    }
-  }
-
-  function performArchive(graduateStudents: boolean) {
-    // Create and submit a form programmatically
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "/dashboard/admin?/archiveEventWithGraduation";
-
-    const graduateInput = document.createElement("input");
-    graduateInput.type = "hidden";
-    graduateInput.name = "graduateStudents";
-    graduateInput.value = graduateStudents.toString();
-
-    form.appendChild(graduateInput);
-    document.body.appendChild(form);
-
-    console.log(
-      "🔄 Submitting archive form with graduation:",
-      graduateStudents
-    );
-    form.submit();
-  }
-
-  // Handle graduation dialog events
-  function handleGraduationConfirm(
-    event: CustomEvent<{ graduateStudents: boolean }>
-  ) {
-    console.log("🎓 EventControlsWidget received confirm event:", event.detail);
-    performArchive(event.detail.graduateStudents);
-  }
-
-  function handleGraduationCancel() {
-    console.log("❌ EventControlsWidget received cancel event");
-    showGraduationDialog = false;
-    graduationStudents = [];
-  }
 </script>
 
 <div class="bg-white rounded-lg shadow p-6">
@@ -392,34 +303,6 @@
       </div>
     </div>
 
-    <!-- Archive Event Button -->
-    <div class="mt-6 pt-4 border-t border-gray-200">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-sm font-medium text-gray-900">
-            Archive Current Event
-          </h3>
-          <p class="text-xs text-gray-500">
-            Move the current event to archived status
-          </p>
-        </div>
-        <button
-          onclick={handleArchiveEvent}
-          disabled={isArchiving}
-          class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded"
-        >
-          {isArchiving ? "Archiving..." : "Archive Event"}
-        </button>
-      </div>
-    </div>
   {/if}
 </div>
 
-<!-- Graduation Dialog -->
-<GraduationDialog
-  bind:isOpen={showGraduationDialog}
-  eventName={upcomingEvent?.name || "Current Event"}
-  students={graduationStudents}
-  on:confirm={handleGraduationConfirm}
-  on:cancel={handleGraduationCancel}
-/>
