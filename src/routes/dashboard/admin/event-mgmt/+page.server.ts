@@ -114,10 +114,23 @@ export const actions: Actions = {
 
             console.log(`🔄 Updating field: ${field} to ${enabled}`);
 
+            // Handle mutual exclusivity between studentSignupsEnabled and lotteryPublished
+            const updateData: Record<string, boolean> = { [field]: enabled };
+            
+            if (field === 'studentSignupsEnabled' && enabled) {
+                // If enabling student signups, disable lottery published
+                updateData.lotteryPublished = false;
+                console.log(`🔄 Disabling lotteryPublished due to enabling studentSignupsEnabled`);
+            } else if (field === 'lotteryPublished' && enabled) {
+                // If enabling lottery published, disable student signups
+                updateData.studentSignupsEnabled = false;
+                console.log(`🔄 Disabling studentSignupsEnabled due to enabling lotteryPublished`);
+            }
+
             // Update the event control
             await prisma.event.update({
                 where: { id: activeEvent.id },
-                data: { [field]: enabled }
+                data: updateData
             });
 
             console.log(`✅ Successfully updated ${field} to ${enabled}`);

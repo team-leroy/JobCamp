@@ -61,34 +61,34 @@
                 <span class="font-medium">Event Controls:</span>
               </div>
               <div class="space-y-1">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full {upcomingEvent.eventEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
-                  <span class="text-xs">Event {upcomingEvent.eventEnabled ? 'Enabled' : 'Disabled'}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full {upcomingEvent.studentAccountsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
-                  <span class="text-xs">Student Accounts {upcomingEvent.studentAccountsEnabled ? 'Enabled' : 'Disabled'}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full {upcomingEvent.companyAccountsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
-                  <span class="text-xs">Company Accounts {upcomingEvent.companyAccountsEnabled ? 'Enabled' : 'Disabled'}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full {upcomingEvent.studentSignupsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
-                  <span class="text-xs">Student Assignments {upcomingEvent.studentSignupsEnabled ? 'Enabled' : 'Disabled'}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full {upcomingEvent.companySignupsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
-                  <span class="text-xs">Company Signups {upcomingEvent.companySignupsEnabled ? 'Enabled' : 'Disabled'}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full {upcomingEvent.lotteryPublished ? 'bg-green-500' : 'bg-red-500'}"></span>
-                  <span class="text-xs">Lottery {upcomingEvent.lotteryPublished ? 'Published' : 'Hidden'}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full {upcomingEvent.companyDirectoryEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
-                  <span class="text-xs">Company Directory {upcomingEvent.companyDirectoryEnabled ? 'Enabled' : 'Disabled'}</span>
-                </div>
+                        <div class="flex items-center gap-2">
+                          <span class="w-2 h-2 rounded-full {upcomingEvent.eventEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                          <span class="text-xs">Overall event enablement {upcomingEvent.eventEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="w-2 h-2 rounded-full {upcomingEvent.studentAccountsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                          <span class="text-xs">Student account logins {upcomingEvent.studentAccountsEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="w-2 h-2 rounded-full {upcomingEvent.companyAccountsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                          <span class="text-xs">Company account logins {upcomingEvent.companyAccountsEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="w-2 h-2 rounded-full {upcomingEvent.studentSignupsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                          <span class="text-xs">Students can pick jobs {upcomingEvent.studentSignupsEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="w-2 h-2 rounded-full {upcomingEvent.companySignupsEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                          <span class="text-xs">New company signups {upcomingEvent.companySignupsEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="w-2 h-2 rounded-full {upcomingEvent.lotteryPublished ? 'bg-green-500' : 'bg-red-500'}"></span>
+                          <span class="text-xs">Lottery results published {upcomingEvent.lotteryPublished ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="w-2 h-2 rounded-full {upcomingEvent.companyDirectoryEnabled ? 'bg-green-500' : 'bg-red-500'}"></span>
+                          <span class="text-xs">Company directory published {upcomingEvent.companyDirectoryEnabled ? 'Yes' : 'No'}</span>
+                        </div>
               </div>
             </div>
           </div>
