@@ -35,6 +35,66 @@ export const load: PageServerLoad = async ({ locals }) => {
     );
     const schoolEvents = allEvents.flat();
 
+    // Calculate filtered stats for each event (same logic as dashboard)
+    const eventsWithFilteredStats = await Promise.all(
+        schoolEvents.map(async (event) => {
+            if (!event.isActive) {
+                // For inactive events, show 0 positions/slots
+                return {
+                    ...event,
+                    filteredStats: {
+                        totalPositions: 0,
+                        totalSlots: 0,
+                        studentsWithChoices: 0
+                    }
+                };
+            }
+
+            // For active events, apply same filtering as dashboard
+            const eventStartDate = event.activatedAt || event.createdAt;
+            
+            const [filteredPositions, filteredSlots] = await Promise.all([
+                // Positions for this event (only from companies logged in since event activation)
+                prisma.position.count({
+                    where: {
+                        eventId: event.id,
+                        host: {
+                            user: {
+                                lastLogin: {
+                                    gte: eventStartDate
+                                }
+                            }
+                        }
+                    }
+                }),
+                
+                // Slots for this event (only from companies logged in since event activation)
+                prisma.position.aggregate({
+                    where: {
+                        eventId: event.id,
+                        host: {
+                            user: {
+                                lastLogin: {
+                                    gte: eventStartDate
+                                }
+                            }
+                        }
+                    },
+                    _sum: { slots: true }
+                }).then(res => res._sum.slots || 0)
+            ]);
+
+            return {
+                ...event,
+                filteredStats: {
+                    totalPositions: filteredPositions,
+                    totalSlots: filteredSlots,
+                    studentsWithChoices: event.stats?.studentsWithChoices || 0
+                }
+            };
+        })
+    );
+
     // Get active event with current event controls
     const upcomingEvent = await prisma.event.findFirst({
         where: {
@@ -51,7 +111,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         loggedIn: true,
         isHost: !!locals.user.host,
         schools,
-        schoolEvents,
+        schoolEvents: eventsWithFilteredStats,
         upcomingEvent
     };
 };

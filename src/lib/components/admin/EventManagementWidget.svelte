@@ -15,10 +15,18 @@
     message?: string;
   }
 
+  interface EventWithFilteredStats extends EventWithStats {
+    filteredStats?: {
+      totalPositions: number;
+      totalSlots: number;
+      studentsWithChoices: number;
+    };
+  }
+
   let {
     schoolEvents = [],
     form = null,
-  }: { schoolEvents?: EventWithStats[]; form?: FormResult | null } = $props();
+  }: { schoolEvents?: EventWithFilteredStats[]; form?: FormResult | null } = $props();
 
   // Debug: Log schoolEvents on component load/update
   console.log("🏫 EventManagementWidget rendered with schoolEvents:", {
@@ -59,7 +67,7 @@
     }
   }
 
-  // Format date for display
+  // Format date for display (fix timezone issue)
   function formatDate(date: Date | string) {
     const d = new Date(date);
     return d.toLocaleDateString("en-US", {
@@ -67,11 +75,12 @@
       year: "numeric",
       month: "long",
       day: "numeric",
+      timeZone: "UTC"
     });
   }
 
   // Get event status display
-  function getEventStatus(event: EventWithStats) {
+  function getEventStatus(event: EventWithFilteredStats) {
     if (event.isActive) return { text: "Active", variant: "default" as const };
     if (event.isArchived)
       return { text: "Archived", variant: "secondary" as const };
@@ -210,17 +219,17 @@ Continue with deletion?`;
               <div>
                 <span class="font-medium">Positions:</span>
                 <br />
-                {event.stats?.totalPositions ?? 0}
+                {event.filteredStats?.totalPositions ?? 0}
               </div>
               <div>
                 <span class="font-medium">Total Slots:</span>
                 <br />
-                {event.stats?.totalSlots ?? 0}
+                {event.filteredStats?.totalSlots ?? 0}
               </div>
               <div>
                 <span class="font-medium">Students with Choices:</span>
                 <br />
-                {event.stats?.studentsWithChoices ?? 0}
+                {event.filteredStats?.studentsWithChoices ?? 0}
               </div>
             </div>
 
