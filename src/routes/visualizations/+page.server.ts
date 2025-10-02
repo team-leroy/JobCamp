@@ -201,8 +201,9 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
 
 async function calculateLotteryStats(results: { studentId: string; positionId: string }[], activeEventId: string) {
     try {
-        // Get all students who participated in this event (have StudentEventParticipation record)
-        const allStudentsWithChoices = await prisma.student.findMany({
+        // Get all students who participated in this event
+        // For archived events, fall back to students with position choices if no participation records exist
+        let allStudentsWithChoices = await prisma.student.findMany({
             where: {
                 eventParticipation: {
                     some: {
@@ -212,6 +213,22 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             },
             select: { id: true }
         });
+        
+        // If no participation records found (e.g., for old archived events), fall back to students with choices
+        if (allStudentsWithChoices.length === 0) {
+            allStudentsWithChoices = await prisma.student.findMany({
+                where: {
+                    positionsSignedUpFor: {
+                        some: {
+                            position: {
+                                eventId: activeEventId
+                            }
+                        }
+                    }
+                },
+                select: { id: true }
+            });
+        }
         
         const totalStudents = allStudentsWithChoices.length;
         const placedStudents = results.length;
@@ -632,8 +649,9 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
 
         const totalAvailableSlots = allPositions.reduce((sum, p) => sum + p.slots, 0);
 
-        // Get students who participated in this event (have StudentEventParticipation record)
-        const studentsWithChoices = await prisma.student.findMany({
+        // Get students who participated in this event
+        // For archived events, fall back to students with position choices if no participation records exist
+        let studentsWithChoices = await prisma.student.findMany({
             where: {
                 schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
                 eventParticipation: {
@@ -664,6 +682,43 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
                 }
             }
         });
+        
+        // If no participation records found (e.g., for old archived events), fall back to students with choices
+        if (studentsWithChoices.length === 0) {
+            studentsWithChoices = await prisma.student.findMany({
+                where: {
+                    schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
+                    positionsSignedUpFor: {
+                        some: {
+                            position: {
+                                eventId: activeEventId
+                            }
+                        }
+                    }
+                },
+                include: {
+                    positionsSignedUpFor: {
+                        where: {
+                            position: {
+                                eventId: activeEventId
+                            }
+                        },
+                        include: {
+                            position: {
+                                include: {
+                                    host: {
+                                        include: {
+                                            company: true
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        orderBy: { rank: 'asc' }
+                    }
+                }
+            });
+        }
 
         // Grade distribution
         const gradeDistribution: Record<number, {
@@ -913,10 +968,10 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             }
         });
 
-        // Get lottery jobs for timeline
+        // Get lottery jobs for timeline (filter by event, not admin)
         const lotteryJobs = await prisma.lotteryJob.findMany({
             where: {
-                adminId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
+                eventId: activeEventId
             },
             orderBy: { startedAt: 'desc' }
         });
