@@ -5,7 +5,7 @@ import { archiveEvent, getGraduationEligibleStudents, graduateStudents } from '$
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
-        redirect(302, "/login");
+        redirect(302, "/admin/login");
     }
     if (!locals.user.emailVerified) {
         redirect(302, "/verify-email");
