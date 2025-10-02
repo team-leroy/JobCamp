@@ -79,13 +79,6 @@
     });
   }
 
-  // Get event status display
-  function getEventStatus(event: EventWithFilteredStats) {
-    if (event.isActive) return { text: "Active", variant: "default" as const };
-    if (event.isArchived)
-      return { text: "Archived", variant: "secondary" as const };
-    return { text: "Inactive", variant: "outline" as const };
-  }
 
   // Handle event deletion using proper form submission
   function handleDeleteEvent(eventId: string, eventName: string) {
@@ -129,11 +122,39 @@ Continue with deletion?`;
   function showEventDetails(eventId: string) {
     expandedEventId = expandedEventId === eventId ? null : eventId;
   }
+
+  // Get dynamic title based on event states
+  function getWidgetTitle() {
+    const activeEvents = schoolEvents.filter(e => e.isActive);
+    const draftEvents = schoolEvents.filter(e => !e.isActive && !e.isArchived);
+    
+    if (activeEvents.length > 0) {
+      return "Active Event";
+    } else if (draftEvents.length > 0) {
+      return draftEvents.length === 1 ? "Draft Event" : "Draft Events";
+    } else {
+      return "Event Management";
+    }
+  }
+
+  // Get enhanced event status
+  function getEnhancedEventStatus(event: EventWithFilteredStats) {
+    if (event.isActive) {
+      return {
+        text: `Activated - ${event.eventEnabled ? 'Enabled' : 'Disabled'}`,
+        variant: event.eventEnabled ? "default" as const : "destructive" as const
+      };
+    }
+    if (event.isArchived) {
+      return { text: "Archived", variant: "secondary" as const };
+    }
+    return { text: "Draft", variant: "outline" as const };
+  }
 </script>
 
 <Card>
   <CardHeader>
-    <CardTitle>Event Management</CardTitle>
+    <CardTitle>{getWidgetTitle()}</CardTitle>
   </CardHeader>
   <CardContent>
     {#if form?.message}
@@ -163,8 +184,8 @@ Continue with deletion?`;
                 <h3 class="font-semibold">
                   {event.name || `Event ${formatDate(event.date)}`}
                 </h3>
-                <Badge variant={getEventStatus(event).variant}>
-                  {getEventStatus(event).text}
+                <Badge variant={getEnhancedEventStatus(event).variant}>
+                  {getEnhancedEventStatus(event).text}
                 </Badge>
               </div>
               <div class="flex items-center gap-2">
@@ -251,28 +272,24 @@ Continue with deletion?`;
                 <div class="space-y-3 text-sm">
                   <div class="flex justify-between">
                     <span class="text-gray-600">Event Status:</span>
-                    <span class="font-medium text-blue-600">Active</span>
+                    <span class="font-medium {event.eventEnabled ? 'text-green-600' : 'text-red-600'}">
+                      Activated - {event.eventEnabled ? 'Enabled' : 'Disabled'}
+                    </span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-gray-600">Event ID:</span>
-                    <span class="font-mono text-xs">{event.id}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Created:</span>
+                    <span class="text-gray-600">Event Date:</span>
                     <span>{formatDate(event.date)}</span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-gray-600">Lottery Results:</span>
-                    <span
-                      class={event.displayLotteryResults
-                        ? "text-green-600"
-                        : "text-gray-500"}
-                    >
-                      {event.displayLotteryResults
-                        ? "Displayed to Students"
-                        : "Hidden from Students"}
-                    </span>
+                    <span class="text-gray-600">Created:</span>
+                    <span>{formatDate(event.createdAt)}</span>
                   </div>
+                  {#if event.activatedAt}
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Activated:</span>
+                      <span>{formatDate(event.activatedAt)}</span>
+                    </div>
+                  {/if}
                 </div>
 
                 <!-- Quick Actions for Active Event -->
