@@ -179,12 +179,17 @@ describe('Admin Dashboard Statistics', () => {
     it('should filter student choices by active event', async () => {
       await load({ locals: mockLocals });
 
-      // Verify student choices query filters by active event (active students only)
+      // Verify student choices query filters by active event (active students who logged in since event creation)
       expect(prisma.positionsOnStudents.count).toHaveBeenCalledWith({
         where: {
           student: { 
             schoolId: { in: ['school-1'] },
-            isActive: true
+            isActive: true,
+            user: {
+              lastLogin: {
+                gte: mockActiveEvent.createdAt
+              }
+            }
           },
           position: { eventId: 'active-event-1' }
         }
@@ -194,11 +199,16 @@ describe('Admin Dashboard Statistics', () => {
     it('should filter students without choices by active event', async () => {
       await load({ locals: mockLocals });
 
-      // Verify students without choices query filters by active event (active students only)
+      // Verify students without choices query filters by active event (active students who logged in since event creation)
       expect(prisma.student.count).toHaveBeenCalledWith({
         where: { 
           schoolId: { in: ['school-1'] },
           isActive: true,
+          user: {
+            lastLogin: {
+              gte: mockActiveEvent.createdAt
+            }
+          },
           positionsSignedUpFor: { 
             none: {
               position: {

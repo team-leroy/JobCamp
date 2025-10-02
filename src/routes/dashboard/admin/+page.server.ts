@@ -52,31 +52,46 @@ export const load: PageServerLoad = async ({ locals }) => {
             totalStudentChoices,
             gradeDistribution
         ] = await Promise.all([
-            // Total active students registered
+            // Total active students who have logged in since event creation
             prisma.student.count({
                 where: { 
                     schoolId: { in: schoolIds },
-                    isActive: true
+                    isActive: true,
+                    user: {
+                        lastLogin: {
+                            gte: upcomingEvent.createdAt
+                        }
+                    }
                 }
             }),
             
-            // Permission slips signed for active event (from active students only)
+            // Permission slips signed for active event (from active students who logged in since event creation)
             prisma.permissionSlipSubmission.count({
                 where: {
                     eventId: upcomingEvent.id,
                     student: {
                         schoolId: { in: schoolIds },
-                        isActive: true
+                        isActive: true,
+                        user: {
+                            lastLogin: {
+                                gte: upcomingEvent.createdAt
+                            }
+                        }
                     }
                 }
             }),
             
-            // Active students without choices for active event
+            // Active students without choices for active event (who logged in since event creation)
             prisma.student.count({
                 where: { 
                     schoolId: { in: schoolIds },
                     isActive: true,
-                    positionsSignedUpFor: { 
+                    user: {
+                        lastLogin: {
+                            gte: upcomingEvent.createdAt
+                        }
+                    },
+                    positionsSignedUpFor: {
                         none: {
                             position: {
                                 eventId: upcomingEvent.id
@@ -86,23 +101,33 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Total student choices for active event (from active students only)
+            // Total student choices for active event (from active students who logged in since event creation)
             prisma.positionsOnStudents.count({
                 where: {
                     student: { 
                         schoolId: { in: schoolIds },
-                        isActive: true
+                        isActive: true,
+                        user: {
+                            lastLogin: {
+                                gte: upcomingEvent.createdAt
+                            }
+                        }
                     },
                     position: { eventId: upcomingEvent.id }
                 }
             }),
             
-            // Grade distribution (active students only)
+            // Grade distribution (active students who logged in since event creation)
             prisma.student.groupBy({
                 by: ['grade'],
                 where: { 
                     schoolId: { in: schoolIds },
-                    isActive: true
+                    isActive: true,
+                    user: {
+                        lastLogin: {
+                            gte: upcomingEvent.createdAt
+                        }
+                    }
                 },
                 _count: { grade: true }
             })
@@ -148,10 +173,19 @@ export const load: PageServerLoad = async ({ locals }) => {
             positionsThisEvent,
             slotsThisEvent
         ] = await Promise.all([
-            // Total companies present in the DB
+            // Total companies that have logged in since event creation
             prisma.company.count({
                 where: { 
-                    schoolId: { in: schoolIds }
+                    schoolId: { in: schoolIds },
+                    hosts: {
+                        some: {
+                            user: {
+                                lastLogin: {
+                                    gte: upcomingEvent.createdAt
+                                }
+                            }
+                        }
+                    }
                 }
             }),
             
