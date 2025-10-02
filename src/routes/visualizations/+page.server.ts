@@ -154,6 +154,14 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
         let timelineStats = null;
         
         if (selectedEvent) {
+            console.log('🔍 DEBUG: Selected event:', {
+                id: selectedEvent.id,
+                name: selectedEvent.name,
+                date: selectedEvent.date,
+                isActive: selectedEvent.isActive,
+                isArchived: selectedEvent.isArchived
+            });
+            
             try {
                 const latestJob = await prisma.lotteryJob.findFirst({
                     where: { 
@@ -166,15 +174,28 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
                     }
                 });
 
+                console.log('🔍 DEBUG: Latest lottery job:', latestJob ? {
+                    id: latestJob.id,
+                    eventId: latestJob.eventId,
+                    status: latestJob.status,
+                    resultsCount: latestJob.results.length
+                } : 'No lottery job found');
+
                 if (latestJob) {
                     // Calculate choice statistics for selected event only
                     lotteryStats = await calculateLotteryStats(latestJob.results, selectedEvent.id);
+                    console.log('🔍 DEBUG: Lottery stats calculated:', lotteryStats ? 'Success' : 'Failed');
                 }
                 
                 // Calculate analytics for selected event only
                 companyStats = await calculateCompanyStats(userInfo, selectedEvent.id);
+                console.log('🔍 DEBUG: Company stats calculated:', companyStats ? 'Success' : 'Failed');
+                
                 studentStats = await calculateStudentStats(userInfo, selectedEvent.id);
+                console.log('🔍 DEBUG: Student stats calculated:', studentStats ? 'Success' : 'Failed');
+                
                 timelineStats = await calculateTimelineStats(userInfo, selectedEvent.id);
+                console.log('🔍 DEBUG: Timeline stats calculated:', timelineStats ? 'Success' : 'Failed');
                 
             } catch (lotteryError) {
                 console.error('Error fetching lottery stats:', lotteryError);
@@ -182,7 +203,7 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
             }
         }
 
-        return {
+        const result = {
             isAdmin: true,
             loggedIn: true,
             isHost: !!locals.user.host,
@@ -193,6 +214,17 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
             studentStats,
             timelineStats
         };
+        
+        console.log('🔍 DEBUG: Final result:', {
+            selectedEventId: selectedEvent?.id,
+            selectedEventName: selectedEvent?.name,
+            lotteryStatsExists: !!lotteryStats,
+            companyStatsExists: !!companyStats,
+            studentStatsExists: !!studentStats,
+            timelineStatsExists: !!timelineStats
+        });
+        
+        return result;
     } catch (error) {
         console.error('Error in visualizations load function:', error);
         throw error;
@@ -201,6 +233,11 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
 
 async function calculateLotteryStats(results: { studentId: string; positionId: string }[], activeEventId: string) {
     try {
+        console.log('🔍 DEBUG: calculateLotteryStats called with:', {
+            resultsCount: results.length,
+            activeEventId
+        });
+        
         // Get all students who participated in this event
         // For archived events, fall back to students with position choices if no participation records exist
         let allStudentsWithChoices = await prisma.student.findMany({
@@ -213,6 +250,8 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             },
             select: { id: true }
         });
+        
+        console.log('🔍 DEBUG: Students with participation records:', allStudentsWithChoices.length);
         
         // If no participation records found (e.g., for old archived events), fall back to students with choices
         if (allStudentsWithChoices.length === 0) {
@@ -228,6 +267,7 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                 },
                 select: { id: true }
             });
+            console.log('🔍 DEBUG: Students with position choices (fallback):', allStudentsWithChoices.length);
         }
         
         const totalStudents = allStudentsWithChoices.length;
