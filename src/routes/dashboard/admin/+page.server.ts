@@ -22,7 +22,6 @@ export const load: PageServerLoad = async ({ locals }) => {
     }
 
     const schoolIds = userInfo.adminOfSchools.map(s => s.id);
-    const currentYear = new Date().getFullYear();
 
     // Get school information
     const schools = await prisma.school.findMany({

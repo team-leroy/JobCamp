@@ -31,7 +31,6 @@
   showSignupLogin={data.showSignupLogin}
   studentAccountsEnabled={data.studentAccountsEnabled}
   companyAccountsEnabled={data.companyAccountsEnabled}
-  eventName={data.eventName}
 />
 
 <div

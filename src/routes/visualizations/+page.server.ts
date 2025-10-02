@@ -175,14 +175,12 @@ export const load = async ({ locals }: { locals: Locals }) => {
 
 async function calculateLotteryStats(results: { studentId: string; positionId: string }[], activeEventId: string) {
     try {
-        // Get all students who made choices for the active event
+        // Get all students who participated in this event (have StudentEventParticipation record)
         const allStudentsWithChoices = await prisma.student.findMany({
             where: {
-                positionsSignedUpFor: { 
+                eventParticipation: {
                     some: {
-                        position: {
-                            eventId: activeEventId
-                        }
+                        eventId: activeEventId
                     }
                 }
             },
@@ -207,10 +205,25 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             notPlaced: notPlacedCount
         };
 
-        // Get all positions with their companies for subscription rate calculation (active event only)
+        // Get the event to determine activation date for filtering
+        const event = await prisma.event.findUnique({
+            where: { id: activeEventId },
+            select: { activatedAt: true, createdAt: true }
+        });
+        
+        const eventStartDate = event?.activatedAt || event?.createdAt;
+        
+        // Get positions from companies that have logged in since event activation
         const positionsWithCompanies = await prisma.position.findMany({
             where: {
                 eventId: activeEventId,
+                host: {
+                    user: {
+                        lastLogin: {
+                            gte: eventStartDate
+                        }
+                    }
+                },
                 students: { some: {} } // Only positions that have student choices
             },
             include: {
@@ -316,10 +329,25 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
 
 async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) {
     try {
-        // Get all positions with their companies and student choices (active event only)
+        // Get the event to determine activation date for filtering
+        const event = await prisma.event.findUnique({
+            where: { id: activeEventId },
+            select: { activatedAt: true, createdAt: true }
+        });
+        
+        const eventStartDate = event?.activatedAt || event?.createdAt;
+        
+        // Get positions from companies that have logged in since event activation
         const positionsWithChoices = await prisma.position.findMany({
             where: {
-                eventId: activeEventId
+                eventId: activeEventId,
+                host: {
+                    user: {
+                        lastLogin: {
+                            gte: eventStartDate
+                        }
+                    }
+                }
             },
             include: {
                 host: {
@@ -483,10 +511,25 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
 
 async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) {
     try {
-        // Get all positions from the active event to calculate total available slots
+        // Get the event to determine activation date for filtering
+        const event = await prisma.event.findUnique({
+            where: { id: activeEventId },
+            select: { activatedAt: true, createdAt: true }
+        });
+        
+        const eventStartDate = event?.activatedAt || event?.createdAt;
+        
+        // Get positions from companies that have logged in since event activation
         const allPositions = await prisma.position.findMany({
             where: {
-                eventId: activeEventId
+                eventId: activeEventId,
+                host: {
+                    user: {
+                        lastLogin: {
+                            gte: eventStartDate
+                        }
+                    }
+                }
             },
             include: {
                 host: {
@@ -499,10 +542,15 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
 
         const totalAvailableSlots = allPositions.reduce((sum, p) => sum + p.slots, 0);
 
-        // Get all students with their choices and grade information (for active event only)
+        // Get students who participated in this event (have StudentEventParticipation record)
         const studentsWithChoices = await prisma.student.findMany({
             where: {
-                schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
+                schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
+                eventParticipation: {
+                    some: {
+                        eventId: activeEventId
+                    }
+                }
             },
             include: {
                 positionsSignedUpFor: {

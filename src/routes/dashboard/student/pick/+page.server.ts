@@ -4,6 +4,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { generatePermissionSlipCode } from '$lib/server/auth';
 import { sendPermissionSlipEmail } from '$lib/server/email';
 import { getPermissionSlipStatus } from '$lib/server/permissionSlips';
+import { trackStudentParticipation, getActiveEventIdForSchool } from '$lib/server/studentParticipation';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -228,6 +229,14 @@ export const actions: Actions = {
                 data: positions
             })
         ]);
+
+        // Track student participation in the active event
+        if (student.schoolId) {
+            const activeEventId = await getActiveEventIdForSchool(student.schoolId);
+            if (activeEventId) {
+                await trackStudentParticipation(studentId, activeEventId);
+            }
+        }
 
         return { sent: false, err: false };
     }

@@ -46,14 +46,13 @@
   };
 </script>
 
-<Navbar 
-  isHost={data.isHost} 
-  loggedIn={data.loggedIn} 
+<Navbar
+  isHost={data.isHost}
+  loggedIn={data.loggedIn}
   isAdmin={data.isAdmin}
   showSignupLogin={data.showSignupLogin}
   studentAccountsEnabled={data.studentAccountsEnabled}
   companyAccountsEnabled={data.companyAccountsEnabled}
-  eventName={data.eventName}
 />
 
 {#if !data.directoryAccessible}

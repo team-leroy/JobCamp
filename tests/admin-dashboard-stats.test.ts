@@ -276,7 +276,6 @@ describe('Admin Dashboard Statistics', () => {
 
     describe('Statistics Accuracy', () => {
         it('should ensure event-specific statistics are more accurate than calendar year', () => {
-            const eventCreatedAt = new Date('2025-01-01T10:00:00Z');
             const eventActivatedAt = new Date('2025-01-15T14:30:00Z');
             const calendarYearStart = new Date('2025-01-01T00:00:00Z');
 

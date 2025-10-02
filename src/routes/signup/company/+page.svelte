@@ -15,14 +15,13 @@
   let passwordEntryType = $derived(showPassword ? "text" : "password");
 </script>
 
-<Navbar 
-  isHost={false} 
-  loggedIn={false} 
+<Navbar
+  isHost={false}
+  loggedIn={false}
   isAdmin={false}
   showSignupLogin={data.showSignupLogin}
   studentAccountsEnabled={data.studentAccountsEnabled}
   companyAccountsEnabled={data.companyAccountsEnabled}
-  eventName={data.eventName}
 />
 
 <div class="w-full mt-28 flex flex-col sm:gap-8 justify-center items-center">

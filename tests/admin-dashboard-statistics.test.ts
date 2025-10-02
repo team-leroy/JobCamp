@@ -211,8 +211,6 @@ describe('Admin Dashboard Statistics', () => {
     });
 
     it('should filter company positions by active event', async () => {
-      const currentYear = new Date().getFullYear();
-      
       await load({ locals: mockLocals });
 
       // Verify positions query filters by active event
@@ -231,8 +229,6 @@ describe('Admin Dashboard Statistics', () => {
     });
 
     it('should filter company slots by active event', async () => {
-      const currentYear = new Date().getFullYear();
-      
       await load({ locals: mockLocals });
 
       // Verify slots query filters by active event
