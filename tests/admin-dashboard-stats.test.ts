@@ -287,17 +287,29 @@ describe('Admin Dashboard Statistics', () => {
         });
 
         it('should handle timezone considerations for event dates', () => {
+            // Test that we can create dates in different timezones
             const utcDate = new Date('2025-01-15T14:30:00Z');
             const localDate = new Date('2025-01-15T14:30:00');
             
-            // UTC date should be different from local date due to timezone offset
-            // This test verifies we're aware of timezone differences
-            expect(utcDate.getTime()).not.toBe(localDate.getTime());
+            // In UTC environments (like CI), these might be the same
+            // In local environments with timezone offset, they'll be different
+            const timezoneOffset = new Date().getTimezoneOffset();
+            
+            if (timezoneOffset !== 0) {
+                // If we're not in UTC, the dates should be different
+                expect(utcDate.getTime()).not.toBe(localDate.getTime());
+            } else {
+                // If we're in UTC (like CI), they'll be the same
+                expect(utcDate.getTime()).toBe(localDate.getTime());
+            }
             
             // But we can create equivalent dates by using the same timezone
             const utcDate2 = new Date('2025-01-15T14:30:00Z');
             const utcDate3 = new Date('2025-01-15T14:30:00Z');
             expect(utcDate2.getTime()).toBe(utcDate3.getTime());
+            
+            // Test that we understand timezone handling
+            expect(utcDate.toISOString()).toBe('2025-01-15T14:30:00.000Z');
         });
     });
 });
