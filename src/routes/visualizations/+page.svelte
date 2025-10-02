@@ -2,6 +2,7 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import { Button } from "$lib/components/ui/button";
   import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
   import {
     Chart,
     CategoryScale,
@@ -23,6 +24,23 @@
   let chartCanvas = $state<HTMLCanvasElement | undefined>(undefined);
   let chart = $state<Chart | null>(null);
   let selectedVisualization = $state("lottery");
+  let selectedEventId = $state(data.selectedEvent?.id || "");
+
+  // Event selection handler
+  function handleEventChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const eventId = target.value;
+    selectedEventId = eventId;
+    
+    // Navigate to the same page with the selected event ID
+    const url = new URL(window.location.href);
+    if (eventId) {
+      url.searchParams.set('eventId', eventId);
+    } else {
+      url.searchParams.delete('eventId');
+    }
+    goto(url.toString());
+  }
 
   // Available visualizations
   const visualizations = [
@@ -791,26 +809,54 @@
     </p>
   </div>
 
-  <!-- No Active Event Notice -->
-  {#if !data.activeEvent}
+  <!-- Event Selector -->
+  {#if data.allEvents && data.allEvents.length > 0}
+    <div class="mb-6">
+      <label for="event-selector" class="block text-sm font-medium text-gray-700 mb-2">
+        Select Event to View:
+      </label>
+      <select
+        id="event-selector"
+        bind:value={selectedEventId}
+        onchange={handleEventChange}
+        class="block w-full max-w-md px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+      >
+        {#each data.allEvents as event}
+          <option value={event.id}>
+            {event.name || `Event ${event.date.toLocaleDateString()}`}
+            {event.isActive ? ' (Active)' : event.isArchived ? ' (Archived)' : ' (Draft)'}
+          </option>
+        {/each}
+      </select>
+      {#if data.selectedEvent}
+        <p class="mt-2 text-sm text-gray-600">
+          Viewing data for: <span class="font-medium">{data.selectedEvent.name || `Event ${data.selectedEvent.date.toLocaleDateString()}`}</span>
+          {data.selectedEvent.isActive ? ' (Active Event)' : data.selectedEvent.isArchived ? ' (Archived Event)' : ' (Draft Event)'}
+        </p>
+      {/if}
+    </div>
+  {/if}
+
+  <!-- No Event Notice -->
+  {#if !data.selectedEvent}
     <div class="mb-8 p-6 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
       <h2 class="text-xl font-semibold text-yellow-800 mb-2">
-        No Active Event
+        No Event Selected
       </h2>
       <p class="text-yellow-700">
-        Visualizations require an active event to display data.
+        Please select an event from the dropdown above to view visualizations.
         <a
           href="/dashboard/admin/event-mgmt"
           class="text-yellow-800 hover:text-yellow-900 underline font-medium"
         >
           Go to Event Management
-        </a> to activate an event.
+        </a> to manage events.
       </p>
     </div>
   {/if}
 
   <!-- Visualization Selector -->
-  {#if data.activeEvent}
+  {#if data.selectedEvent}
     <div class="mb-8 bg-white rounded-lg shadow p-6">
       <h2 class="text-xl font-semibold mb-4">Select Visualization</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

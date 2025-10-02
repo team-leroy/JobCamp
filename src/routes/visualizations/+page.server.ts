@@ -90,7 +90,7 @@ interface LotteryTimelineStats {
     progress: number;
 }
 
-export const load = async ({ locals }: { locals: Locals }) => {
+export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
     try {
         if (!locals.user) {
             redirect(302, "/login");
@@ -111,29 +111,54 @@ export const load = async ({ locals }: { locals: Locals }) => {
 
         const schoolIds = userInfo.adminOfSchools.map(s => s.id);
 
-        // Get the active event - visualizations should only show data for the active event
-        const activeEvent = await prisma.event.findFirst({
+        // Get all events (active and archived) for the dropdown
+        const allEvents = await prisma.event.findMany({
             where: {
-                schoolId: { in: schoolIds },
-                isActive: true
+                schoolId: { in: schoolIds }
             },
             orderBy: {
-                date: 'asc'
+                date: 'desc'
+            },
+            select: {
+                id: true,
+                name: true,
+                date: true,
+                isActive: true,
+                isArchived: true,
+                createdAt: true,
+                activatedAt: true
             }
         });
 
-        // Get latest completed lottery results for the active event only
+        // Get the selected event from URL parameter, default to active event
+        const selectedEventId = url.searchParams.get('eventId');
+        let selectedEvent = null;
+
+        if (selectedEventId) {
+            // Find the selected event
+            selectedEvent = allEvents.find(e => e.id === selectedEventId);
+        } else {
+            // Default to active event
+            selectedEvent = allEvents.find(e => e.isActive);
+        }
+
+        // If no event is selected or found, use the first available event
+        if (!selectedEvent && allEvents.length > 0) {
+            selectedEvent = allEvents[0];
+        }
+
+        // Get latest completed lottery results for the selected event only
         let lotteryStats = null;
         let companyStats = null;
         let studentStats = null;
         let timelineStats = null;
         
-        if (activeEvent) {
+        if (selectedEvent) {
             try {
                 const latestJob = await prisma.lotteryJob.findFirst({
                     where: { 
                         status: 'COMPLETED',
-                        eventId: activeEvent.id  // NEW: Filter by specific event
+                        eventId: selectedEvent.id  // Filter by selected event
                     },
                     orderBy: { completedAt: 'desc' },
                     include: { 
@@ -142,14 +167,14 @@ export const load = async ({ locals }: { locals: Locals }) => {
                 });
 
                 if (latestJob) {
-                    // Calculate choice statistics for active event only
-                    lotteryStats = await calculateLotteryStats(latestJob.results, activeEvent.id);
+                    // Calculate choice statistics for selected event only
+                    lotteryStats = await calculateLotteryStats(latestJob.results, selectedEvent.id);
                 }
                 
-                // Calculate analytics for active event only
-                companyStats = await calculateCompanyStats(userInfo, activeEvent.id);
-                studentStats = await calculateStudentStats(userInfo, activeEvent.id);
-                timelineStats = await calculateTimelineStats(userInfo, activeEvent.id);
+                // Calculate analytics for selected event only
+                companyStats = await calculateCompanyStats(userInfo, selectedEvent.id);
+                studentStats = await calculateStudentStats(userInfo, selectedEvent.id);
+                timelineStats = await calculateTimelineStats(userInfo, selectedEvent.id);
                 
             } catch (lotteryError) {
                 console.error('Error fetching lottery stats:', lotteryError);
@@ -161,7 +186,8 @@ export const load = async ({ locals }: { locals: Locals }) => {
             isAdmin: true,
             loggedIn: true,
             isHost: !!locals.user.host,
-            activeEvent,
+            selectedEvent,
+            allEvents,
             lotteryStats,
             companyStats,
             studentStats,
