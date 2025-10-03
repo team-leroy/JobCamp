@@ -138,7 +138,6 @@ export const actions: Actions = {
             const controlType = formData.get('controlType') as string;
             const enabled = formData.get('enabled') === 'true';
 
-            console.log(`📝 Update request: controlType=${controlType}, enabled=${enabled}`);
 
             // Get the active event for this school
             const activeEvent = await prisma.event.findFirst({
@@ -149,11 +148,8 @@ export const actions: Actions = {
             });
 
             if (!activeEvent) {
-                console.error('❌ No active event found');
                 return { success: false, message: 'No active event found' };
             }
-
-            console.log(`📋 Active event ID: ${activeEvent.id}`);
 
             // Map control types to database fields
             const fieldMap: Record<string, string> = {
@@ -168,11 +164,8 @@ export const actions: Actions = {
 
             const field = fieldMap[controlType];
             if (!field) {
-                console.error(`❌ Invalid control type: ${controlType}`);
                 return { success: false, message: 'Invalid control type' };
             }
-
-            console.log(`🔄 Updating field: ${field} to ${enabled}`);
 
             // Handle mutual exclusivity between studentSignupsEnabled and lotteryPublished
             const updateData: Record<string, boolean> = { [field]: enabled };
@@ -180,11 +173,9 @@ export const actions: Actions = {
             if (field === 'studentSignupsEnabled' && enabled) {
                 // If enabling student signups, disable lottery published
                 updateData.lotteryPublished = false;
-                console.log(`🔄 Disabling lotteryPublished due to enabling studentSignupsEnabled`);
             } else if (field === 'lotteryPublished' && enabled) {
                 // If enabling lottery published, disable student signups
                 updateData.studentSignupsEnabled = false;
-                console.log(`🔄 Disabling studentSignupsEnabled due to enabling lotteryPublished`);
             }
 
             // Update the event control
@@ -193,7 +184,6 @@ export const actions: Actions = {
                 data: updateData
             });
 
-            console.log(`✅ Successfully updated ${field} to ${enabled}`);
 
             return { 
                 success: true, 
@@ -202,7 +192,7 @@ export const actions: Actions = {
                 enabled
             };
         } catch (error) {
-            console.error('❌ Error in updateEventControls:', error);
+            console.error('Error in updateEventControls:', error);
             return { 
                 success: false, 
                 message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -267,8 +257,6 @@ export const actions: Actions = {
         } catch (error) {
             console.error('Error creating event:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.error('Error details:', errorMessage);
-            console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
             return { 
                 success: false, 
                 message: `Failed to create event: ${errorMessage}` 

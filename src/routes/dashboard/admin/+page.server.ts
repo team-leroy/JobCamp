@@ -4,52 +4,30 @@ import { prisma } from '$lib/server/prisma';
 import { archiveEvent, getGraduationEligibleStudents, graduateStudents } from '$lib/server/eventManagement';
 
 export const load: PageServerLoad = async ({ locals }) => {
-    console.log('🏠 Admin dashboard load function started');
-    console.log('👤 Locals user:', { 
-        exists: !!locals.user, 
-        id: locals.user?.id, 
-        email: locals.user?.email,
-        emailVerified: locals.user?.emailVerified 
-    });
-    
     if (!locals.user) {
-        console.log('❌ No user found, redirecting to /admin/login');
         redirect(302, "/admin/login");
     }
     if (!locals.user.emailVerified) {
-        console.log('❌ Email not verified, redirecting to /verify-email');
         redirect(302, "/verify-email");
     }
 
     // Check if user is admin
-    console.log('🔍 Checking admin status for user:', locals.user.id);
     const userInfo = await prisma.user.findFirst({
         where: { id: locals.user.id },
         include: { adminOfSchools: true }
     });
 
-    console.log('👑 Admin check result:', { 
-        userFound: !!userInfo, 
-        userId: userInfo?.id,
-        adminOfSchoolsCount: userInfo?.adminOfSchools?.length || 0,
-        adminOfSchools: userInfo?.adminOfSchools?.map(s => ({ id: s.id, name: s.name })) || []
-    });
-
     if (!userInfo?.adminOfSchools?.length) {
-        console.log('❌ User is not an admin, redirecting to /dashboard');
         redirect(302, "/dashboard");
     }
 
     const schoolIds = userInfo.adminOfSchools.map(s => s.id);
-    console.log('🏫 School IDs for admin:', schoolIds);
 
     // Get school information
-    console.log('🔍 Fetching school information...');
     const schools = await prisma.school.findMany({
         where: { id: { in: schoolIds } },
         select: { id: true, name: true }
     });
-    console.log('🏫 Schools found:', schools);
 
     // Get active event first to determine if we should show statistics
     const upcomingEvent = await prisma.event.findFirst({
@@ -405,10 +383,7 @@ export const actions: Actions = {
     },
 
     getGraduationPreview: async ({ locals }) => {
-        console.log("🎓 getGraduationPreview action called");
-        
         if (!locals.user) {
-            console.log("❌ No user in locals");
             return { 
                 success: false, 
                 message: "User not authenticated",
@@ -423,22 +398,12 @@ export const actions: Actions = {
                 include: { adminOfSchools: true }
             });
 
-            console.log("👤 User info:", { 
-                userId: locals.user.id, 
-                adminSchools: userInfo?.adminOfSchools?.length || 0 
-            });
-
             if (!userInfo?.adminOfSchools?.length) {
-                console.log("❌ User not authorized - no admin schools");
                 return { success: false, message: "Not authorized", students: [] };
             }
 
             const schoolId = userInfo.adminOfSchools[0].id;
-            console.log("🏫 School ID:", schoolId);
-            
             const eligibleStudents = await getGraduationEligibleStudents(schoolId);
-            console.log("🎓 Eligible students found:", eligibleStudents.length);
-            console.log("📋 Students:", eligibleStudents.map(s => `${s.firstName} ${s.lastName} (Grade ${s.grade})`));
 
             return { 
                 success: true, 
@@ -446,7 +411,7 @@ export const actions: Actions = {
                 message: `Found ${eligibleStudents.length} Grade 12 students eligible for graduation`
             };
         } catch (error) {
-            console.error('❌ Error getting graduation preview:', error);
+            console.error('Error getting graduation preview:', error);
             return { 
                 success: false, 
                 message: "Failed to get graduation preview",
