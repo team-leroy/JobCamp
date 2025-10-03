@@ -4,30 +4,52 @@ import { prisma } from '$lib/server/prisma';
 import { archiveEvent, getGraduationEligibleStudents, graduateStudents } from '$lib/server/eventManagement';
 
 export const load: PageServerLoad = async ({ locals }) => {
+    console.log('🏠 Admin dashboard load function started');
+    console.log('👤 Locals user:', { 
+        exists: !!locals.user, 
+        id: locals.user?.id, 
+        email: locals.user?.email,
+        emailVerified: locals.user?.emailVerified 
+    });
+    
     if (!locals.user) {
+        console.log('❌ No user found, redirecting to /admin/login');
         redirect(302, "/admin/login");
     }
     if (!locals.user.emailVerified) {
+        console.log('❌ Email not verified, redirecting to /verify-email');
         redirect(302, "/verify-email");
     }
 
     // Check if user is admin
+    console.log('🔍 Checking admin status for user:', locals.user.id);
     const userInfo = await prisma.user.findFirst({
         where: { id: locals.user.id },
         include: { adminOfSchools: true }
     });
 
+    console.log('👑 Admin check result:', { 
+        userFound: !!userInfo, 
+        userId: userInfo?.id,
+        adminOfSchoolsCount: userInfo?.adminOfSchools?.length || 0,
+        adminOfSchools: userInfo?.adminOfSchools?.map(s => ({ id: s.id, name: s.name })) || []
+    });
+
     if (!userInfo?.adminOfSchools?.length) {
+        console.log('❌ User is not an admin, redirecting to /dashboard');
         redirect(302, "/dashboard");
     }
 
     const schoolIds = userInfo.adminOfSchools.map(s => s.id);
+    console.log('🏫 School IDs for admin:', schoolIds);
 
     // Get school information
+    console.log('🔍 Fetching school information...');
     const schools = await prisma.school.findMany({
         where: { id: { in: schoolIds } },
         select: { id: true, name: true }
     });
+    console.log('🏫 Schools found:', schools);
 
     // Get active event first to determine if we should show statistics
     const upcomingEvent = await prisma.event.findFirst({
