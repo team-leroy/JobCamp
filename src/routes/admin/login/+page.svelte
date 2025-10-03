@@ -9,7 +9,6 @@
     CardTitle,
   } from "$lib/components/ui/card";
   import { AlertCircle } from "lucide-svelte";
-  import { enhance } from "$app/forms";
   import logo from "$lib/assets/favicon.png";
 
   export let data;
@@ -108,11 +107,7 @@
           </div>
         {/if}
 
-        <form method="POST" use:enhance={({ result }) => {
-          if (result.type === 'success' && result.data?.success && result.data?.redirect) {
-            window.location.href = result.data.redirect;
-          }
-        }} class="space-y-4">
+        <form method="POST" class="space-y-4">
           <div>
             <Label for="email">Email Address</Label>
             <Input
