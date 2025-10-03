@@ -133,7 +133,7 @@ export const lucia = new Lucia(luciaAuthDb, {
     sessionCookie: {
         attributes: {
 			// set to `true` when using HTTPS
-            secure: !dev
+            secure: !dev && process.env.NODE_ENV === 'production'
         }
     },
     getUserAttributes: (attributes: DatabaseUserAttributes) => {

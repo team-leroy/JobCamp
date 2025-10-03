@@ -108,7 +108,11 @@
           </div>
         {/if}
 
-        <form method="POST" use:enhance class="space-y-4">
+        <form method="POST" use:enhance={({ result }) => {
+          if (result.type === 'success' && result.data?.success && result.data?.redirect) {
+            window.location.href = result.data.redirect;
+          }
+        }} class="space-y-4">
           <div>
             <Label for="email">Email Address</Label>
             <Input

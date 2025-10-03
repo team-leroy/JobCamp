@@ -102,7 +102,9 @@ export const actions: Actions = {
             console.log('🍪 Setting session cookie:', { 
                 name: sessionCookie.name, 
                 hasValue: !!sessionCookie.value,
-                attributes: sessionCookie.attributes 
+                attributes: sessionCookie.attributes,
+                dev: process.env.NODE_ENV !== 'production',
+                nodeEnv: process.env.NODE_ENV
             });
             
             cookies.set(sessionCookie.name, sessionCookie.value, {
@@ -110,20 +112,14 @@ export const actions: Actions = {
                 ...sessionCookie.attributes
             });
 
-            console.log('✅ Admin login successful, redirecting to /dashboard/admin');
-            // Redirect to admin dashboard after successful login
-            redirect(302, '/dashboard/admin');
+            console.log('✅ Admin login successful, returning success response');
+            // Return success response - the client will handle the redirect
+            return {
+                success: true,
+                message: 'Login successful',
+                redirect: '/dashboard/admin'
+            };
         } catch (error) {
-            // Check if this is a redirect (which is expected behavior)
-            if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
-                console.log('🔄 Redirect detected (expected):', { 
-                    status: error.status, 
-                    location: error.location 
-                });
-                // This is a redirect, not an error - re-throw it
-                throw error;
-            }
-            
             console.error('❌ Admin login error:', error);
             return {
                 success: false,
