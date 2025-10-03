@@ -1096,14 +1096,22 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         // Create timeline based on real data
         const eventDate = new Date(event.date);
         
-        // Create timeline data for the 3 months leading up to the event
-        const timelineStart = new Date(eventDate);
-        timelineStart.setMonth(timelineStart.getMonth() - 3);
+        // Create timeline data - use different windows for active vs archived events
+        let timelineStart: Date;
+        if (eventData?.isActive) {
+            // For active events, use 3 months leading up to the event
+            timelineStart = new Date(eventDate);
+            timelineStart.setMonth(timelineStart.getMonth() - 3);
+        } else {
+            // For archived events, use 6 months leading up to the event to capture more activity
+            timelineStart = new Date(eventDate);
+            timelineStart.setMonth(timelineStart.getMonth() - 6);
+        }
         
-        let registrationStats: TimelineStats[] = [];
-        let choiceStats: TimelineStats[] = [];
-        let companyStats: TimelineStats[] = [];
-        let positionStats: TimelineStats[] = [];
+        const registrationStats: TimelineStats[] = [];
+        const choiceStats: TimelineStats[] = [];
+        const companyStats: TimelineStats[] = [];
+        const positionStats: TimelineStats[] = [];
 
         // Generate timeline data based on real student activity
         const studentUsers = students.filter(s => s.user);
@@ -1115,13 +1123,38 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             .filter(date => date && date >= timelineStart && date <= eventDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
-        // If no registration dates found in the timeline period, return empty timeline
-        // Don't create fake data for active events with no activity
-        if (registrationDates.length === 0) {
-            // For active events with no registrations, return empty timeline
-            // For archived events, we might want to show some data, but for now keep it empty
-            registrationStats = [];
-        } else {
+        // For archived events, if no registrations in timeline window, try to find any registrations
+        // and use a broader window to show the data
+        if (registrationDates.length === 0 && !eventData?.isActive) {
+            // For archived events, try to find any registrations and use a broader window
+            const allRegistrationDates = studentUsers
+                .map(s => s.user?.createdAt)
+                .filter(date => date)
+                .sort((a, b) => a!.getTime() - b!.getTime());
+            
+            if (allRegistrationDates.length > 0) {
+                // Use the earliest registration as the start of our timeline
+                const earliestRegistration = allRegistrationDates[0]!;
+                const broaderTimelineStart = new Date(Math.min(earliestRegistration.getTime(), timelineStart.getTime()));
+                
+                const broaderRegistrationDates = studentUsers
+                    .map(s => s.user?.createdAt)
+                    .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
+                    .sort((a, b) => a!.getTime() - b!.getTime());
+                
+                if (broaderRegistrationDates.length > 0) {
+                    const registrationByDate = new Map();
+                    broaderRegistrationDates.forEach(date => {
+                        const dateStr = date!.toISOString().split('T')[0];
+                        registrationByDate.set(dateStr, (registrationByDate.get(dateStr) || 0) + 1);
+                    });
+
+                    registrationByDate.forEach((count, date) => {
+                        registrationStats.push({ date, count });
+                    });
+                }
+            }
+        } else if (registrationDates.length > 0) {
             // Group registrations by date
             const registrationByDate = new Map();
             registrationDates.forEach(date => {
@@ -1139,13 +1172,50 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         const totalChoices = studentsWithChoices.reduce((sum, s) => sum + s.positionsSignedUpFor.length, 0);
         
         // Get choice submission dates from PositionsOnStudents createdAt
+        // For archived events, if createdAt is null, we can't show timeline data
         const choiceDates = studentsWithChoices
             .flatMap(s => s.positionsSignedUpFor)
             .map(choice => choice.createdAt)
             .filter(date => date && date >= timelineStart && date <= eventDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
-        if (choiceDates.length > 0) {
+        // For archived events, if no choices in timeline window, try to find any choices
+        if (choiceDates.length === 0 && !eventData?.isActive) {
+            // For archived events, try to find any choices and use a broader window
+            const allChoiceDates = studentsWithChoices
+                .flatMap(s => s.positionsSignedUpFor)
+                .map(choice => choice.createdAt)
+                .filter(date => date)
+                .sort((a, b) => a!.getTime() - b!.getTime());
+            
+            if (allChoiceDates.length > 0) {
+                // Use the earliest choice as the start of our timeline
+                const earliestChoice = allChoiceDates[0]!;
+                const broaderTimelineStart = new Date(Math.min(earliestChoice.getTime(), timelineStart.getTime()));
+                
+                const broaderChoiceDates = studentsWithChoices
+                    .flatMap(s => s.positionsSignedUpFor)
+                    .map(choice => choice.createdAt)
+                    .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
+                    .sort((a, b) => a!.getTime() - b!.getTime());
+                
+                if (broaderChoiceDates.length > 0) {
+                    const choiceByDate = new Map();
+                    broaderChoiceDates.forEach(date => {
+                        const dateStr = date!.toISOString().split('T')[0];
+                        choiceByDate.set(dateStr, (choiceByDate.get(dateStr) || 0) + 1);
+                    });
+
+                    choiceByDate.forEach((count, date) => {
+                        choiceStats.push({ date, count });
+                    });
+                }
+            } else {
+                // No choice dates available - this means createdAt is NULL for all choices
+                // This happens for events created before the createdAt field was added
+                // We'll leave choiceStats empty to indicate no timeline data is available
+            }
+        } else if (choiceDates.length > 0) {
             // Group choices by date
             const choiceByDate = new Map();
             choiceDates.forEach(date => {
@@ -1156,10 +1226,6 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             choiceByDate.forEach((count, date) => {
                 choiceStats.push({ date, count });
             });
-        } else {
-            // For active events with no choices, return empty timeline
-            // Don't create fake data
-            choiceStats = [];
         }
 
         // Company engagement timeline (based on host createdAt dates)
@@ -1168,12 +1234,37 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             .filter(date => date && date >= timelineStart && date <= eventDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
-        // If no host activity dates found, return empty timeline
-        // Don't create fake data for active events with no activity
-        if (hostActivityDates.length === 0) {
-            // For active events with no company activity, return empty timeline
-            companyStats = [];
-        } else {
+        // For archived events, if no company activity in timeline window, try to find any activity
+        if (hostActivityDates.length === 0 && !eventData?.isActive) {
+            // For archived events, try to find any company activity and use a broader window
+            const allHostActivityDates = hostUsers
+                .map(h => h.createdAt)
+                .filter(date => date)
+                .sort((a, b) => a!.getTime() - b!.getTime());
+            
+            if (allHostActivityDates.length > 0) {
+                // Use the earliest activity as the start of our timeline
+                const earliestActivity = allHostActivityDates[0]!;
+                const broaderTimelineStart = new Date(Math.min(earliestActivity.getTime(), timelineStart.getTime()));
+                
+                const broaderHostActivityDates = hostUsers
+                    .map(h => h.createdAt)
+                    .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
+                    .sort((a, b) => a!.getTime() - b!.getTime());
+                
+                if (broaderHostActivityDates.length > 0) {
+                    const companyByDate = new Map();
+                    broaderHostActivityDates.forEach(date => {
+                        const dateStr = date!.toISOString().split('T')[0];
+                        companyByDate.set(dateStr, (companyByDate.get(dateStr) || 0) + 1);
+                    });
+
+                    companyByDate.forEach((count, date) => {
+                        companyStats.push({ date, count });
+                    });
+                }
+            }
+        } else if (hostActivityDates.length > 0) {
             const companyByDate = new Map();
             hostActivityDates.forEach(date => {
                 const dateStr = date!.toISOString().split('T')[0];
@@ -1191,7 +1282,37 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             .filter(date => date && date >= timelineStart && date <= eventDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
-        if (positionDates.length > 0) {
+        // For archived events, if no positions in timeline window, try to find any positions
+        if (positionDates.length === 0 && !eventData?.isActive) {
+            // For archived events, try to find any positions and use a broader window
+            const allPositionDates = positions
+                .map(p => p.createdAt)
+                .filter(date => date)
+                .sort((a, b) => a!.getTime() - b!.getTime());
+            
+            if (allPositionDates.length > 0) {
+                // Use the earliest position as the start of our timeline
+                const earliestPosition = allPositionDates[0]!;
+                const broaderTimelineStart = new Date(Math.min(earliestPosition.getTime(), timelineStart.getTime()));
+                
+                const broaderPositionDates = positions
+                    .map(p => p.createdAt)
+                    .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
+                    .sort((a, b) => a!.getTime() - b!.getTime());
+                
+                if (broaderPositionDates.length > 0) {
+                    const positionByDate = new Map();
+                    broaderPositionDates.forEach(date => {
+                        const dateStr = date!.toISOString().split('T')[0];
+                        positionByDate.set(dateStr, (positionByDate.get(dateStr) || 0) + 1);
+                    });
+
+                    positionByDate.forEach((count, date) => {
+                        positionStats.push({ date, count });
+                    });
+                }
+            }
+        } else if (positionDates.length > 0) {
             // Group positions by date
             const positionByDate = new Map();
             positionDates.forEach(date => {
@@ -1202,10 +1323,6 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             positionByDate.forEach((count, date) => {
                 positionStats.push({ date, count });
             });
-        } else {
-            // For active events with no positions, return empty timeline
-            // Don't create fake data
-            positionStats = [];
         }
 
         // Lottery timeline (based on actual lottery job dates)
