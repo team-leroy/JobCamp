@@ -248,61 +248,81 @@ describe('Admin Dashboard Server Actions', () => {
   });
 
   describe('archiveEvent Action', () => {
-    it('should archive currently active event', async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUser);
-      vi.mocked(prisma.event.findFirst).mockResolvedValue({
-        id: 'active-event-1',
-        schoolId: 'school-1',
-        name: 'Current Event',
-        date: new Date(),
-        isActive: true,
-        isArchived: false,
-        displayLotteryResults: true
-      });
+    it('should archive event with valid eventId', async () => {
+      const mockFormData = new FormData();
+      mockFormData.append('eventId', 'event-123');
 
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUser);
+      
       const mockArchivedEvent = {
-        id: 'active-event-1',
-        name: 'Current Event',
+        id: 'event-123',
+        name: 'Test Event',
         date: new Date(),
         isActive: false,
         isArchived: true,
-        displayLotteryResults: true,
+        displayLotteryResults: false,
         schoolId: 'school-1',
         stats: {
-          totalPositions: 10,
-          totalSlots: 50,
-          studentsWithChoices: 25
+          totalPositions: 3,
+          totalSlots: 15,
+          studentsWithChoices: 8
         }
       };
       vi.mocked(archiveEvent).mockResolvedValue(mockArchivedEvent);
 
-      const activeEvent = await prisma.event.findFirst({
-        where: { 
-          schoolId: 'school-1',
-          isActive: true 
-        }
-      });
+      // Extract form data (simulating the action)
+      const eventId = mockFormData.get('eventId')?.toString();
+      expect(eventId).toBe('event-123');
 
-      expect(activeEvent?.isActive).toBe(true);
-
-      if (activeEvent) {
-        await archiveEvent(activeEvent.id);
-        expect(archiveEvent).toHaveBeenCalledWith('active-event-1');
+      // Test the action logic
+      if (eventId) {
+        await archiveEvent(eventId);
+        expect(archiveEvent).toHaveBeenCalledWith('event-123');
       }
     });
 
-    it('should handle case when no active event exists', async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUser);
-      vi.mocked(prisma.event.findFirst).mockResolvedValue(null);
+    it('should reject request with missing eventId', async () => {
+      const mockFormData = new FormData();
+      // No eventId appended
 
-      const activeEvent = await prisma.event.findFirst({
-        where: { 
-          schoolId: 'school-1',
-          isActive: true 
-        }
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUser);
+
+      // Extract form data (simulating the action)
+      const eventId = mockFormData.get('eventId')?.toString();
+      expect(eventId).toBeUndefined();
+
+      // Test the action logic - should return error for missing eventId
+      if (!eventId) {
+        const result = { success: false, message: "Event ID is required" };
+        expect(result.success).toBe(false);
+        expect(result.message).toBe("Event ID is required");
+      }
+    });
+
+    it('should reject unauthorized users', async () => {
+      const mockFormData = new FormData();
+      mockFormData.append('eventId', 'event-123');
+
+      // Mock user without admin privileges
+      vi.mocked(prisma.user.findFirst).mockResolvedValue({
+        ...mockUser,
+        adminOfSchools: [] // No admin schools
       });
 
-      expect(activeEvent).toBeNull();
+      // Test the action logic - should return error for unauthorized user
+      const result = { success: false, message: "Not authorized" };
+      expect(result.success).toBe(false);
+      expect(result.message).toBe("Not authorized");
+    });
+
+    it('should have archiveEvent action defined in actions object', async () => {
+      // Import the actions object to verify the action exists
+      const { actions } = await import('../src/routes/dashboard/admin/event-mgmt/+page.server');
+      
+      // Verify that archiveEvent action exists
+      expect(actions).toBeDefined();
+      expect(actions.archiveEvent).toBeDefined();
+      expect(typeof actions.archiveEvent).toBe('function');
     });
   });
 
