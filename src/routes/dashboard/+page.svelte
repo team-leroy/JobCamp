@@ -20,7 +20,7 @@
             <div class="mt-4 text-sm text-red-600">
               <p><strong>Current Status:</strong></p>
               <ul class="mt-1 list-disc list-inside">
-                <li>Event: {data.eventEnabled ? "Enabled" : "Draft Mode"}</li>
+                <li>Event: Active</li>
                 <li>
                   Student Accounts: {data.studentAccountsEnabled
                     ? "Enabled"
