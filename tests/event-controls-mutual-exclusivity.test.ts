@@ -32,7 +32,6 @@ describe('Event Controls Mutual Exclusivity', () => {
     id: 'active-event-1',
     schoolId: 'school-1',
     isActive: true,
-    eventEnabled: true,
     studentAccountsEnabled: true,
     companyAccountsEnabled: true,
     studentSignupsEnabled: false,

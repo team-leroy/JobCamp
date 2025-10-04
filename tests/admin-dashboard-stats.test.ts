@@ -55,7 +55,6 @@ describe('Admin Dashboard Statistics', () => {
                 schoolId: 'school-1',
                 createdAt: new Date('2025-01-01T10:00:00Z'),
                 activatedAt: new Date('2025-01-15T14:30:00Z'), // Event activated on Jan 15
-                eventEnabled: true,
                 companyAccountsEnabled: true,
                 companySignupsEnabled: true,
                 studentAccountsEnabled: true,
@@ -136,7 +135,6 @@ describe('Admin Dashboard Statistics', () => {
                 schoolId: 'school-1',
                 createdAt: new Date('2025-01-01T10:00:00Z'), // Event created on Jan 1
                 activatedAt: null, // Never activated
-                eventEnabled: true,
                 companyAccountsEnabled: true,
                 companySignupsEnabled: true,
                 studentAccountsEnabled: true,
@@ -234,7 +232,6 @@ describe('Admin Dashboard Statistics', () => {
                 schoolId: 'school-1',
                 createdAt: new Date('2025-01-01T10:00:00Z'),
                 activatedAt: new Date('2025-01-15T14:30:00Z'),
-                eventEnabled: true,
                 companyAccountsEnabled: true,
                 companySignupsEnabled: true,
                 studentAccountsEnabled: true,

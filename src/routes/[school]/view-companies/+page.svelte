@@ -70,7 +70,7 @@
                 There are currently no active events. The company directory will
                 be available when a new event is created and enabled.
               </p>
-            {:else if !data.eventEnabled}
+            {:else if !data.directoryAccessible}
               <p class="mt-2 text-sm text-yellow-700">
                 {data.eventName || "The current event"} is in preparation mode. The
                 company directory will be available when the event is enabled.

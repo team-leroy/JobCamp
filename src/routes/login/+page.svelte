@@ -39,7 +39,7 @@
       <h2 class="text-lg font-semibold text-yellow-800 mb-2">
         {#if !data.hasActiveEvent}
           JobCamp Season Has Ended
-        {:else if !data.eventEnabled}
+        {:else if !data.seasonActive}
           JobCamp In Preparation
         {/if}
       </h2>
@@ -47,7 +47,7 @@
         {#if !data.hasActiveEvent}
           Thank you for participating! Please check back next year for the next
           JobCamp season.
-        {:else if !data.eventEnabled}
+        {:else if !data.seasonActive}
           We're currently preparing for the upcoming JobCamp event. Student and
           company access will be available soon.
         {/if}
@@ -154,7 +154,7 @@
       <p class="text-gray-700 text-sm mb-4">
         {#if !data.hasActiveEvent}
           There is currently no active JobCamp event. Please check back when the next event is announced.
-        {:else if !data.eventEnabled}
+        {:else if !data.seasonActive}
           {data.eventName || "JobCamp"} is currently in preparation. Student and company access will be available soon.
         {/if}
       </p>

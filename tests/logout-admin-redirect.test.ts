@@ -82,7 +82,6 @@ describe('Admin Logout Redirect Logic', () => {
       // Mock getNavbarData to return showSignupLogin: false
       vi.mocked(getNavbarData).mockResolvedValue({
         hasActiveEvent: true,
-        eventEnabled: false,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
         showSignupLogin: false,
@@ -104,7 +103,6 @@ describe('Admin Logout Redirect Logic', () => {
       // Mock getNavbarData to return showSignupLogin: false (no active event)
       vi.mocked(getNavbarData).mockResolvedValue({
         hasActiveEvent: false,
-        eventEnabled: false,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
         showSignupLogin: false,
@@ -125,7 +123,6 @@ describe('Admin Logout Redirect Logic', () => {
       // Mock getNavbarData to return showSignupLogin: false (event disabled)
       vi.mocked(getNavbarData).mockResolvedValue({
         hasActiveEvent: true,
-        eventEnabled: false,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true,
         showSignupLogin: false,
@@ -148,7 +145,6 @@ describe('Admin Logout Redirect Logic', () => {
       // Mock getNavbarData to return showSignupLogin: true
       vi.mocked(getNavbarData).mockResolvedValue({
         hasActiveEvent: true,
-        eventEnabled: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true,
         showSignupLogin: true,
@@ -170,7 +166,6 @@ describe('Admin Logout Redirect Logic', () => {
       // Mock getNavbarData to return showSignupLogin: true (only students enabled)
       vi.mocked(getNavbarData).mockResolvedValue({
         hasActiveEvent: true,
-        eventEnabled: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: false,
         showSignupLogin: true,
@@ -191,7 +186,6 @@ describe('Admin Logout Redirect Logic', () => {
       // Mock getNavbarData to return showSignupLogin: true (only companies enabled)
       vi.mocked(getNavbarData).mockResolvedValue({
         hasActiveEvent: true,
-        eventEnabled: true,
         studentAccountsEnabled: false,
         companyAccountsEnabled: true,
         showSignupLogin: true,
@@ -283,7 +277,6 @@ describe('Admin Logout Redirect Logic', () => {
       vi.mocked(prisma.user.findFirst).mockResolvedValue(mockAdminUser);
       vi.mocked(getNavbarData).mockResolvedValue({
         hasActiveEvent: true,
-        eventEnabled: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true,
         showSignupLogin: true,
@@ -305,7 +298,6 @@ describe('Admin Logout Redirect Logic', () => {
       vi.mocked(prisma.user.findFirst).mockResolvedValue(mockAdminUser);
       vi.mocked(getNavbarData).mockResolvedValue({
         hasActiveEvent: true,
-        eventEnabled: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true,
         showSignupLogin: true,

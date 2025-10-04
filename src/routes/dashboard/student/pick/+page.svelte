@@ -107,15 +107,12 @@
           <p class="text-sm text-yellow-700 mb-2">
             <strong>Position selection is currently unavailable.</strong>
           </p>
-          {#if !data.eventEnabled}
-            <p class="text-sm text-yellow-600">• Event is in draft mode</p>
-          {/if}
-          {#if data.eventEnabled && !data.studentAccountsEnabled}
+          {#if !data.studentAccountsEnabled}
             <p class="text-sm text-yellow-600">
               • Student accounts are disabled
             </p>
           {/if}
-          {#if data.eventEnabled && data.studentAccountsEnabled && !data.studentSignupsEnabled}
+          {#if data.studentAccountsEnabled && !data.studentSignupsEnabled}
             <p class="text-sm text-yellow-600">
               • Student signups are disabled
             </p>

@@ -10,7 +10,6 @@
     isAdmin,
     seasonActive,
     hasActiveEvent,
-    eventEnabled,
     eventName,
     studentAccountsEnabled,
     companyAccountsEnabled,
@@ -45,7 +44,7 @@
           experience.
         </p>
         <p class="text-lg font-semibold text-blue-600">See you next year! 🎉</p>
-      {:else if !eventEnabled}
+      {:else if !seasonActive}
         <h2 class="text-2xl font-bold text-gray-800 mb-3">Coming Soon</h2>
         <p class="text-gray-700 mb-4">
           {eventName || "JobCamp"} is currently in preparation.
