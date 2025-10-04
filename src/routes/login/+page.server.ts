@@ -19,16 +19,14 @@ export const load: PageServerLoad = async (event) => {
         }
     });
 
-    const eventEnabled = Boolean(activeEvent?.eventEnabled);
     const studentAccountsEnabled = Boolean(activeEvent?.studentAccountsEnabled);
     const companyAccountsEnabled = Boolean(activeEvent?.companyAccountsEnabled);
-    const seasonActive = activeEvent && eventEnabled;
+    const seasonActive = Boolean(activeEvent?.isActive);
 
     const form = await superValidate(zod(schema));
     return { 
         form,
         seasonActive: Boolean(seasonActive),
-        eventEnabled: Boolean(eventEnabled),
         hasActiveEvent: Boolean(activeEvent),
         studentAccountsEnabled: Boolean(studentAccountsEnabled),
         companyAccountsEnabled: Boolean(companyAccountsEnabled),
@@ -52,10 +50,9 @@ export const actions: Actions = {
             }
         });
 
-        const eventEnabled = activeEvent?.eventEnabled ?? false;
         const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
         const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
-        const seasonActive = activeEvent && eventEnabled;
+        const seasonActive = Boolean(activeEvent?.isActive);
 
         // First validate credentials without logging in
         const existingUser = await prisma.user.findFirst({ 
@@ -85,7 +82,7 @@ export const actions: Actions = {
         if (!isAdmin && !seasonActive) {
             if (!activeEvent) {
                 return message(form, "JobCamp season has ended. Please check back next year!");
-            } else if (!eventEnabled) {
+            } else if (!activeEvent.isActive) {
                 return message(form, "JobCamp is currently in preparation mode. Please check back later!");
             }
         }

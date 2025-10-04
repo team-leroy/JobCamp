@@ -29,9 +29,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         }
     });
 
-    const eventEnabled = activeEvent?.eventEnabled ?? false;
     const companyDirectoryEnabled = activeEvent?.companyDirectoryEnabled ?? false;
-    const directoryAccessible = activeEvent && eventEnabled && companyDirectoryEnabled;
+    const directoryAccessible = Boolean(activeEvent?.isActive) && companyDirectoryEnabled;
 
     let positionData = [];
     if (directoryAccessible) {
@@ -61,7 +60,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         loggedIn, 
         isAdmin,
         hasActiveEvent: !!activeEvent,
-        eventEnabled,
         companyDirectoryEnabled,
         directoryAccessible,
         eventName: activeEvent?.name || null,

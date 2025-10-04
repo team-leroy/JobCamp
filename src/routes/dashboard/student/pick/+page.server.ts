@@ -27,12 +27,11 @@ export const load: PageServerLoad = async ({ locals }) => {
         }
     });
 
-    const eventEnabled = activeEvent?.eventEnabled ?? false;
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
     const studentSignupsEnabled = activeEvent?.studentSignupsEnabled ?? false;
 
-    // Student signups require: Event enabled + Student accounts enabled + Student signups enabled
-    const canSignUp = eventEnabled && studentAccountsEnabled && studentSignupsEnabled;
+    // Student signups require: Event active + Student accounts enabled + Student signups enabled
+    const canSignUp = Boolean(activeEvent?.isActive) && studentAccountsEnabled && studentSignupsEnabled;
 
     const positionData = await prisma.position.findMany({
         where: {
@@ -105,7 +104,6 @@ export const load: PageServerLoad = async ({ locals }) => {
         countSelected: positionsOnStudents.length, 
         permissionSlipCompleted: permissionSlipStatus.hasPermissionSlip,
         parentEmail: student.parentEmail,
-        eventEnabled,
         studentAccountsEnabled,
         studentSignupsEnabled,
         canSignUp,
@@ -167,11 +165,10 @@ export const actions: Actions = {
                 }
             });
 
-            const eventEnabled = activeEvent?.eventEnabled ?? false;
             const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
             const studentSignupsEnabled = activeEvent?.studentSignupsEnabled ?? false;
 
-            if (!eventEnabled) {
+            if (!activeEvent?.isActive) {
                 return { 
                     success: false, 
                     message: "Event is currently in draft mode. Please contact your administrator." 

@@ -6,7 +6,6 @@ export interface EventData {
   displayLotteryResults?: boolean;
   carryForwardData?: boolean; // Default to true - carry forward existing data
   // Event Controls
-  eventEnabled?: boolean;
   companyAccountsEnabled?: boolean;
   companySignupsEnabled?: boolean;
   studentAccountsEnabled?: boolean;
@@ -26,7 +25,6 @@ export interface EventWithStats {
   createdAt: Date;
   activatedAt: Date | null;
   // Event Controls
-  eventEnabled: boolean;
   companyAccountsEnabled: boolean;
   companySignupsEnabled: boolean;
   studentAccountsEnabled: boolean;
@@ -77,7 +75,6 @@ export async function getSchoolEvents(
     createdAt: event.createdAt,
     activatedAt: event.activatedAt,
     // Event Controls
-    eventEnabled: event.eventEnabled,
     companyAccountsEnabled: event.companyAccountsEnabled,
     companySignupsEnabled: event.companySignupsEnabled,
     studentAccountsEnabled: event.studentAccountsEnabled,
@@ -131,7 +128,6 @@ export async function getActiveEvent(schoolId: string): Promise<EventWithStats |
     createdAt: event.createdAt,
     activatedAt: event.activatedAt,
     // Event Controls
-    eventEnabled: event.eventEnabled,
     companyAccountsEnabled: event.companyAccountsEnabled,
     companySignupsEnabled: event.companySignupsEnabled,
     studentAccountsEnabled: event.studentAccountsEnabled,
@@ -169,7 +165,6 @@ export async function createEvent(
       isActive: false,
       isArchived: false,
       // Event Controls - new events start in draft mode (all disabled)
-      eventEnabled: eventData.eventEnabled ?? false,
       companyAccountsEnabled: eventData.companyAccountsEnabled ?? false,
       companySignupsEnabled: eventData.companySignupsEnabled ?? false,
       studentAccountsEnabled: eventData.studentAccountsEnabled ?? false,
@@ -253,7 +248,6 @@ export async function createEvent(
     createdAt: eventWithStats!.createdAt,
     activatedAt: eventWithStats!.activatedAt,
     // Event Controls
-    eventEnabled: eventWithStats!.eventEnabled,
     companyAccountsEnabled: eventWithStats!.companyAccountsEnabled,
     companySignupsEnabled: eventWithStats!.companySignupsEnabled,
     studentAccountsEnabled: eventWithStats!.studentAccountsEnabled,
@@ -318,7 +312,6 @@ export async function activateEvent(eventId: string, schoolId: string): Promise<
     createdAt: event.createdAt,
     activatedAt: event.activatedAt,
     // Event Controls
-    eventEnabled: event.eventEnabled,
     companyAccountsEnabled: event.companyAccountsEnabled,
     companySignupsEnabled: event.companySignupsEnabled,
     studentAccountsEnabled: event.studentAccountsEnabled,
@@ -371,7 +364,6 @@ export async function archiveEvent(eventId: string): Promise<EventWithStats> {
     createdAt: event.createdAt,
     activatedAt: event.activatedAt,
     // Event Controls
-    eventEnabled: event.eventEnabled,
     companyAccountsEnabled: event.companyAccountsEnabled,
     companySignupsEnabled: event.companySignupsEnabled,
     studentAccountsEnabled: event.studentAccountsEnabled,
@@ -430,7 +422,6 @@ export async function updateEvent(
     createdAt: event.createdAt,
     activatedAt: event.activatedAt,
     // Event Controls
-    eventEnabled: event.eventEnabled,
     companyAccountsEnabled: event.companyAccountsEnabled,
     companySignupsEnabled: event.companySignupsEnabled,
     studentAccountsEnabled: event.studentAccountsEnabled,

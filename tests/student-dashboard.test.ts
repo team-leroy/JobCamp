@@ -73,7 +73,6 @@ describe('Student Dashboard Server', () => {
         id: 'event-1',
         name: 'Test Event 2025',
         isActive: true,
-        eventEnabled: true,
         studentAccountsEnabled: true,
         studentSignupsEnabled: true,
         lotteryPublished: true,
@@ -219,13 +218,13 @@ describe('Student Dashboard Server', () => {
             expect(mockPrisma.lotteryJob.findFirst).not.toHaveBeenCalled();
         });
 
-        it('should not load lottery results when event is disabled', async () => {
+        it('should not load lottery results when event is inactive', async () => {
             const { load } = await import('../src/routes/dashboard/student/+page.server');
             
             mockPrisma.student.findFirst.mockResolvedValue(mockStudent);
             mockPrisma.event.findFirst.mockResolvedValue({
                 ...mockActiveEvent,
-                eventEnabled: false
+                isActive: false
             });
             mockPrisma.positionsOnStudents.findMany.mockResolvedValue([]);
 
@@ -347,20 +346,19 @@ describe('Student Dashboard Server', () => {
 
             const result = await load(event);
 
-            expect(result.eventEnabled).toBe(true);
             expect(result.studentAccountsEnabled).toBe(true);
             expect(result.studentSignupsEnabled).toBe(true);
             expect(result.lotteryPublished).toBe(true);
             expect(result.showLotteryResult).toBe(true);
         });
 
-        it('should set showLotteryResult to false when event is disabled', async () => {
+        it('should set showLotteryResult to false when event is inactive', async () => {
             const { load } = await import('../src/routes/dashboard/student/+page.server');
             
             mockPrisma.student.findFirst.mockResolvedValue(mockStudent);
             mockPrisma.event.findFirst.mockResolvedValue({
                 ...mockActiveEvent,
-                eventEnabled: false
+                isActive: false
             });
             mockPrisma.positionsOnStudents.findMany.mockResolvedValue([]);
 
@@ -432,7 +430,6 @@ describe('Student Dashboard Server', () => {
 
             const result = await load(event);
 
-            expect(result.eventEnabled).toBe(false);
             expect(result.studentAccountsEnabled).toBe(false);
             expect(result.studentSignupsEnabled).toBe(false);
             expect(result.lotteryPublished).toBe(false);

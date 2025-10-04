@@ -307,7 +307,6 @@ describe('Event Management Functions', () => {
         displayLotteryResults: true,
         schoolId: testSchoolId,
         // Event Controls - new events start in draft mode (all disabled)
-        eventEnabled: false,
         companyAccountsEnabled: false,
         companySignupsEnabled: false,
         studentAccountsEnabled: false,
@@ -330,7 +329,6 @@ describe('Event Management Functions', () => {
           isActive: false,
           isArchived: false,
           // Event Controls - new events start in draft mode (all disabled)
-          eventEnabled: false,
           companyAccountsEnabled: false,
           companySignupsEnabled: false,
           studentAccountsEnabled: false,
@@ -378,7 +376,6 @@ describe('Event Management Functions', () => {
           isActive: false,
           isArchived: false,
           // Event Controls - new events start in draft mode (all disabled)
-          eventEnabled: false,
           companyAccountsEnabled: false,
           companySignupsEnabled: false,
           studentAccountsEnabled: false,
@@ -851,7 +848,6 @@ describe('Event Management Functions', () => {
             isActive: false,
             isArchived: false,
             // Event Controls - new events start in draft mode (all disabled)
-            eventEnabled: false,
             companyAccountsEnabled: false,
             companySignupsEnabled: false,
             studentAccountsEnabled: false,

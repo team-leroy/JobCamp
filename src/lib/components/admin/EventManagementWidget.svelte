@@ -70,8 +70,18 @@
 
   // Format date for display (fix timezone issue)
   function formatDate(date: Date | string) {
-    const d = new Date(date);
-    return d.toLocaleDateString("en-US", {
+    // Ensure we're working with a proper Date object
+    const d = date instanceof Date ? date : new Date(date);
+
+    // Extract the UTC components to avoid timezone conversion issues
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth();
+    const day = d.getUTCDate();
+
+    // Create a new date with the UTC components
+    const utcDate = new Date(Date.UTC(year, month, day));
+
+    return utcDate.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -143,10 +153,8 @@ Continue with deletion?`;
   function getEnhancedEventStatus(event: EventWithFilteredStats) {
     if (event.isActive) {
       return {
-        text: `Activated - ${event.eventEnabled ? "Enabled" : "Disabled"}`,
-        variant: event.eventEnabled
-          ? ("default" as const)
-          : ("destructive" as const),
+        text: "Activated",
+        variant: "default" as const,
       };
     }
     if (event.isArchived) {
@@ -276,13 +284,7 @@ Continue with deletion?`;
                 <div class="space-y-3 text-sm">
                   <div class="flex justify-between">
                     <span class="text-gray-600">Event Status:</span>
-                    <span
-                      class="font-medium {event.eventEnabled
-                        ? 'text-green-600'
-                        : 'text-red-600'}"
-                    >
-                      Activated - {event.eventEnabled ? "Enabled" : "Disabled"}
-                    </span>
+                    <span class="font-medium text-green-600"> Activated </span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-gray-600">Event Date:</span>
@@ -366,7 +368,7 @@ Continue with deletion?`;
     {/if}
 
     <!-- Archive Event Section -->
-    {#if schoolEvents.some(e => e.isActive)}
+    {#if schoolEvents.some((e) => e.isActive)}
       <div class="mt-6 pt-6 border-t border-gray-200">
         <div class="flex items-center justify-between">
           <div>
@@ -379,18 +381,23 @@ Continue with deletion?`;
           </div>
           <button
             onclick={() => {
-              const activeEvent = schoolEvents.find(e => e.isActive);
-              if (activeEvent && confirm(`Are you sure you want to archive "${activeEvent.name || 'this event'}"? This will make it inactive and move it to archived status.`)) {
+              const activeEvent = schoolEvents.find((e) => e.isActive);
+              if (
+                activeEvent &&
+                confirm(
+                  `Are you sure you want to archive "${activeEvent.name || "this event"}"? This will make it inactive and move it to archived status.`
+                )
+              ) {
                 // Create and submit archive form
                 const form = document.createElement("form");
                 form.method = "POST";
                 form.action = "?/archiveEvent";
-                
+
                 const eventIdInput = document.createElement("input");
                 eventIdInput.type = "hidden";
                 eventIdInput.name = "eventId";
                 eventIdInput.value = activeEvent.id;
-                
+
                 form.appendChild(eventIdInput);
                 document.body.appendChild(form);
                 form.submit();

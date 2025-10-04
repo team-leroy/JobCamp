@@ -153,7 +153,6 @@ export const actions: Actions = {
 
             // Map control types to database fields
             const fieldMap: Record<string, string> = {
-                'event': 'eventEnabled',
                 'companyAccounts': 'companyAccountsEnabled',
                 'companySignups': 'companySignupsEnabled',
                 'studentAccounts': 'studentAccountsEnabled',
@@ -237,13 +236,13 @@ export const actions: Actions = {
             }
 
             // Create the event (displayLotteryResults removed, defaulting to false)
-            // Parse the date as local time to avoid timezone issues
+            // Parse the date as UTC to avoid timezone issues
             const [year, month, day] = eventDate.split('-').map(Number);
-            const localDate = new Date(year, month - 1, day); // month is 0-indexed
+            const utcDate = new Date(Date.UTC(year, month - 1, day)); // month is 0-indexed, use UTC
             
             const eventData = {
                 name: eventName.trim(),
-                date: localDate,
+                date: utcDate,
                 displayLotteryResults: false, // Always false - controlled by Event Controls
                 carryForwardData
             };

@@ -29,13 +29,12 @@ export const load: PageServerLoad = async (event) => {
         }
     });
 
-    const eventEnabled = activeEvent?.eventEnabled ?? false;
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
     const studentSignupsEnabled = activeEvent?.studentSignupsEnabled ?? false;
     const lotteryPublished = activeEvent?.lotteryPublished ?? false;
 
-    // Only show lottery results if event is enabled AND lottery is published
-    const showLotteryResult = eventEnabled && lotteryPublished;
+    // Only show lottery results if event is active AND lottery is published
+    const showLotteryResult = Boolean(activeEvent?.isActive) && lotteryPublished;
 
     // Load lottery result from the new event-specific LotteryResults table
     let lotteryResult = null;
@@ -100,7 +99,6 @@ export const load: PageServerLoad = async (event) => {
         lotteryResult, 
         permissionSlipCompleted: permissionSlipStatus.hasPermissionSlip, 
         parentEmail: student.parentEmail,
-        eventEnabled,
         studentAccountsEnabled,
         studentSignupsEnabled,
         lotteryPublished,

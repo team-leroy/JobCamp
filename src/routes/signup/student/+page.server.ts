@@ -22,8 +22,7 @@ export const load: PageServerLoad = async (event) => {
         }
     });
 
-    const eventEnabled = activeEvent?.eventEnabled ?? false;
-    const seasonActive = activeEvent && eventEnabled;
+    const seasonActive = Boolean(activeEvent?.isActive);
 
     // Redirect to homepage if season is not active
     if (!seasonActive) {

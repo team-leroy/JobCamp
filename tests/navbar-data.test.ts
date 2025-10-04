@@ -24,7 +24,6 @@ describe('getNavbarData Function', () => {
 
       expect(result).toEqual({
         hasActiveEvent: false,
-        eventEnabled: false,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
         companySignupsEnabled: false,
@@ -33,11 +32,11 @@ describe('getNavbarData Function', () => {
       });
     });
 
-    it('should return showSignupLogin: false when event is disabled', async () => {
+    it('should return showSignupLogin: false when event is inactive', async () => {
       const mockEvent = {
         id: 'event-1',
         name: 'Test Event',
-        eventEnabled: false,
+        isActive: false,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true
       };
@@ -48,7 +47,6 @@ describe('getNavbarData Function', () => {
 
       expect(result).toEqual({
         hasActiveEvent: true,
-        eventEnabled: false,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true,
         companySignupsEnabled: false,
@@ -61,7 +59,7 @@ describe('getNavbarData Function', () => {
       const mockEvent = {
         id: 'event-1',
         name: 'Test Event',
-        eventEnabled: true,
+        isActive: true,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false
       };
@@ -72,7 +70,6 @@ describe('getNavbarData Function', () => {
 
       expect(result).toEqual({
         hasActiveEvent: true,
-        eventEnabled: true,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
         companySignupsEnabled: false,
@@ -81,11 +78,11 @@ describe('getNavbarData Function', () => {
       });
     });
 
-    it('should return showSignupLogin: true when event is enabled and student accounts are enabled', async () => {
+    it('should return showSignupLogin: true when event is active and student accounts are enabled', async () => {
       const mockEvent = {
         id: 'event-1',
         name: 'Test Event',
-        eventEnabled: true,
+        isActive: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: false
       };
@@ -96,7 +93,6 @@ describe('getNavbarData Function', () => {
 
       expect(result).toEqual({
         hasActiveEvent: true,
-        eventEnabled: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: false,
         companySignupsEnabled: false,
@@ -105,11 +101,11 @@ describe('getNavbarData Function', () => {
       });
     });
 
-    it('should return showSignupLogin: true when event is enabled and company accounts are enabled', async () => {
+    it('should return showSignupLogin: true when event is active and company accounts are enabled', async () => {
       const mockEvent = {
         id: 'event-1',
         name: 'Test Event',
-        eventEnabled: true,
+        isActive: true,
         studentAccountsEnabled: false,
         companyAccountsEnabled: true
       };
@@ -120,7 +116,6 @@ describe('getNavbarData Function', () => {
 
       expect(result).toEqual({
         hasActiveEvent: true,
-        eventEnabled: true,
         studentAccountsEnabled: false,
         companyAccountsEnabled: true,
         companySignupsEnabled: false,
@@ -129,11 +124,11 @@ describe('getNavbarData Function', () => {
       });
     });
 
-    it('should return showSignupLogin: true when event is enabled and both account types are enabled', async () => {
+    it('should return showSignupLogin: true when event is active and both account types are enabled', async () => {
       const mockEvent = {
         id: 'event-1',
         name: 'Test Event',
-        eventEnabled: true,
+        isActive: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true
       };
@@ -144,7 +139,6 @@ describe('getNavbarData Function', () => {
 
       expect(result).toEqual({
         hasActiveEvent: true,
-        eventEnabled: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true,
         companySignupsEnabled: false,
@@ -159,7 +153,7 @@ describe('getNavbarData Function', () => {
       const mockEvent = {
         id: 'event-1',
         name: 'Test Event',
-        eventEnabled: null,
+        isActive: null,
         studentAccountsEnabled: null,
         companyAccountsEnabled: null
       };
@@ -170,7 +164,6 @@ describe('getNavbarData Function', () => {
 
       expect(result).toEqual({
         hasActiveEvent: true,
-        eventEnabled: false,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
         companySignupsEnabled: false,
@@ -183,7 +176,7 @@ describe('getNavbarData Function', () => {
       const mockEvent = {
         id: 'event-1',
         name: 'Test Event',
-        eventEnabled: undefined,
+        isActive: undefined,
         studentAccountsEnabled: undefined,
         companyAccountsEnabled: undefined
       };
@@ -194,7 +187,6 @@ describe('getNavbarData Function', () => {
 
       expect(result).toEqual({
         hasActiveEvent: true,
-        eventEnabled: false,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false,
         companySignupsEnabled: false,
@@ -206,7 +198,7 @@ describe('getNavbarData Function', () => {
     it('should handle event with missing name', async () => {
       const mockEvent = {
         id: 'event-1',
-        eventEnabled: true,
+        isActive: true,
         studentAccountsEnabled: true,
         companyAccountsEnabled: true
         // name is missing

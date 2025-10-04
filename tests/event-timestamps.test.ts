@@ -74,7 +74,6 @@ describe('Event Timestamps', () => {
                     displayLotteryResults: mockEventData.displayLotteryResults,
                     isActive: false,
                     isArchived: false,
-                    eventEnabled: mockEventData.eventEnabled,
                     companyAccountsEnabled: mockEventData.companyAccountsEnabled,
                     companySignupsEnabled: mockEventData.companySignupsEnabled,
                     studentAccountsEnabled: mockEventData.studentAccountsEnabled,

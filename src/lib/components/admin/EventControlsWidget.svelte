@@ -13,7 +13,6 @@
   const hasActiveEvent = upcomingEvent && upcomingEvent.isActive;
 
   // Event control states - initialize from props
-  let eventEnabled = $state(upcomingEvent?.eventEnabled ?? false);
   let companyAccountsEnabled = $state(
     upcomingEvent?.companyAccountsEnabled ?? false
   );
@@ -31,39 +30,37 @@
     upcomingEvent?.companyDirectoryEnabled ?? false
   );
 
-
   let isUpdating = $state(false);
 
+  // Handle control changes using native form submission
+  function handleControlChange(control: string, currentValue: boolean) {
+    const newValue = !currentValue;
+    isUpdating = true;
 
-        // Handle control changes using native form submission
-        function handleControlChange(control: string, currentValue: boolean) {
-          const newValue = !currentValue;
-          isUpdating = true;
+    console.log(
+      `🔄 Attempting to change ${control} from ${currentValue} to ${newValue}`
+    );
 
-          console.log(`🔄 Attempting to change ${control} from ${currentValue} to ${newValue}`);
+    // Create a form and submit it natively
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/dashboard/admin/event-mgmt?/updateEventControls";
 
-          // Create a form and submit it natively
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = '/dashboard/admin/event-mgmt?/updateEventControls';
-          
-          const controlTypeInput = document.createElement('input');
-          controlTypeInput.type = 'hidden';
-          controlTypeInput.name = 'controlType';
-          controlTypeInput.value = control;
-          form.appendChild(controlTypeInput);
-          
-          const enabledInput = document.createElement('input');
-          enabledInput.type = 'hidden';
-          enabledInput.name = 'enabled';
-          enabledInput.value = newValue.toString();
-          form.appendChild(enabledInput);
-          
-          document.body.appendChild(form);
-          form.submit();
-        }
+    const controlTypeInput = document.createElement("input");
+    controlTypeInput.type = "hidden";
+    controlTypeInput.name = "controlType";
+    controlTypeInput.value = control;
+    form.appendChild(controlTypeInput);
 
+    const enabledInput = document.createElement("input");
+    enabledInput.type = "hidden";
+    enabledInput.name = "enabled";
+    enabledInput.value = newValue.toString();
+    form.appendChild(enabledInput);
 
+    document.body.appendChild(form);
+    form.submit();
+  }
 </script>
 
 <div class="bg-white rounded-lg shadow p-6">
@@ -98,7 +95,9 @@
     <div class="mb-4 p-3 bg-blue-50 rounded-lg">
       <p class="text-sm text-blue-700">
         <strong>Active Event:</strong>
-        {upcomingEvent.name} ({upcomingEvent.date.toLocaleDateString()})
+        {upcomingEvent.name} ({upcomingEvent.date.toLocaleDateString("en-US", {
+          timeZone: "UTC",
+        })})
         <br />
         <strong>Event Controls:</strong> These access controls determine what users
         can do within the active event. You can keep controls disabled while preparing
@@ -109,73 +108,55 @@
 
   {#if hasActiveEvent}
     <div class="space-y-4">
-      <!-- Top Level: Overall Event Enablement -->
-      <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-        <div class="flex items-center space-x-3">
-          <Switch
-            checked={eventEnabled}
-            disabled={isUpdating}
-            onclick={() => handleControlChange("event", eventEnabled)}
-          />
-          <Label class="text-base font-medium text-blue-900">Overall event enablement</Label>
-        </div>
-        <span class="text-sm text-blue-700">
-          {eventEnabled ? "Enabled" : "Disabled"}
-          {#if isUpdating}
-            <span class="ml-1 text-xs">(updating...)</span>
-          {/if}
-        </span>
-      </div>
-
-      <!-- Second Level Controls -->
-      <div class="ml-6 space-y-4">
+      <!-- Top Level Controls -->
+      <div class="space-y-4">
         <!-- Company Account Section -->
         <div class="space-y-3">
           <!-- Enable Company Account Logins -->
           <div
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-            class:opacity-50={!eventEnabled}
           >
             <div class="flex items-center space-x-3">
               <Switch
                 checked={companyAccountsEnabled}
-                disabled={isUpdating || !eventEnabled}
+                disabled={isUpdating}
                 onclick={() =>
-                  handleControlChange("companyAccounts", companyAccountsEnabled)}
+                  handleControlChange(
+                    "companyAccounts",
+                    companyAccountsEnabled
+                  )}
               />
-              <Label class="text-base font-medium">Enable company account logins</Label>
+              <Label class="text-base font-medium"
+                >Enable company account logins</Label
+              >
             </div>
             <span class="text-sm text-gray-500">
-              {!eventEnabled
-                ? "Requires Overall Event Enabled"
-                : companyAccountsEnabled
-                  ? "Enabled"
-                  : "Disabled"}
+              {companyAccountsEnabled ? "Enabled" : "Disabled"}
             </span>
           </div>
 
           <!-- Enable New Company Signups (under Company Accounts) -->
           <div
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg ml-6"
-            class:opacity-50={!eventEnabled || !companyAccountsEnabled}
+            class:opacity-50={!companyAccountsEnabled}
           >
             <div class="flex items-center space-x-3">
               <Switch
                 checked={companySignupsEnabled}
-                disabled={isUpdating || !eventEnabled || !companyAccountsEnabled}
+                disabled={isUpdating || !companyAccountsEnabled}
                 onclick={() =>
                   handleControlChange("companySignups", companySignupsEnabled)}
               />
-              <Label class="text-base font-medium">Enable new company signups</Label>
+              <Label class="text-base font-medium"
+                >Enable new company signups</Label
+              >
             </div>
             <span class="text-sm text-gray-500">
-              {!eventEnabled
-                ? "Requires Overall Event Enabled"
-                : !companyAccountsEnabled
-                  ? "Requires Company Account Logins"
-                  : companySignupsEnabled
-                    ? "Enabled"
-                    : "Disabled"}
+              {!companyAccountsEnabled
+                ? "Requires Company Account Logins"
+                : companySignupsEnabled
+                  ? "Enabled"
+                  : "Disabled"}
             </span>
           </div>
         </div>
@@ -185,77 +166,81 @@
           <!-- Enable Student Account Logins -->
           <div
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-            class:opacity-50={!eventEnabled}
           >
             <div class="flex items-center space-x-3">
               <Switch
                 checked={studentAccountsEnabled}
-                disabled={isUpdating || !eventEnabled}
+                disabled={isUpdating}
                 onclick={() =>
-                  handleControlChange("studentAccounts", studentAccountsEnabled)}
+                  handleControlChange(
+                    "studentAccounts",
+                    studentAccountsEnabled
+                  )}
               />
-              <Label class="text-base font-medium">Enable student account logins</Label>
+              <Label class="text-base font-medium"
+                >Enable student account logins</Label
+              >
             </div>
             <span class="text-sm text-gray-500">
-              {!eventEnabled
-                ? "Requires Overall Event Enabled"
-                : studentAccountsEnabled
-                  ? "Enabled"
-                  : "Disabled"}
+              {studentAccountsEnabled ? "Enabled" : "Disabled"}
             </span>
           </div>
 
           <!-- Allow Students to Pick Jobs (under Student Accounts) -->
           <div
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg ml-6"
-            class:opacity-50={!eventEnabled || !studentAccountsEnabled || lotteryPublished}
+            class:opacity-50={!studentAccountsEnabled || lotteryPublished}
           >
             <div class="flex items-center space-x-3">
               <Switch
                 checked={studentSignupsEnabled}
-                disabled={isUpdating || !eventEnabled || !studentAccountsEnabled || lotteryPublished}
+                disabled={isUpdating ||
+                  !studentAccountsEnabled ||
+                  lotteryPublished}
                 onclick={() =>
                   handleControlChange("studentSignups", studentSignupsEnabled)}
               />
-              <Label class="text-base font-medium">Allow students to pick jobs</Label>
+              <Label class="text-base font-medium"
+                >Allow students to pick jobs</Label
+              >
             </div>
             <span class="text-sm text-gray-500">
-              {!eventEnabled
-                ? "Requires Overall Event Enabled"
-                : !studentAccountsEnabled
-                  ? "Requires Student Account Logins"
-                  : lotteryPublished
-                    ? "Cannot enable while lottery results are published"
-                    : studentSignupsEnabled
-                      ? "Enabled"
-                      : "Disabled"}
+              {!studentAccountsEnabled
+                ? "Requires Student Account Logins"
+                : lotteryPublished
+                  ? "Cannot enable while lottery results are published"
+                  : studentSignupsEnabled
+                    ? "Enabled"
+                    : "Disabled"}
             </span>
           </div>
 
           <!-- Publish Lottery Results to Students (under Student Accounts) -->
           <div
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg ml-6"
-            class:opacity-50={!eventEnabled || !studentAccountsEnabled || studentSignupsEnabled}
+            class:opacity-50={!studentAccountsEnabled || studentSignupsEnabled}
           >
             <div class="flex items-center space-x-3">
               <Switch
                 checked={lotteryPublished}
-                disabled={isUpdating || !eventEnabled || !studentAccountsEnabled || studentSignupsEnabled}
+                disabled={isUpdating ||
+                  !studentAccountsEnabled ||
+                  studentSignupsEnabled}
                 onclick={() =>
                   handleControlChange("lotteryPublished", lotteryPublished)}
               />
-              <Label class="text-base font-medium">Publish lottery results to students</Label>
+              <Label class="text-base font-medium"
+                >Publish lottery results to students</Label
+              >
             </div>
             <span class="text-sm text-gray-500">
-              {!eventEnabled
-                ? "Requires Overall Event Enabled"
-                : !studentAccountsEnabled
-                  ? "Requires Student Account Logins"
-                  : studentSignupsEnabled
-                    ? "Cannot enable while students can pick jobs"
-                    : lotteryPublished
-                      ? "Published"
-                      : "Hidden"}
+              {!studentAccountsEnabled
+                ? "Requires Student Account Logins"
+                : studentSignupsEnabled
+                  ? "Cannot enable while students can pick jobs"
+                  : lotteryPublished
+                    ? "Published"
+                    : "Hidden"}
             </span>
           </div>
         </div>
@@ -263,23 +248,23 @@
         <!-- Publish Company Directory -->
         <div
           class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-          class:opacity-50={!eventEnabled}
         >
           <div class="flex items-center space-x-3">
             <Switch
               checked={companyDirectoryEnabled}
-              disabled={isUpdating || !eventEnabled}
+              disabled={isUpdating}
               onclick={() =>
-                handleControlChange("companyDirectory", companyDirectoryEnabled)}
+                handleControlChange(
+                  "companyDirectory",
+                  companyDirectoryEnabled
+                )}
             />
-            <Label class="text-base font-medium">Publish company directory</Label>
+            <Label class="text-base font-medium"
+              >Publish company directory</Label
+            >
           </div>
           <span class="text-sm text-gray-500">
-            {!eventEnabled
-              ? "Requires Overall Event Enabled"
-              : companyDirectoryEnabled
-                ? "Published"
-                : "Hidden"}
+            {companyDirectoryEnabled ? "Published" : "Hidden"}
           </span>
         </div>
       </div>
@@ -291,18 +276,15 @@
         <span class="text-gray-600">Active Controls:</span>
         <span class="font-medium text-blue-600">
           {[
-            eventEnabled,
             companyAccountsEnabled,
             companySignupsEnabled,
             studentAccountsEnabled,
             studentSignupsEnabled,
             lotteryPublished,
             companyDirectoryEnabled,
-          ].filter(Boolean).length}/7
+          ].filter(Boolean).length}/6
         </span>
       </div>
     </div>
-
   {/if}
 </div>
-

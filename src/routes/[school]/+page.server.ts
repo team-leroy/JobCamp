@@ -22,10 +22,9 @@ export const load : PageServerLoad = async ({ locals }) => {
         }
     });
 
-    const eventEnabled = Boolean(activeEvent?.eventEnabled);
     const studentAccountsEnabled = Boolean(activeEvent?.studentAccountsEnabled);
     const companyAccountsEnabled = Boolean(activeEvent?.companyAccountsEnabled);
-    const seasonActive = activeEvent && eventEnabled;
+    const seasonActive = Boolean(activeEvent?.isActive);
 
     // Determine if signup/login should be shown
     const showSignupLogin = seasonActive && (studentAccountsEnabled || companyAccountsEnabled);
@@ -35,7 +34,6 @@ export const load : PageServerLoad = async ({ locals }) => {
         loggedIn: Boolean(loggedIn), 
         isAdmin: Boolean(isAdmin),
         seasonActive: Boolean(seasonActive),
-        eventEnabled: Boolean(eventEnabled),
         hasActiveEvent: Boolean(activeEvent),
         eventName: activeEvent?.name || null,
         studentAccountsEnabled: Boolean(studentAccountsEnabled),
