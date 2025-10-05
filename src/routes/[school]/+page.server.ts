@@ -36,6 +36,7 @@ export const load : PageServerLoad = async ({ locals }) => {
         seasonActive: Boolean(seasonActive),
         hasActiveEvent: Boolean(activeEvent),
         eventName: activeEvent?.name || null,
+        eventDate: activeEvent?.date || null,
         studentAccountsEnabled: Boolean(studentAccountsEnabled),
         companyAccountsEnabled: Boolean(companyAccountsEnabled),
         showSignupLogin: Boolean(showSignupLogin)

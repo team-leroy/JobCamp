@@ -18,12 +18,14 @@
   let passwordEntryType = $derived(showPassword ? "text" : "password");
 
   // Determine if signup/login should be shown
-  const showSignupLogin = data.seasonActive && (data.studentAccountsEnabled || data.companyAccountsEnabled);
+  const showSignupLogin =
+    data.seasonActive &&
+    (data.studentAccountsEnabled || data.companyAccountsEnabled);
 </script>
 
-<Navbar 
-  isHost={false} 
-  loggedIn={false} 
+<Navbar
+  isHost={false}
+  loggedIn={false}
   isAdmin={false}
   {showSignupLogin}
   studentAccountsEnabled={data.studentAccountsEnabled}
@@ -38,7 +40,7 @@
     >
       <h2 class="text-lg font-semibold text-yellow-800 mb-2">
         {#if !data.hasActiveEvent}
-          JobCamp Season Has Ended
+          JobCamp Has Ended
         {:else if !data.seasonActive}
           JobCamp In Preparation
         {/if}
@@ -46,17 +48,12 @@
       <p class="text-yellow-700 text-sm">
         {#if !data.hasActiveEvent}
           Thank you for participating! Please check back next year for the next
-          JobCamp season.
+          JobCamp Event.
         {:else if !data.seasonActive}
           We're currently preparing for the upcoming JobCamp event. Student and
           company access will be available soon.
         {/if}
       </p>
-      {#if !data.hasActiveEvent}
-        <p class="text-yellow-600 text-xs mt-2">
-          Administrators can still log in to manage events.
-        </p>
-      {/if}
     </div>
   {:else if !data.studentAccountsEnabled && !data.companyAccountsEnabled}
     <!-- Both Account Types Disabled -->
@@ -67,11 +64,8 @@
         Account Access Temporarily Disabled
       </h2>
       <p class="text-orange-700 text-sm">
-        Student and company accounts are currently disabled for {data.eventName || "this event"}. 
-        This may be during event preparation or maintenance.
-      </p>
-      <p class="text-orange-600 text-xs mt-2">
-        Administrators can still access the system.
+        Student and company accounts are disabled while we prepare for the next
+        JobCamp event.
       </p>
     </div>
   {:else if !data.studentAccountsEnabled || !data.companyAccountsEnabled}
@@ -84,10 +78,12 @@
       </h2>
       <p class="text-blue-700 text-sm">
         {#if !data.studentAccountsEnabled}
-          Student accounts are currently disabled for {data.eventName || "this event"}.
+          Student accounts are currently disabled for {data.eventName ||
+            "this event"}.
         {/if}
         {#if !data.companyAccountsEnabled}
-          Company accounts are currently disabled for {data.eventName || "this event"}.
+          Company accounts are currently disabled for {data.eventName ||
+            "this event"}.
         {/if}
         Please check back later or contact an administrator if you need access.
       </p>
@@ -113,7 +109,8 @@
           bind:value={$form.email}
         />
       </div>
-      {#if $errors.email}<span class="text-sm text-red-500">{$errors.email}</span
+      {#if $errors.email}<span class="text-sm text-red-500"
+          >{$errors.email}</span
         >{/if}
 
       <div class="flex max-w-full w-96 justify-between items-center">
@@ -141,21 +138,27 @@
         >Login</button
       >
     </form>
-    <a href="/reset-password" class="underline text-blue-500">Forgot Password?</a>
+    <a href="/reset-password" class="underline text-blue-500"
+      >Forgot Password?</a
+    >
     <a href="/signup" class="underline text-blue-500">Do you want to signup?</a>
   {:else if !data.studentAccountsEnabled && !data.companyAccountsEnabled}
     <!-- Both account types disabled - don't show additional message since we already have one above -->
   {:else}
     <!-- No Login Available - Show appropriate message for other cases -->
-    <div class="max-w-md mx-4 p-6 bg-gray-50 border-l-4 border-gray-400 rounded-lg text-center">
+    <div
+      class="max-w-md mx-4 p-6 bg-gray-50 border-l-4 border-gray-400 rounded-lg text-center"
+    >
       <h2 class="text-lg font-semibold text-gray-800 mb-2">
         Login Not Available
       </h2>
       <p class="text-gray-700 text-sm mb-4">
         {#if !data.hasActiveEvent}
-          There is currently no active JobCamp event. Please check back when the next event is announced.
+          There is currently no active JobCamp event. Please check back when the
+          next event is announced.
         {:else if !data.seasonActive}
-          {data.eventName || "JobCamp"} is currently in preparation. Student and company access will be available soon.
+          {data.eventName || "JobCamp"} is currently in preparation. Student and
+          company access will be available soon.
         {/if}
       </p>
       <p class="text-gray-600 text-xs">

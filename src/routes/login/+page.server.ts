@@ -81,7 +81,7 @@ export const actions: Actions = {
         // Block student/company login if season is not active
         if (!isAdmin && !seasonActive) {
             if (!activeEvent) {
-                return message(form, "JobCamp season has ended. Please check back next year!");
+                return message(form, "JobCamp has ended. Please check back next year!");
             } else if (!activeEvent.isActive) {
                 return message(form, "JobCamp is currently in preparation mode. Please check back later!");
             }

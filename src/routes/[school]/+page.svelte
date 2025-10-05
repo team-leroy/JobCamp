@@ -11,16 +11,17 @@
     seasonActive,
     hasActiveEvent,
     eventName,
+    eventDate,
     studentAccountsEnabled,
     companyAccountsEnabled,
     showSignupLogin,
   } = data;
 </script>
 
-<Navbar 
-  {isHost} 
-  {loggedIn} 
-  {isAdmin} 
+<Navbar
+  {isHost}
+  {loggedIn}
+  {isAdmin}
   {showSignupLogin}
   {studentAccountsEnabled}
   {companyAccountsEnabled}
@@ -38,7 +39,7 @@
       class="mt-8 max-w-lg mx-4 p-6 bg-white/90 rounded-lg shadow-2xl text-center"
     >
       {#if !hasActiveEvent}
-        <h2 class="text-2xl font-bold text-gray-800 mb-3">Season Has Ended</h2>
+        <h2 class="text-2xl font-bold text-gray-800 mb-3">JobCamp Has Ended</h2>
         <p class="text-gray-700 mb-4">
           Thank you for participating in JobCamp! We hope you had a great
           experience.
@@ -53,7 +54,11 @@
           Check back soon for registration! 🚀
         </p>
       {:else if !showSignupLogin}
-        <h2 class="text-2xl font-bold text-gray-800 mb-3">Coming Soon</h2>
+        <h2 class="text-2xl font-bold text-gray-800 mb-3">
+          Coming Soon{@html eventDate
+            ? ` on ${new Date(eventDate).toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC" })}`
+            : ""}
+        </h2>
         <p class="text-gray-700 mb-4">
           {eventName || "JobCamp"} is currently in preparation.
         </p>
