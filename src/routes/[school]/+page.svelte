@@ -55,7 +55,7 @@
         </p>
       {:else if !showSignupLogin}
         <h2 class="text-2xl font-bold text-gray-800 mb-3">
-          Coming Soon{@html eventDate
+          Coming Soon{eventDate
             ? ` on ${new Date(eventDate).toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC" })}`
             : ""}
         </h2>

@@ -9,11 +9,7 @@
   }
 
   let { data }: Props = $props();
-  const {
-    studentAccountsEnabled,
-    companyAccountsEnabled,
-    companySignupsEnabled,
-  } = data;
+  const { studentAccountsEnabled, companyAccountsEnabled } = data;
 
   const studentSignup = () => {
     goto("/signup/student");
@@ -51,15 +47,10 @@
       <Button
         class="w-32 text-lg"
         onclick={companySignup}
-        disabled={!companyAccountsEnabled || !companySignupsEnabled}
+        disabled={!companyAccountsEnabled}
       >
         Company
       </Button>
-      {#if !companySignupsEnabled && companyAccountsEnabled}
-        <span class="text-sm italic w-40 text-center text-gray-600">
-          Company signups are currently disabled
-        </span>
-      {/if}
     </div>
     <a href="/login" class="text-lg">I already have an account</a>
   </div>

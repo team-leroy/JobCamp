@@ -101,7 +101,7 @@
                       : 'bg-red-500'}"
                   ></span>
                   <span class="text-xs"
-                    >New company signups {upcomingEvent.companySignupsEnabled
+                    >Company position management {upcomingEvent.companySignupsEnabled
                       ? "Enabled"
                       : "Disabled"}</span
                   >

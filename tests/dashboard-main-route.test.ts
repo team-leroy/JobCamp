@@ -79,8 +79,8 @@ describe('Dashboard Main Route', () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
             try {
-                await load({ locals: { user: null } } as any);
-            } catch (error) {
+                await load({ locals: { user: null } } as never);
+            } catch {
                 // Expected to throw redirect
             }
             
@@ -95,8 +95,8 @@ describe('Dashboard Main Route', () => {
                     locals: { 
                         user: { ...mockUser, emailVerified: false } 
                     } 
-                } as any);
-            } catch (error) {
+                } as never);
+            } catch {
                 // Expected to throw redirect
             }
             
@@ -113,8 +113,8 @@ describe('Dashboard Main Route', () => {
             try {
                 await load({ 
                     locals: { user: mockUser } 
-                } as any);
-            } catch (error) {
+                } as never);
+            } catch {
                 // Expected to throw redirect
             }
             
@@ -131,8 +131,8 @@ describe('Dashboard Main Route', () => {
             try {
                 await load({ 
                     locals: { user: mockUser } 
-                } as any);
-            } catch (error) {
+                } as never);
+            } catch {
                 // Expected to throw redirect
             }
             
@@ -148,7 +148,7 @@ describe('Dashboard Main Route', () => {
             
             const result = await load({ 
                 locals: { user: mockUser } 
-            } as any);
+            } as never);
             
             expect(result).toEqual({
                 accessDenied: true,
@@ -170,7 +170,7 @@ describe('Dashboard Main Route', () => {
             
             const result = await load({ 
                 locals: { user: mockUser } 
-            } as any);
+            } as never);
             
             expect(result).toEqual({
                 accessDenied: true,
@@ -195,7 +195,7 @@ describe('Dashboard Main Route', () => {
             
             const result = await load({ 
                 locals: { user: mockUser } 
-            } as any);
+            } as never);
             
             expect(result).toEqual({
                 positions: mockPositions,
@@ -218,7 +218,7 @@ describe('Dashboard Main Route', () => {
             
             const result = await load({ 
                 locals: { user: mockUser } 
-            } as any);
+            } as never);
             
             expect(result).toEqual({
                 accessDenied: true,
@@ -236,8 +236,8 @@ describe('Dashboard Main Route', () => {
             try {
                 await load({ 
                     locals: { user: mockUser } 
-                } as any);
-            } catch (error) {
+                } as never);
+            } catch {
                 // Expected to throw redirect
             }
             
@@ -267,7 +267,7 @@ describe('Dashboard Main Route', () => {
                         session: { id: 'session-123' } 
                     }, 
                     cookies: mockCookies 
-                } as any);
+                } as never);
                 
                 expect(lucia.invalidateSession).toHaveBeenCalledWith('session-123');
                 expect(mockCookies.delete).toHaveBeenCalledWith('auth_session', { path: '.' });
@@ -294,7 +294,7 @@ describe('Dashboard Main Route', () => {
                         session: { id: 'session-123' } 
                     }, 
                     cookies: mockCookies 
-                } as any);
+                } as never);
                 
                 expect(lucia.invalidateSession).toHaveBeenCalledWith('session-123');
                 expect(mockCookies.delete).toHaveBeenCalledWith('auth_session', { path: '.' });
@@ -324,7 +324,7 @@ describe('Dashboard Main Route', () => {
                         session: { id: 'session-123' } 
                     }, 
                     cookies: mockCookies 
-                } as any);
+                } as never);
                 
                 expect(redirect).toHaveBeenCalledWith(302, '/login');
             });
@@ -344,7 +344,7 @@ describe('Dashboard Main Route', () => {
                         session: null 
                     }, 
                     cookies: mockCookies 
-                } as any);
+                } as never);
                 
                 expect(lucia.validateSession).not.toHaveBeenCalled();
                 expect(lucia.invalidateSession).not.toHaveBeenCalled();
@@ -368,7 +368,7 @@ describe('Dashboard Main Route', () => {
                         session: { id: 'session-123' } 
                     }, 
                     cookies: mockCookies 
-                } as any);
+                } as never);
                 
                 expect(fail).toHaveBeenCalledWith(401);
             });
@@ -393,8 +393,8 @@ describe('Dashboard Main Route', () => {
                             session: { id: 'session-123' } 
                         }, 
                         cookies: mockCookies 
-                    } as any);
-                } catch (error) {
+                    } as never);
+                } catch {
                     // Expected to throw redirect
                 }
                 
@@ -407,7 +407,7 @@ describe('Dashboard Main Route', () => {
             it('should delete position with valid positionId', async () => {
                 const { actions } = await import('../src/routes/dashboard/+page.server');
                 
-                vi.mocked(prisma.position.delete).mockResolvedValue({} as any);
+                vi.mocked(prisma.position.delete).mockResolvedValue({} as never);
                 
                 const mockUrl = {
                     searchParams: {
@@ -415,7 +415,7 @@ describe('Dashboard Main Route', () => {
                     }
                 };
                 
-                await actions.deletePosition({ url: mockUrl } as any);
+                await actions.deletePosition({ url: mockUrl } as never);
                 
                 expect(prisma.position.delete).toHaveBeenCalledWith({ where: { id: 'pos-123' } });
             });
@@ -430,8 +430,8 @@ describe('Dashboard Main Route', () => {
             };
             
             try {
-                await actions.deletePosition({ url: mockUrl } as any);
-            } catch (error) {
+                await actions.deletePosition({ url: mockUrl } as never);
+            } catch {
                 // Expected to throw redirect
             }
             
@@ -450,8 +450,8 @@ describe('Dashboard Main Route', () => {
                 };
                 
                 try {
-                    await actions.deletePosition({ url: mockUrl } as any);
-                } catch (error) {
+                    await actions.deletePosition({ url: mockUrl } as never);
+                } catch {
                     // Expected to throw redirect
                 }
                 
@@ -474,9 +474,9 @@ describe('Dashboard Main Route', () => {
                 companyAccountsEnabled: false
             });
             
-            const result = await load({ 
+            await load({ 
                 locals: { user: mockUser } 
-            } as any);
+            } as never);
             
             expect(redirect).toHaveBeenCalledWith(302, '/dashboard/student');
         });
@@ -497,7 +497,7 @@ describe('Dashboard Main Route', () => {
             
             const result = await load({ 
                 locals: { user: mockUser } 
-            } as any);
+            } as never);
             
             expect(result).toEqual({
                 positions: mockPositions,
@@ -519,7 +519,7 @@ describe('Dashboard Main Route', () => {
             
             const result = await load({ 
                 locals: { user: mockUser } 
-            } as any);
+            } as never);
             
             expect(result).toEqual({
                 accessDenied: true,

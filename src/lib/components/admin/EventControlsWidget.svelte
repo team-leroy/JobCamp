@@ -135,7 +135,7 @@
             </span>
           </div>
 
-          <!-- Enable New Company Signups (under Company Accounts) -->
+          <!-- Enable Company Position Management (under Company Accounts) -->
           <div
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg ml-6"
             class:opacity-50={!companyAccountsEnabled}
@@ -148,7 +148,7 @@
                   handleControlChange("companySignups", companySignupsEnabled)}
               />
               <Label class="text-base font-medium"
-                >Enable new company signups</Label
+                >Enable company position management</Label
               >
             </div>
             <span class="text-sm text-gray-500">
