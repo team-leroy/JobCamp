@@ -446,6 +446,7 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
         // For archived events, show all positions regardless of login date
         const whereClause: {
             eventId: string;
+            isPublished: boolean;
             host?: {
                 user: {
                     lastLogin: {
@@ -454,7 +455,8 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
                 };
             };
         } = {
-            eventId: activeEventId
+            eventId: activeEventId,
+            isPublished: true
         };
         
         // Only filter by login date for active events
@@ -649,6 +651,7 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
         // For archived events, show all positions regardless of login date
         const whereClause: {
             eventId: string;
+            isPublished: boolean;
             host?: {
                 user: {
                     lastLogin: {
@@ -657,7 +660,8 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
                 };
             };
         } = {
-            eventId: activeEventId
+            eventId: activeEventId,
+            isPublished: true
         };
         
         // Only filter by login date for active events
@@ -1060,7 +1064,8 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 };
             };
         } = {
-            eventId: activeEventId
+            eventId: activeEventId,
+            isPublished: true
         };
         
         // Only filter by login date for active events

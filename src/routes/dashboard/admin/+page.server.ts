@@ -205,31 +205,19 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Positions for active event (only for companies logged in since event activation)
+            // Positions for active event (only published positions)
             prisma.position.count({
                 where: {
                     eventId: upcomingEvent.id,
-                    host: {
-                        user: {
-                            lastLogin: {
-                                gte: eventStartDate
-                            }
-                        }
-                    }
+                    isPublished: true
                 }
             }),
             
-            // Slots for active event (only for companies logged in since event activation)
+            // Slots for active event (only published positions)
             prisma.position.aggregate({
                 where: {
                     eventId: upcomingEvent.id,
-                    host: {
-                        user: {
-                            lastLogin: {
-                                gte: eventStartDate
-                            }
-                        }
-                    }
+                    isPublished: true
                 },
                 _sum: { slots: true }
             }).then(res => res._sum.slots || 0)

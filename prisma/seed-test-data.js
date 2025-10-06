@@ -100,6 +100,7 @@ async function createPosition(positionData, eventId, hostId) {
       end: positionData.end,
       eventId: eventId,
       hostId: hostId,
+      isPublished: positionData.isPublished ?? true, // Default to published for seed data
     },
   });
 }

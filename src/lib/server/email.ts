@@ -80,7 +80,7 @@ export async function sendPositionUpdateEmail(hostEmail: string, position: Posit
         await emailClient.send({
             from: SENDER,
             to:  [{ email: position.contact_email }],
-            subject: "JobCamp.org position created/updated for March 10, 2025",
+            subject: "JobCamp.org position published for March 10, 2025",
             html: renderEmailTemplate(positionUpdateEmail, position)
         });
     }
@@ -88,7 +88,7 @@ export async function sendPositionUpdateEmail(hostEmail: string, position: Posit
     await emailClient.send({
         from: SENDER,
         to:  [{ email: hostEmail }],
-        subject: "JobCamp.org position created/updated for March 10, 2025",
+        subject: "JobCamp.org position published for March 10, 2025",
         html: renderEmailTemplate(positionUpdateEmail, position)
     });
 }

@@ -55,6 +55,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
     const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
+    const companySignupsEnabled = (activeEvent as { companySignupsEnabled?: boolean })?.companySignupsEnabled ?? false;
 
     if (userInfo.adminOfSchools && userInfo.adminOfSchools.length > 0) {
         redirect(302, "/dashboard/admin");
@@ -85,9 +86,26 @@ export const load: PageServerLoad = async ({ locals }) => {
     }
 
 
-    const positions = await prisma.position.findMany({where: {hostId: hostInfo.id}, include: { attachments: true }});
+    const positions = await prisma.position.findMany({
+        where: {
+            hostId: hostInfo.id,
+            eventId: activeEvent?.id
+        }, 
+        include: { attachments: true }
+    });
 
-    return { positions, userData: locals.user, isCompany: true };
+    // Check if positions were brought forward (unpublished positions exist)
+    const hasUnpublishedPositions = positions.some(position => !position.isPublished);
+
+    return { 
+        positions, 
+        userData: locals.user, 
+        isCompany: true,
+        companySignupsEnabled,
+        eventName: activeEvent?.name || "JobCamp",
+        eventDate: activeEvent?.date,
+        hasUnpublishedPositions
+    };
 };
 
 export const actions: Actions = {

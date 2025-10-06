@@ -61,6 +61,7 @@ model Position {
   end               String
   eventId           String
   hostId            String
+  isPublished       Boolean               @default(false)
   attachments       Attachment[]
   manualAssignments ManualAssignment[]
   event             Event                 @relation(fields: [eventId], references: [id])

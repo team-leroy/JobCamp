@@ -227,13 +227,7 @@ describe('Admin Dashboard Statistics', () => {
       expect(prisma.position.count).toHaveBeenCalledWith({
         where: {
           eventId: 'active-event-1',
-          host: {
-            user: {
-              lastLogin: {
-                gte: mockActiveEvent.activatedAt
-              }
-            }
-          }
+          isPublished: true
         }
       });
     });
@@ -245,13 +239,7 @@ describe('Admin Dashboard Statistics', () => {
       expect(prisma.position.aggregate).toHaveBeenCalledWith({
         where: {
           eventId: 'active-event-1',
-          host: {
-            user: {
-              lastLogin: {
-                gte: mockActiveEvent.activatedAt
-              }
-            }
-          }
+          isPublished: true
         },
         _sum: { slots: true }
       });

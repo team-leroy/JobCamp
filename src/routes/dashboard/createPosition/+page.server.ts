@@ -45,7 +45,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-    createPosition: async ({ request, locals }) => {
+    publishPosition: async ({ request, locals }) => {
         const { userInfo, hostInfo } = await grabUserData(locals);
         const form = await superValidate(request, zod(createNewPositionSchema(hostInfo.name, userInfo.email)));
 
@@ -115,6 +115,7 @@ export const actions: Actions = {
                             start: form.data.start,
                             end:form.data.release,
                             event: { connect: { id: activeEvent.id } },
+                            isPublished: false,
                             // attachments: { create: attachments }
                         }
                     ]

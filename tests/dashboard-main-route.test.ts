@@ -200,11 +200,17 @@ describe('Dashboard Main Route', () => {
             expect(result).toEqual({
                 positions: mockPositions,
                 userData: mockUser,
-                isCompany: true
+                isCompany: true,
+                companySignupsEnabled: false,
+                eventName: "JobCamp",
+                hasUnpublishedPositions: true
             });
             
             expect(prisma.position.findMany).toHaveBeenCalledWith({
-                where: { hostId: mockHostInfo.id },
+                where: { 
+                    hostId: mockHostInfo.id,
+                    eventId: mockActiveEvent.id
+                },
                 include: { attachments: true }
             });
         });
@@ -502,7 +508,10 @@ describe('Dashboard Main Route', () => {
             expect(result).toEqual({
                 positions: mockPositions,
                 userData: mockUser,
-                isCompany: true
+                isCompany: true,
+                companySignupsEnabled: false,
+                eventName: "JobCamp",
+                hasUnpublishedPositions: true
             });
         });
 

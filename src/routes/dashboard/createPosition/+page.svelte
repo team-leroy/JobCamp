@@ -7,6 +7,6 @@
 
 <Navbar loggedIn={true} isHost={true} isAdmin={false} />
 
-<PositionForm {data} formTitle="Create New Position" buttonName="Create" />
+<PositionForm {data} formTitle="Create New Position" buttonName="Publish" />
 
 <div class="h-2"></div>

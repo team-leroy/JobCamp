@@ -107,13 +107,7 @@ describe('Admin Dashboard Statistics', () => {
             expect(prisma.position.count).toHaveBeenCalledWith({
                 where: {
                     eventId: mockActiveEvent.id,
-                    host: {
-                        user: {
-                            lastLogin: {
-                                gte: mockActiveEvent.activatedAt // Should use activatedAt (Jan 15)
-                            }
-                        }
-                    }
+                    isPublished: true
                 }
             });
 

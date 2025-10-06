@@ -36,7 +36,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-    createPosition: async ({ url, request, locals }) => {
+    publishPosition: async ({ url, request, locals }) => {
         const positionId = url.searchParams.get("posId")?.toString();
         if (!positionId) {
             redirect(302, "/about")
@@ -95,6 +95,7 @@ export const actions: Actions = {
                 arrival: form.data.arrival,
                 start: form.data.start,
                 end:form.data.release,
+                isPublished: true, // Mark as published when form is submitted
                 // attachments: { set: attachments }
             }
         });

@@ -51,34 +51,21 @@ export const load: PageServerLoad = async ({ locals }) => {
             }
 
             // For active events, apply same filtering as dashboard
-            const eventStartDate = event.activatedAt || event.createdAt;
             
             const [filteredPositions, filteredSlots] = await Promise.all([
-                // Positions for this event (only from companies logged in since event activation)
+                // Positions for this event (only published positions)
                 prisma.position.count({
                     where: {
                         eventId: event.id,
-                        host: {
-                            user: {
-                                lastLogin: {
-                                    gte: eventStartDate
-                                }
-                            }
-                        }
+                        isPublished: true
                     }
                 }),
                 
-                // Slots for this event (only from companies logged in since event activation)
+                // Slots for this event (only published positions)
                 prisma.position.aggregate({
                     where: {
                         eventId: event.id,
-                        host: {
-                            user: {
-                                lastLogin: {
-                                    gte: eventStartDate
-                                }
-                            }
-                        }
+                        isPublished: true
                     },
                     _sum: { slots: true }
                 }).then(res => res._sum.slots || 0)

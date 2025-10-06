@@ -38,7 +38,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             event: {
                 schoolId: school.id,
                 isActive: true
-            }
+            },
+            isPublished: true // Only show published positions to students
         },
         include: {
             host: {

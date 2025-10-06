@@ -212,7 +212,8 @@ export async function createEvent(
         start: position.start,
         end: position.end,
         eventId: event.id,
-        hostId: position.hostId
+        hostId: position.hostId,
+        isPublished: false // Reset to unpublished when carried forward
       }));
 
       await prisma.position.createMany({
