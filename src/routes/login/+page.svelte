@@ -85,7 +85,7 @@
           Company accounts are currently disabled for {data.eventName ||
             "this event"}.
         {/if}
-        Please check back later or contact an administrator if you need access.
+        Please check back later.
       </p>
     </div>
   {/if}
