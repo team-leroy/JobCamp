@@ -93,13 +93,25 @@ export const load: PageServerLoad = async ({ locals }) => {
         }
     });
 
+    // Load important dates for the active event
+    const importantDates = upcomingEvent
+        ? await prisma.importantDate.findMany({
+            where: { eventId: upcomingEvent.id },
+            orderBy: [
+                { displayOrder: 'asc' },
+                { date: 'asc' }
+            ]
+        })
+        : [];
+
     return {
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host,
         schools,
         schoolEvents: eventsWithFilteredStats,
-        upcomingEvent
+        upcomingEvent,
+        importantDates
     };
 };
 
@@ -379,6 +391,167 @@ export const actions: Actions = {
             return { 
                 success: false, 
                 message: `Failed to archive event: ${errorMessage}` 
+            };
+        }
+    },
+
+    createImportantDate: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        try {
+            // Check if user is admin
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const schoolIds = userInfo.adminOfSchools.map(s => s.id);
+
+            // Get the active event
+            const activeEvent = await prisma.event.findFirst({
+                where: {
+                    schoolId: { in: schoolIds },
+                    isActive: true
+                }
+            });
+
+            if (!activeEvent) {
+                return { success: false, message: "No active event found" };
+            }
+
+            const formData = await request.formData();
+            const date = formData.get('date')?.toString();
+            const time = formData.get('time')?.toString() || null;
+            const title = formData.get('title')?.toString();
+            const description = formData.get('description')?.toString();
+            const displayOrder = parseInt(formData.get('displayOrder')?.toString() || '0');
+
+            // Validate required fields
+            if (!date || !title || !description) {
+                return { success: false, message: "Date, title, and description are required" };
+            }
+
+            // Parse the date as UTC
+            const [year, month, day] = date.split('-').map(Number);
+            const utcDate = new Date(Date.UTC(year, month - 1, day));
+
+            // Create the important date
+            await prisma.importantDate.create({
+                data: {
+                    eventId: activeEvent.id,
+                    date: utcDate,
+                    time: time || null,
+                    title: title.trim(),
+                    description: description.trim(),
+                    displayOrder
+                }
+            });
+
+            return { success: true, message: "Important date created successfully" };
+        } catch (error) {
+            console.error('Error creating important date:', error);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Unknown error'
+            };
+        }
+    },
+
+    updateImportantDate: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        try {
+            // Check if user is admin
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const formData = await request.formData();
+            const dateId = formData.get('dateId')?.toString();
+            const date = formData.get('date')?.toString();
+            const time = formData.get('time')?.toString() || null;
+            const title = formData.get('title')?.toString();
+            const description = formData.get('description')?.toString();
+            const displayOrder = parseInt(formData.get('displayOrder')?.toString() || '0');
+
+            // Validate required fields
+            if (!dateId || !date || !title || !description) {
+                return { success: false, message: "All required fields must be provided" };
+            }
+
+            // Parse the date as UTC
+            const [year, month, day] = date.split('-').map(Number);
+            const utcDate = new Date(Date.UTC(year, month - 1, day));
+
+            // Update the important date
+            await prisma.importantDate.update({
+                where: { id: dateId },
+                data: {
+                    date: utcDate,
+                    time: time || null,
+                    title: title.trim(),
+                    description: description.trim(),
+                    displayOrder
+                }
+            });
+
+            return { success: true, message: "Important date updated successfully" };
+        } catch (error) {
+            console.error('Error updating important date:', error);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Unknown error'
+            };
+        }
+    },
+
+    deleteImportantDate: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        try {
+            // Check if user is admin
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const formData = await request.formData();
+            const dateId = formData.get('dateId')?.toString();
+
+            if (!dateId) {
+                return { success: false, message: "Date ID is required" };
+            }
+
+            // Delete the important date
+            await prisma.importantDate.delete({
+                where: { id: dateId }
+            });
+
+            return { success: true, message: "Important date deleted successfully" };
+        } catch (error) {
+            console.error('Error deleting important date:', error);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Unknown error'
             };
         }
     }

@@ -2,9 +2,24 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import EventManagementWidget from "$lib/components/admin/EventManagementWidget.svelte";
   import EventControlsWidget from "$lib/components/admin/EventControlsWidget.svelte";
+  import ImportantDatesWidget from "$lib/components/admin/ImportantDatesWidget.svelte";
   import { Button } from "$lib/components/ui/button";
-  import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
+  import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+  } from "$lib/components/ui/card";
   import type { EventWithStats } from "$lib/server/eventManagement";
+
+  interface ImportantDate {
+    id: string;
+    date: Date;
+    time: string | null;
+    title: string;
+    description: string;
+    displayOrder: number;
+  }
 
   interface PageData {
     isAdmin: boolean;
@@ -13,6 +28,7 @@
     schoolEvents: EventWithStats[];
     upcomingEvent?: EventWithStats | null;
     schools?: Array<{ id: string; name: string }>;
+    importantDates: ImportantDate[];
   }
 
   interface FormResult {
@@ -27,12 +43,14 @@
     isHost,
     schoolEvents,
     upcomingEvent,
+    importantDates,
   }: {
     isAdmin: boolean;
     loggedIn: boolean;
     isHost: boolean;
     schoolEvents: EventWithStats[];
     upcomingEvent?: EventWithStats | null;
+    importantDates: ImportantDate[];
   } = data;
 
   // Track active tab
@@ -61,26 +79,38 @@
       <div class="border-b border-gray-200 mb-6">
         <nav class="-mb-px flex space-x-8">
           <button
-            class="py-2 px-1 border-b-2 font-medium text-sm {activeTab === 'controls' 
-              ? 'border-blue-500 text-blue-600' 
+            class="py-2 px-1 border-b-2 font-medium text-sm {activeTab ===
+            'controls'
+              ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
-            onclick={() => setActiveTab('controls')}
+            onclick={() => setActiveTab("controls")}
           >
             Event Controls
           </button>
           <button
-            class="py-2 px-1 border-b-2 font-medium text-sm {activeTab === 'create' 
-              ? 'border-green-500 text-green-600' 
+            class="py-2 px-1 border-b-2 font-medium text-sm {activeTab ===
+            'dates'
+              ? 'border-purple-500 text-purple-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
-            onclick={() => setActiveTab('create')}
+            onclick={() => setActiveTab("dates")}
+          >
+            Important Dates
+          </button>
+          <button
+            class="py-2 px-1 border-b-2 font-medium text-sm {activeTab ===
+            'create'
+              ? 'border-green-500 text-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+            onclick={() => setActiveTab("create")}
           >
             Create Event
           </button>
           <button
-            class="py-2 px-1 border-b-2 font-medium text-sm {activeTab === 'history' 
-              ? 'border-blue-500 text-blue-600' 
+            class="py-2 px-1 border-b-2 font-medium text-sm {activeTab ===
+            'history'
+              ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
-            onclick={() => setActiveTab('history')}
+            onclick={() => setActiveTab("history")}
           >
             Event History
           </button>
@@ -88,9 +118,11 @@
       </div>
 
       <!-- Tab Content -->
-      {#if activeTab === 'controls'}
+      {#if activeTab === "controls"}
         <EventControlsWidget {upcomingEvent} />
-      {:else if activeTab === 'create'}
+      {:else if activeTab === "dates"}
+        <ImportantDatesWidget {upcomingEvent} {importantDates} />
+      {:else if activeTab === "create"}
         <Card>
           <CardHeader>
             <CardTitle class="flex items-center gap-2">
@@ -112,7 +144,10 @@
             <form method="POST" action="?/createEvent" class="space-y-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label for="eventName" class="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    for="eventName"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Event Name *
                   </label>
                   <input
@@ -125,7 +160,10 @@
                   />
                 </div>
                 <div>
-                  <label for="eventDate" class="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    for="eventDate"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Event Date *
                   </label>
                   <input
@@ -147,7 +185,10 @@
                     checked
                     class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                   />
-                  <label for="carryForwardData" class="ml-2 block text-sm text-gray-700">
+                  <label
+                    for="carryForwardData"
+                    class="ml-2 block text-sm text-gray-700"
+                  >
                     Copy positions from previous event (recommended)
                   </label>
                 </div>
@@ -158,10 +199,22 @@
               </div>
 
               <div class="bg-blue-50 p-4 rounded-lg space-y-2 text-sm">
-                <p><strong>💡 Creation:</strong> New events are created as "Inactive" - they exist but are not the primary event.</p>
-                <p><strong>⚡ Activation:</strong> Use the "Activate" button to make this the active event for your school.</p>
-                <p><strong>🎛️ Controls:</strong> Once active, configure user access permissions in the Event Controls tab.</p>
-                <p><strong>🏫 Scope:</strong> This event will be created for <strong>{data.schools?.[0]?.name || "your school"}</strong>.</p>
+                <p>
+                  <strong>💡 Creation:</strong> New events are created as "Inactive"
+                  - they exist but are not the primary event.
+                </p>
+                <p>
+                  <strong>⚡ Activation:</strong> Use the "Activate" button to make
+                  this the active event for your school.
+                </p>
+                <p>
+                  <strong>🎛️ Controls:</strong> Once active, configure user access
+                  permissions in the Event Controls tab.
+                </p>
+                <p>
+                  <strong>🏫 Scope:</strong> This event will be created for
+                  <strong>{data.schools?.[0]?.name || "your school"}</strong>.
+                </p>
               </div>
 
               <div class="pt-4">
@@ -172,7 +225,7 @@
             </form>
           </CardContent>
         </Card>
-      {:else if activeTab === 'history'}
+      {:else if activeTab === "history"}
         <Card>
           <CardHeader>
             <CardTitle class="flex items-center gap-2">
@@ -183,26 +236,38 @@
           <CardContent>
             <div class="space-y-4">
               <p class="text-gray-600">
-                View and manage your past events, including archived events with complete statistics and data.
+                View and manage your past events, including archived events with
+                complete statistics and data.
               </p>
-              
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-4 border rounded-lg">
-                  <h3 class="font-medium text-gray-900 mb-2">📊 Archived Events</h3>
+                  <h3 class="font-medium text-gray-900 mb-2">
+                    📊 Archived Events
+                  </h3>
                   <p class="text-sm text-gray-600 mb-3">
-                    View complete statistics, student participation, and lottery results from past events.
+                    View complete statistics, student participation, and lottery
+                    results from past events.
                   </p>
-                  <Button variant="outline" onclick={() => window.location.href = '/dashboard/admin/archived'}>
+                  <Button
+                    variant="outline"
+                    onclick={() =>
+                      (window.location.href = "/dashboard/admin/archived")}
+                  >
                     View Archives
                   </Button>
                 </div>
-                
+
                 <div class="p-4 border rounded-lg">
                   <h3 class="font-medium text-gray-900 mb-2">📈 Analytics</h3>
                   <p class="text-sm text-gray-600 mb-3">
-                    Compare data across events and analyze trends in student participation and company engagement.
+                    Compare data across events and analyze trends in student
+                    participation and company engagement.
                   </p>
-                  <Button variant="outline" onclick={() => window.location.href = '/visualizations'}>
+                  <Button
+                    variant="outline"
+                    onclick={() => (window.location.href = "/visualizations")}
+                  >
                     View Analytics
                   </Button>
                 </div>

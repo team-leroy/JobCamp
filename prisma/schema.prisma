@@ -28,6 +28,7 @@ model Event {
   positions               Position[]
   permissionSlips         PermissionSlipSubmission[] // Track permission slips for this event
   studentParticipation    StudentEventParticipation[] // Track student participation in this event
+  importantDates          ImportantDate[]            // Important dates for this event
 
   @@index([schoolId, isArchived, date])
 }
@@ -295,4 +296,20 @@ model PrefillSetting {
   @@index([companyId])
   @@index([positionId])
   @@index([lotteryConfigurationId])
+}
+
+model ImportantDate {
+  id           String   @id @default(cuid())
+  eventId      String
+  date         DateTime
+  time         String?
+  title        String
+  description  String   @db.VarChar(1024)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, displayOrder])
+  @@index([eventId, date])
 }

@@ -23,6 +23,9 @@ const mockPrisma = {
         delete: vi.fn(),
         update: vi.fn()
     },
+    importantDate: {
+        findMany: vi.fn()
+    },
     $transaction: vi.fn()
 };
 
@@ -53,6 +56,8 @@ vi.mock('@sveltejs/kit', async () => {
 describe('Student Dashboard Server', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Default mock for importantDate to return empty array
+        mockPrisma.importantDate.findMany.mockResolvedValue([]);
     });
 
     const createMockEvent = (locals: App.Locals) => ({

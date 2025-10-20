@@ -2,13 +2,23 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import * as Accordion from "$lib/components/ui/accordion/index.js";
   import { ArrowBigDown, ArrowBigUp, Trash2Icon } from "lucide-svelte";
-  import { dates } from "./important-dates.json";
   import { Label } from "$lib/components/ui/label";
   import { Input } from "$lib/components/ui/input";
   import { enhance } from "$app/forms";
   import Button from "$lib/components/ui/button/button.svelte";
 
   let { data, form } = $props();
+
+  // Format date for display
+  function formatDate(date: Date): string {
+    return new Date(date).toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    });
+  }
 
   let positions = $state({ posList: data.positions });
 
@@ -17,16 +27,16 @@
     positions.posList = positions.posList.filter((val) => val.id != posID);
 
     // Submit form natively to trigger data invalidation
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '?/deletePosition';
-    
-    const posIdInput = document.createElement('input');
-    posIdInput.type = 'hidden';
-    posIdInput.name = 'id';
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "?/deletePosition";
+
+    const posIdInput = document.createElement("input");
+    posIdInput.type = "hidden";
+    posIdInput.name = "id";
     posIdInput.value = posID;
     form.appendChild(posIdInput);
-    
+
     document.body.appendChild(form);
     form.submit();
   };
@@ -45,22 +55,22 @@
     positions.posList[posRankIndex] = temp;
 
     // Submit form natively to trigger data invalidation
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '?/move';
-    
-    const posIdInput = document.createElement('input');
-    posIdInput.type = 'hidden';
-    posIdInput.name = 'id';
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "?/move";
+
+    const posIdInput = document.createElement("input");
+    posIdInput.type = "hidden";
+    posIdInput.name = "id";
     posIdInput.value = posID;
     form.appendChild(posIdInput);
-    
-    const dirInput = document.createElement('input');
-    dirInput.type = 'hidden';
-    dirInput.name = 'dir';
-    dirInput.value = 'down';
+
+    const dirInput = document.createElement("input");
+    dirInput.type = "hidden";
+    dirInput.name = "dir";
+    dirInput.value = "down";
     form.appendChild(dirInput);
-    
+
     document.body.appendChild(form);
     form.submit();
   };
@@ -79,22 +89,22 @@
     positions.posList[posRankIndex] = temp;
 
     // Submit form natively to trigger data invalidation
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '?/move';
-    
-    const posIdInput = document.createElement('input');
-    posIdInput.type = 'hidden';
-    posIdInput.name = 'id';
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "?/move";
+
+    const posIdInput = document.createElement("input");
+    posIdInput.type = "hidden";
+    posIdInput.name = "id";
     posIdInput.value = posID;
     form.appendChild(posIdInput);
-    
-    const dirInput = document.createElement('input');
-    dirInput.type = 'hidden';
-    dirInput.name = 'dir';
-    dirInput.value = 'up';
+
+    const dirInput = document.createElement("input");
+    dirInput.type = "hidden";
+    dirInput.name = "dir";
+    dirInput.value = "up";
     form.appendChild(dirInput);
-    
+
     document.body.appendChild(form);
     form.submit();
   };
@@ -302,12 +312,23 @@
         </form>
       </div>
     {/if}
-    <h1 class="text-2xl px-4 py-4 text-center w-full">Important Dates</h1>
-    {#each dates as info}
-      <div class="m-2 mx-4 p-4 rounded-md shadow-xl border-2">
-        <h1 class="text-xl mb-2">{info.date} - {info.title}</h1>
-        <p>{info.description}</p>
-      </div>
-    {/each}
+    {#if data.importantDates && data.importantDates.length > 0}
+      <h1 class="text-2xl px-4 py-4 text-center w-full">Important Dates</h1>
+      {#each data.importantDates as dateInfo}
+        <div class="m-2 mx-4 p-4 rounded-md shadow-xl border-2">
+          <h1 class="text-xl mb-2">
+            {formatDate(dateInfo.date)}
+            {#if dateInfo.time}
+              <span class="text-gray-600">at {dateInfo.time}</span>
+            {:else}
+              <span class="text-gray-600">- All Day</span>
+            {/if}
+          </h1>
+          <h2 class="text-lg font-semibold mb-2">{dateInfo.title}</h2>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          <p class="whitespace-pre-wrap">{@html dateInfo.description}</p>
+        </div>
+      {/each}
+    {/if}
   </div>
 </div>

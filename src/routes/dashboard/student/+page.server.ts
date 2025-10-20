@@ -95,6 +95,17 @@ export const load: PageServerLoad = async (event) => {
 
     const positions = positionsOnStudents.map(pos => pos.position);
 
+    // Load important dates for the active event
+    const importantDates = activeEvent
+        ? await prisma.importantDate.findMany({
+            where: { eventId: activeEvent.id },
+            orderBy: [
+                { displayOrder: 'asc' },
+                { date: 'asc' }
+            ]
+        })
+        : [];
+
     return { 
         lotteryResult, 
         permissionSlipCompleted: permissionSlipStatus.hasPermissionSlip, 
@@ -105,7 +116,8 @@ export const load: PageServerLoad = async (event) => {
         showLotteryResult,
         activeEventName: permissionSlipStatus.eventName,
         hasActiveEvent: permissionSlipStatus.hasActiveEvent,
-        positions
+        positions,
+        importantDates
     };
 };
 
