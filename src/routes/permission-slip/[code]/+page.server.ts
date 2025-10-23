@@ -18,15 +18,43 @@ export const load: PageServerLoad = async (event) => {
     }
 
     const student = await prisma.student.findFirst({
-        where: { userId: permissionSlip.user_id }
+        where: { userId: permissionSlip.user_id },
+        include: { school: true }
     });
-    if (!student) {
+    if (!student || !student.school) {
         console.log("Tes2t");
         redirect(302, "/permission-slip/error");
     }
 
+    // Get active event for the student's school
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            schoolId: student.schoolId!,
+            isActive: true
+        },
+        include: {
+            importantDates: {
+                orderBy: [
+                    { displayOrder: 'asc' },
+                    { date: 'asc' }
+                ]
+            }
+        }
+    });
+
     const form = await superValidate(zod(createPermissionSlipSchema(student.firstName, student.lastName)));
-    return { form, firstName: student.firstName, lastName: student.lastName };
+    
+    return { 
+        form, 
+        firstName: student.firstName, 
+        lastName: student.lastName,
+        activeEvent: activeEvent ? {
+            name: activeEvent.name || 'JobCamp',
+            date: activeEvent.date,
+            importantDates: activeEvent.importantDates
+        } : null,
+        schoolName: student.school.name
+    };
 };
 
 export const actions: Actions = {

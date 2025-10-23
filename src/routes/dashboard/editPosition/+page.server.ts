@@ -6,7 +6,7 @@ import { prisma } from "$lib/server/prisma";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { editPositionSchema } from "./schema";
-import { sendPositionUpdateEmail } from "$lib/server/email";
+import { sendPositionUpdateEmail, formatEmailDate, type EventEmailData } from "$lib/server/email";
 
 export const load: PageServerLoad = async ({ locals, url }) => {
     if (!locals.user) {
@@ -100,6 +100,29 @@ export const actions: Actions = {
             }
         });
 
+        // Get event and school information for email
+        const position = await prisma.position.findFirst({
+            where: { id: positionId },
+            include: {
+                event: {
+                    include: {
+                        school: true
+                    }
+                }
+            }
+        });
+
+        if (!position || !position.event || !position.event.school) {
+            throw new Error('Position, event, or school not found');
+        }
+
+        const eventData: EventEmailData = {
+            eventName: position.event.name || 'JobCamp',
+            eventDate: formatEmailDate(position.event.date),
+            schoolName: position.event.school.name,
+            schoolId: position.event.school.id
+        };
+
         sendPositionUpdateEmail(locals.user.email, {
             title: form.data.title,
             career: form.data.career,
@@ -113,7 +136,7 @@ export const actions: Actions = {
             arrival: form.data.arrival,
             start: form.data.start,
             end: form.data.release,
-        });
+        }, eventData);
 
         redirect(302, "/dashboard");
     }

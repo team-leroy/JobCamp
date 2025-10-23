@@ -2,7 +2,7 @@ import { redirect } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 import { prisma } from "$lib/server/prisma";
 import { generatePermissionSlipCode } from "$lib/server/auth";
-import { sendPermissionSlipEmail } from "$lib/server/email";
+import { sendPermissionSlipEmail, formatEmailDate, type EventEmailData } from "$lib/server/email";
 import { getPermissionSlipStatus } from "$lib/server/permissionSlips";
 import { trackStudentParticipation, getActiveEventIdForSchool } from "$lib/server/studentParticipation";
 
@@ -137,14 +137,44 @@ export const actions: Actions = {
                 redirect(302, "/login");
             }
     
-            const user = await prisma.user.findFirst({ where: { id }, include: { student: true }})
+            const user = await prisma.user.findFirst({ 
+                where: { id }, 
+                include: { 
+                    student: {
+                        include: {
+                            school: true
+                        }
+                    }
+                }
+            });
+            
             const firstName = user?.student?.firstName;
-            if (!firstName) {
+            const student = user?.student;
+            if (!firstName || !student || !student.school) {
                 redirect(302, "/login");
             }
             
+            // Get active event for email templating
+            const activeEvent = await prisma.event.findFirst({
+                where: {
+                    schoolId: student.schoolId!,
+                    isActive: true
+                }
+            });
+
+            if (!activeEvent) {
+                return { sent: false, err: true };
+            }
+
+            const eventData: EventEmailData = {
+                eventName: activeEvent.name || 'JobCamp',
+                eventDate: formatEmailDate(activeEvent.date),
+                schoolName: student.school.name,
+                schoolId: student.school.id
+            };
+            
             generatePermissionSlipCode(id).then(
-                (code) => sendPermissionSlipEmail(parentEmail.toString(), code, firstName)
+                (code) => sendPermissionSlipEmail(parentEmail.toString(), code, firstName, eventData)
             );
     
             return { sent: true, err: false };

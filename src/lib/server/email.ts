@@ -4,8 +4,8 @@ import verificationEmail from "$lib/emails/emailVerification.html?raw";
 import resetPasswordEmail from "$lib/emails/resetPassword.html?raw";
 import permissionSlipEmail from "$lib/emails/permissionSlip.html?raw";
 import positionUpdateEmail from "$lib/emails/positionUpdate.html?raw";
-import hostEmailTemp from "$lib/emails/hostEmailTemp.html?raw";
 import lotteryResults from "$lib/emails/lotteryResults.html?raw";
+import { prisma } from './prisma';
 
 export const emailClient = new MailtrapClient({ token: env.MAILTRAP_TOKEN || '' });
 
@@ -18,8 +18,18 @@ interface Position {
     [key: string]: string;
 }
 
-interface HostInfo {
-    [key: string]: string;
+export interface EventEmailData {
+    eventName: string;
+    eventDate: string; // Formatted date
+    schoolName: string;
+    schoolId: string;
+}
+
+export interface ImportantDateData {
+    date: string;
+    time?: string;
+    title: string;
+    description: string;
 }
 
 export function renderEmailTemplate(emailHtml: string, params: EmailParams) {
@@ -27,6 +37,87 @@ export function renderEmailTemplate(emailHtml: string, params: EmailParams) {
         emailHtml = emailHtml.replaceAll("${"+name+"}", params[name]);
     });
     return emailHtml;
+}
+
+/**
+ * Format a date for display in emails
+ */
+export function formatEmailDate(date: Date): string {
+    return new Date(date).toLocaleDateString("en-US", {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+    });
+}
+
+/**
+ * Calculate date relative to event date (e.g., "2 weeks before")
+ */
+export function calculateRelativeDate(eventDate: Date, weeksBefore: number): string {
+    const date = new Date(eventDate);
+    date.setDate(date.getDate() - (weeksBefore * 7));
+    return formatEmailDate(date);
+}
+
+/**
+ * Get statistics from the most recent completed (archived) event for a school
+ */
+export async function getPreviousEventStats(schoolId: string): Promise<string> {
+    const previousEvent = await prisma.event.findFirst({
+        where: {
+            schoolId,
+            isArchived: true,
+            AND: [
+                { name: { not: { contains: 'test' } } },
+                { name: { not: { contains: 'mock' } } }
+            ]
+        },
+        orderBy: {
+            date: 'desc'
+        },
+        include: {
+            positions: {
+                include: {
+                    students: true,
+                    host: {
+                        include: {
+                            company: true
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    if (!previousEvent) {
+        return "Previous JobCamp events have successfully matched students with local companies.";
+    }
+
+    const year = new Date(previousEvent.date).getFullYear();
+    const studentCount = new Set(previousEvent.positions.flatMap(p => p.students.map(s => s.studentId))).size;
+    const companyCount = new Set(
+        previousEvent.positions
+            .filter(p => p.host.company)
+            .map(p => p.host.company!.companyName)
+    ).size;
+
+    return `Our ${year} event placed ${studentCount} students to over ${companyCount} companies`;
+}
+
+/**
+ * Format important dates for email display
+ */
+export function formatImportantDatesHtml(dates: ImportantDateData[]): string {
+    if (dates.length === 0) {
+        return '<li>Check your dashboard for upcoming deadlines</li>';
+    }
+
+    return dates.map(date => {
+        const timeStr = date.time ? ` at ${date.time}` : '';
+        return `<li>${date.date}${timeStr} - ${date.title}</li>`;
+    }).join('\n            ');
 }
 
 export async function sendEmailLotteryEmail(email:string) {
@@ -48,8 +139,7 @@ export async function sendEmailVerificationEmail(uid: string, email: string, cod
         });
     } catch (error) {
         console.warn('Email service not configured or failed to send verification email:', error);
-        // In development, we can continue without email verification
-        // In production, you should have proper email service configured
+
     }
 }
 
@@ -66,39 +156,57 @@ export async function sendPasswordResetEmail(uid: string, email: string, code: s
     }
 }
 
-export async function sendPermissionSlipEmail(parentEmail: string, code: string, name: string) {
+export async function sendPermissionSlipEmail(
+    parentEmail: string, 
+    code: string, 
+    name: string,
+    eventData: EventEmailData
+) {
+    const previousEventStats = await getPreviousEventStats(eventData.schoolId);
+    
     await emailClient.send({
         from: SENDER,
         to:  [{ email: parentEmail }],
         subject: `Permission Slip for ${name}`,
-        html: renderEmailTemplate(permissionSlipEmail, {link: "https://jobcamp.org/permission-slip/"+code, name: name}) // Change url
+        html: renderEmailTemplate(permissionSlipEmail, {
+            link: "https://jobcamp.org/permission-slip/"+code,
+            name: name,
+            eventName: eventData.eventName,
+            eventDate: eventData.eventDate,
+            schoolName: eventData.schoolName,
+            previousEventStats: previousEventStats
+        })
     });
 }
 
-export async function sendPositionUpdateEmail(hostEmail: string, position: Position) {
+export async function sendPositionUpdateEmail(
+    hostEmail: string, 
+    position: Position,
+    eventData: EventEmailData
+) {
+    const twoWeeksBefore = calculateRelativeDate(new Date(eventData.eventDate), 2);
+    
+    const emailParams = {
+        ...position,
+        eventName: eventData.eventName,
+        eventDate: eventData.eventDate,
+        schoolName: eventData.schoolName,
+        assignmentNotificationDate: twoWeeksBefore
+    };
+
     if (hostEmail != position.contact_email) {
         await emailClient.send({
             from: SENDER,
             to:  [{ email: position.contact_email }],
-            subject: "JobCamp.org position published for March 10, 2025",
-            html: renderEmailTemplate(positionUpdateEmail, position)
+            subject: `JobCamp.org position published for ${eventData.eventDate}`,
+            html: renderEmailTemplate(positionUpdateEmail, emailParams)
         });
     }
 
     await emailClient.send({
         from: SENDER,
         to:  [{ email: hostEmail }],
-        subject: "JobCamp.org position published for March 10, 2025",
-        html: renderEmailTemplate(positionUpdateEmail, position)
-    });
-}
-
-export async function sendHostEmail(hostEmail: string, info: HostInfo) {
-    // console.log(hostEmail, renderEmailTemplate(hostEmailTemp, info), "\n\n\n\n\n");
-    await emailClient.send({
-        from: SENDER,
-        to:  [{ email: hostEmail }],
-        subject: "Job Shadow Day update",
-        html: renderEmailTemplate(hostEmailTemp, info)
+        subject: `JobCamp.org position published for ${eventData.eventDate}`,
+        html: renderEmailTemplate(positionUpdateEmail, emailParams)
     });
 }
