@@ -9,13 +9,13 @@
   import { buttonVariants } from "../ui/button";
   import logo from "$lib/assets/favicon.png";
 
-  const { 
-    loggedIn, 
-    isHost, 
+  const {
+    loggedIn,
+    isHost,
     isAdmin,
     showSignupLogin = true,
     studentAccountsEnabled = true,
-    companyAccountsEnabled = true
+    companyAccountsEnabled = true,
   } = $props();
 
   let collapsed = $state(false);
@@ -46,8 +46,10 @@
           <Button href="/messaging" variant="link" class="text-white text-xl"
             >Messaging</Button
           >
-          <Button href="/edit-data" variant="link" class="text-white text-xl"
-            >Edit/Search Data</Button
+          <Button
+            href="/dashboard/admin/data-mgmt"
+            variant="link"
+            class="text-white text-xl">Edit/Search Data</Button
           >
           <Button href="/lottery" variant="link" class="text-white text-xl"
             >Lottery</Button
@@ -111,17 +113,17 @@
           >
           {#if !loggedIn}
             {#if showSignupLogin}
-              <Button 
-                href="/signup" 
-                variant="link" 
+              <Button
+                href="/signup"
+                variant="link"
                 class="text-white text-xl"
                 disabled={!studentAccountsEnabled && !companyAccountsEnabled}
               >
                 Sign Up
               </Button>
-              <Button 
-                href="/login" 
-                variant="link" 
+              <Button
+                href="/login"
+                variant="link"
                 class="text-white text-xl"
                 disabled={!studentAccountsEnabled && !companyAccountsEnabled}
               >
@@ -254,17 +256,17 @@
 
         {#if !loggedIn}
           {#if showSignupLogin}
-            <Button 
-              href="/signup" 
-              variant="link" 
+            <Button
+              href="/signup"
+              variant="link"
               class="text-white text-xl"
               disabled={!studentAccountsEnabled && !companyAccountsEnabled}
             >
               Sign Up
             </Button>
-            <Button 
-              href="/login" 
-              variant="link" 
+            <Button
+              href="/login"
+              variant="link"
               class="text-white text-xl"
               disabled={!studentAccountsEnabled && !companyAccountsEnabled}
             >
