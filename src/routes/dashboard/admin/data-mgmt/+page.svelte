@@ -22,10 +22,13 @@
     Clock,
     XCircle,
     AlertTriangle,
+    Briefcase,
   } from "lucide-svelte";
   import StudentEditModal from "./StudentEditModal.svelte";
   import CompanyEditModal from "./CompanyEditModal.svelte";
   import HostEditModal from "./HostEditModal.svelte";
+  import PositionEditModal from "./PositionEditModal.svelte";
+  import CreatePositionModal from "./CreatePositionModal.svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
 
   interface Student {
@@ -72,6 +75,26 @@
     companyName: string;
   }
 
+  interface Position {
+    id: string;
+    title: string;
+    career: string;
+    slots: number;
+    summary: string;
+    contactName: string;
+    contactEmail: string;
+    address: string;
+    instructions: string;
+    attire: string;
+    arrival: string;
+    start: string;
+    end: string;
+    createdAt: Date;
+    hostName: string;
+    companyName: string;
+    isPublished: boolean;
+  }
+
   interface Props {
     data: {
       hasActiveEvent: boolean;
@@ -86,6 +109,9 @@
       totalCompanies: number;
       hosts: Host[];
       totalHosts: number;
+      positions: Position[];
+      totalPositions: number;
+      careers: string[];
       isAdmin: boolean;
       loggedIn: boolean;
       isHost: boolean;
@@ -107,9 +133,14 @@
   // Filter states for Host
   let hostNameFilter = $state("");
 
+  // Filter states for Position
+  let positionTitleFilter = $state("");
+  let positionCareerFilter = $state("All");
+
   // UI states
   let expandedStudents = $state(new Set<string>());
   let expandedCompanies = $state(new Set<string>());
+  let expandedPositions = $state(new Set<string>());
   let selectedTab = $state("Student");
 
   // Computed filtered students
@@ -163,6 +194,23 @@
     })
   );
 
+  // Computed filtered positions
+  let filteredPositions = $derived(
+    data.positions.filter((position) => {
+      const matchesTitle =
+        !positionTitleFilter ||
+        position.title
+          .toLowerCase()
+          .includes(positionTitleFilter.toLowerCase());
+
+      const matchesCareer =
+        positionCareerFilter === "All" ||
+        position.career === positionCareerFilter;
+
+      return matchesTitle && matchesCareer;
+    })
+  );
+
   function toggleStudentExpansion(studentId: string) {
     if (expandedStudents.has(studentId)) {
       expandedStudents.delete(studentId);
@@ -181,6 +229,15 @@
     expandedCompanies = new Set(expandedCompanies);
   }
 
+  function togglePositionExpansion(positionId: string) {
+    if (expandedPositions.has(positionId)) {
+      expandedPositions.delete(positionId);
+    } else {
+      expandedPositions.add(positionId);
+    }
+    expandedPositions = new Set(expandedPositions);
+  }
+
   function clearFilters() {
     if (selectedTab === "Student") {
       lastNameFilter = "";
@@ -191,6 +248,9 @@
       companyNameFilter = "";
     } else if (selectedTab === "Host") {
       hostNameFilter = "";
+    } else if (selectedTab === "Position") {
+      positionTitleFilter = "";
+      positionCareerFilter = "All";
     }
   }
 
@@ -808,14 +868,199 @@
       {/if}
 
       {#if selectedTab === "Position"}
-        <Card>
-          <CardContent class="p-6 text-center">
-            <h3 class="text-lg font-semibold mb-2">Position Management</h3>
-            <p class="text-gray-600">
-              Position management interface coming soon...
-            </p>
-          </CardContent>
-        </Card>
+        <!-- Position Management Section -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-semibold">Position Management</h2>
+            <CreatePositionModal careers={data.careers} />
+          </div>
+
+          <!-- Filters -->
+          <Card class="mb-4">
+            <CardHeader>
+              <CardTitle class="text-lg">Filters</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label for="positionTitle">Position Title</Label>
+                  <Input
+                    id="positionTitle"
+                    bind:value={positionTitleFilter}
+                    placeholder="Search by title..."
+                  />
+                </div>
+
+                <FilterSelect
+                  label="Career"
+                  bind:value={positionCareerFilter}
+                  placeholder="All Careers"
+                  options={[
+                    { value: "All", label: "All Careers" },
+                    ...data.careers.map((career) => ({
+                      value: career,
+                      label: career,
+                    })),
+                  ]}
+                />
+              </div>
+              <Button variant="outline" onclick={clearFilters}>
+                Clear All Filters
+              </Button>
+            </CardContent>
+          </Card>
+
+          <!-- Position List -->
+          <div class="space-y-4">
+            {#each filteredPositions as position}
+              <Card>
+                <CardContent class="p-4">
+                  <div class="flex justify-between items-start mb-4">
+                    <div class="flex-1">
+                      <div class="flex items-center space-x-2 mb-2">
+                        <h3 class="text-lg font-semibold">{position.title}</h3>
+                        <Badge variant="outline">{position.career}</Badge>
+                        {#if position.isPublished}
+                          <Badge variant="default">Published</Badge>
+                        {:else}
+                          <Badge variant="secondary">Draft</Badge>
+                        {/if}
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flex items-center space-x-2">
+                          <User class="h-4 w-4 text-gray-500" />
+                          <span class="text-sm">{position.contactName}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <Badge variant="outline"
+                            >{position.slots} slot{position.slots !== 1
+                              ? "s"
+                              : ""}</Badge
+                          >
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <span class="text-sm text-gray-600"
+                            >{position.companyName}</span
+                          >
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onclick={() => togglePositionExpansion(position.id)}
+                      >
+                        {#if expandedPositions.has(position.id)}
+                          <ChevronUp class="h-4 w-4 mr-2" />
+                          Hide Details
+                        {:else}
+                          <ChevronDown class="h-4 w-4 mr-2" />
+                          View Details
+                        {/if}
+                      </Button>
+
+                      <PositionEditModal {position} careers={data.careers} />
+                    </div>
+                  </div>
+
+                  <!-- Expanded Details -->
+                  {#if expandedPositions.has(position.id)}
+                    <div class="border-t pt-4 space-y-4">
+                      <div>
+                        <h4 class="font-semibold mb-2">
+                          Additional Information
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <span class="text-sm font-medium">Summary:</span>
+                            <p class="text-sm text-gray-600">
+                              {position.summary}
+                            </p>
+                          </div>
+                          <div>
+                            <span class="text-sm font-medium"
+                              >Contact Email:</span
+                            >
+                            <p class="text-sm text-gray-600">
+                              {position.contactEmail}
+                            </p>
+                          </div>
+                          <div>
+                            <span class="text-sm font-medium">Address:</span>
+                            <p class="text-sm text-gray-600">
+                              {position.address}
+                            </p>
+                          </div>
+                          <div>
+                            <span class="text-sm font-medium"
+                              >Instructions:</span
+                            >
+                            <p class="text-sm text-gray-600">
+                              {position.instructions || "None"}
+                            </p>
+                          </div>
+                          <div>
+                            <span class="text-sm font-medium">Attire:</span>
+                            <p class="text-sm text-gray-600">
+                              {position.attire || "None"}
+                            </p>
+                          </div>
+                          <div>
+                            <span class="text-sm font-medium">Host Name:</span>
+                            <p class="text-sm text-gray-600">
+                              {position.hostName}
+                            </p>
+                          </div>
+                          <div>
+                            <span class="text-sm font-medium"
+                              >Arrival Time:</span
+                            >
+                            <p class="text-sm text-gray-600">
+                              {position.arrival}
+                            </p>
+                          </div>
+                          <div>
+                            <span class="text-sm font-medium">Start Time:</span>
+                            <p class="text-sm text-gray-600">
+                              {position.start}
+                            </p>
+                          </div>
+                          <div>
+                            <span class="text-sm font-medium">End Time:</span>
+                            <p class="text-sm text-gray-600">{position.end}</p>
+                          </div>
+                          <div>
+                            <span class="text-sm font-medium">Created At:</span>
+                            <p class="text-sm text-gray-600">
+                              {formatDate(position.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {/if}
+                </CardContent>
+              </Card>
+            {/each}
+          </div>
+
+          {#if filteredPositions.length === 0}
+            <Card>
+              <CardContent class="p-6 text-center">
+                <Briefcase class="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 class="text-lg font-semibold mb-2">No Positions Found</h3>
+                <p class="text-gray-600 mb-4">
+                  No positions match your current filters.
+                </p>
+                <Button variant="outline" onclick={clearFilters}>
+                  Clear All Filters
+                </Button>
+              </CardContent>
+            </Card>
+          {/if}
+        </div>
       {/if}
     {/if}
   </div>

@@ -1,6 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
+import { careers } from '$lib/appconfig';
+import { scrypt } from '$lib/server/hash';
+import crypto from 'node:crypto';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -40,6 +43,9 @@ export const load: PageServerLoad = async ({ locals }) => {
             totalCompanies: 0,
             hosts: [],
             totalHosts: 0,
+            positions: [],
+            totalPositions: 0,
+            careers: careers,
             isAdmin: true,
             loggedIn: true,
             isHost: !!locals.user.host
@@ -240,6 +246,61 @@ export const load: PageServerLoad = async ({ locals }) => {
         };
     });
 
+    // Get positions for the active event
+    const eventPositions = await prisma.position.findMany({
+        where: {
+            eventId: activeEvent.id
+        },
+        include: {
+            host: {
+                include: {
+                    company: {
+                        select: {
+                            companyName: true
+                        }
+                    },
+                    user: {
+                        select: {
+                            email: true
+                        }
+                    }
+                }
+            },
+            event: {
+                select: {
+                    name: true,
+                    date: true
+                }
+            }
+        },
+        orderBy: {
+            title: 'asc'
+        }
+    });
+
+    // Transform position data for the UI
+    const transformedPositions = eventPositions.map(position => {
+        return {
+            id: position.id,
+            title: position.title,
+            career: position.career,
+            slots: position.slots,
+            summary: position.summary,
+            contactName: position.contact_name,
+            contactEmail: position.contact_email,
+            address: position.address,
+            instructions: position.instructions,
+            attire: position.attire,
+            arrival: position.arrival,
+            start: position.start,
+            end: position.end,
+            createdAt: position.createdAt,
+            hostName: position.host.name,
+            companyName: position.host.company?.companyName || 'No Company',
+            isPublished: position.isPublished
+        };
+    });
+
     return {
         hasActiveEvent: true,
         activeEvent: {
@@ -253,11 +314,79 @@ export const load: PageServerLoad = async ({ locals }) => {
         totalCompanies: transformedCompanies.length,
         hosts: transformedHosts,
         totalHosts: transformedHosts.length,
+        positions: transformedPositions,
+        totalPositions: transformedPositions.length,
+        careers: careers,
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host
     };
 };
+
+// Helper function to find or create an admin host for admin-created positions
+async function getOrCreateAdminHost(schoolId: string) {
+    // First, try to find an existing admin user with admin@jobcamp.org email
+    const adminUser = await prisma.user.findUnique({
+        where: { email: 'admin@jobcamp.org' },
+        include: { host: true }
+    });
+
+    if (adminUser?.host) {
+        return adminUser.host;
+    }
+
+    // If no admin user exists, create one
+    // First check if a user with this email exists
+    let user = adminUser;
+    if (!user) {
+        // Create a dummy user (we won't use it for login, just for host association)
+        // Use scrypt for password hashing to match the existing pattern
+        const passwordSalt = crypto.randomBytes(16).toString('base64');
+        const passwordHash = await scrypt.hash('dummy', passwordSalt);
+        
+        user = await prisma.user.create({
+            data: {
+                email: 'admin@jobcamp.org',
+                passwordHash,
+                passwordSalt,
+                emailVerified: true,
+                lastLogin: new Date()
+            }
+        });
+    }
+
+    // Create or find the admin host
+    let host = user.host;
+    if (!host) {
+        // Find a company for this host (or create a generic one)
+        let company = await prisma.company.findFirst({
+            where: {
+                companyName: 'JobCamp Admin',
+                schoolId: schoolId
+            }
+        });
+
+        if (!company) {
+            company = await prisma.company.create({
+                data: {
+                    companyName: 'JobCamp Admin',
+                    companyDescription: 'Administrative company for admin-created positions',
+                    schoolId: schoolId
+                }
+            });
+        }
+
+        host = await prisma.host.create({
+            data: {
+                name: 'JobCamp Admin',
+                companyId: company.id,
+                userId: user.id
+            }
+        });
+    }
+
+    return host;
+}
 
 export const actions: Actions = {
     updateStudent: async ({ request, locals }) => {
@@ -581,6 +710,136 @@ export const actions: Actions = {
         } catch (error) {
             console.error('Error updating host:', error);
             return { success: false, message: "Failed to update host" };
+        }
+    },
+
+    updatePosition: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const positionId = formData.get('positionId')?.toString();
+            const title = formData.get('title')?.toString();
+            const career = formData.get('career')?.toString();
+            const slots = formData.get('slots')?.toString();
+            const summary = formData.get('summary')?.toString();
+            const contactName = formData.get('contactName')?.toString();
+            const contactEmail = formData.get('contactEmail')?.toString();
+            const address = formData.get('address')?.toString();
+            const instructions = formData.get('instructions')?.toString();
+            const attire = formData.get('attire')?.toString();
+            const arrival = formData.get('arrival')?.toString();
+            const start = formData.get('start')?.toString();
+            const end = formData.get('end')?.toString();
+
+            if (!positionId || !title || !career || !slots) {
+                return { success: false, message: "Missing required fields" };
+            }
+
+            // Update position record
+            await prisma.position.update({
+                where: { id: positionId },
+                data: {
+                    title,
+                    career,
+                    slots: parseInt(slots),
+                    summary: summary || '',
+                    contact_name: contactName || '',
+                    contact_email: contactEmail || '',
+                    address: address || '',
+                    instructions: instructions || '',
+                    attire: attire || '',
+                    arrival: arrival || '',
+                    start: start || '',
+                    end: end || ''
+                }
+            });
+
+            return { success: true, message: "Position updated successfully" };
+        } catch (error) {
+            console.error('Error updating position:', error);
+            return { success: false, message: "Failed to update position" };
+        }
+    },
+
+    createPosition: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        try {
+            // Check if user is admin
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const schoolIds = userInfo.adminOfSchools.map(s => s.id);
+
+            // Get the active event
+            const activeEvent = await prisma.event.findFirst({
+                where: {
+                    schoolId: { in: schoolIds },
+                    isActive: true
+                }
+            });
+
+            if (!activeEvent) {
+                return { success: false, message: "No active event found" };
+            }
+
+            const formData = await request.formData();
+            const title = formData.get('title')?.toString();
+            const career = formData.get('career')?.toString();
+            const slots = formData.get('slots')?.toString();
+            const summary = formData.get('summary')?.toString();
+            const contactName = formData.get('contactName')?.toString();
+            const contactEmail = formData.get('contactEmail')?.toString();
+            const address = formData.get('address')?.toString();
+            const instructions = formData.get('instructions')?.toString();
+            const attire = formData.get('attire')?.toString();
+            const arrival = formData.get('arrival')?.toString();
+            const start = formData.get('start')?.toString();
+            const end = formData.get('end')?.toString();
+
+            if (!title || !career || !slots) {
+                return { success: false, message: "Missing required fields" };
+            }
+
+            // Get or create admin host
+            const adminHost = await getOrCreateAdminHost(activeEvent.schoolId);
+
+            // Create the position
+            await prisma.position.create({
+                data: {
+                    title,
+                    career,
+                    slots: parseInt(slots),
+                    summary: summary || '',
+                    contact_name: contactName || 'admin@jobcamp.org',
+                    contact_email: contactEmail || 'admin@jobcamp.org',
+                    address: address || '',
+                    instructions: instructions || '',
+                    attire: attire || '',
+                    arrival: arrival || '',
+                    start: start || '',
+                    end: end || '',
+                    eventId: activeEvent.id,
+                    hostId: adminHost.id,
+                    isPublished: false
+                }
+            });
+
+            return { success: true, message: "Position created successfully" };
+        } catch (error) {
+            console.error('Error creating position:', error);
+            return { success: false, message: "Failed to create position" };
         }
     }
 };
