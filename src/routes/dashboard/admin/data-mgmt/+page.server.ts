@@ -38,6 +38,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             totalStudents: 0,
             companies: [],
             totalCompanies: 0,
+            hosts: [],
+            totalHosts: 0,
             isAdmin: true,
             loggedIn: true,
             isHost: !!locals.user.host
@@ -202,6 +204,42 @@ export const load: PageServerLoad = async ({ locals }) => {
         };
     });
 
+    // Get hosts from companies in the active event's school
+    const hosts = await prisma.host.findMany({
+        where: {
+            company: {
+                schoolId: { in: schoolIds }
+            }
+        },
+        include: {
+            user: {
+                select: {
+                    email: true,
+                    lastLogin: true
+                }
+            },
+            company: {
+                select: {
+                    companyName: true
+                }
+            }
+        },
+        orderBy: {
+            name: 'asc'
+        }
+    });
+
+    // Transform host data for the UI
+    const transformedHosts = hosts.map(host => {
+        return {
+            id: host.id,
+            name: host.name,
+            email: host.user.email,
+            lastLogin: host.user.lastLogin,
+            companyName: host.company?.companyName || 'No Company'
+        };
+    });
+
     return {
         hasActiveEvent: true,
         activeEvent: {
@@ -213,6 +251,8 @@ export const load: PageServerLoad = async ({ locals }) => {
         totalStudents: transformedStudents.length,
         companies: transformedCompanies,
         totalCompanies: transformedCompanies.length,
+        hosts: transformedHosts,
+        totalHosts: transformedHosts.length,
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host
@@ -498,6 +538,49 @@ export const actions: Actions = {
         } catch (error) {
             console.error('Error updating company:', error);
             return { success: false, message: "Failed to update company" };
+        }
+    },
+
+    updateHost: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const hostId = formData.get('hostId')?.toString();
+            const name = formData.get('name')?.toString();
+            const email = formData.get('email')?.toString();
+
+            if (!hostId || !name || !email) {
+                return { success: false, message: "Missing required fields" };
+            }
+
+            // Update host name
+            const host = await prisma.host.findUnique({
+                where: { id: hostId },
+                select: { userId: true }
+            });
+
+            if (!host) {
+                return { success: false, message: "Host not found" };
+            }
+
+            await prisma.host.update({
+                where: { id: hostId },
+                data: { name }
+            });
+
+            // Update user email
+            await prisma.user.update({
+                where: { id: host.userId },
+                data: { email }
+            });
+
+            return { success: true, message: "Host updated successfully" };
+        } catch (error) {
+            console.error('Error updating host:', error);
+            return { success: false, message: "Failed to update host" };
         }
     }
 };

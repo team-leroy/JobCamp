@@ -25,6 +25,7 @@
   } from "lucide-svelte";
   import StudentEditModal from "./StudentEditModal.svelte";
   import CompanyEditModal from "./CompanyEditModal.svelte";
+  import HostEditModal from "./HostEditModal.svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
 
   interface Student {
@@ -63,6 +64,14 @@
     activePositionCount: number;
   }
 
+  interface Host {
+    id: string;
+    name: string;
+    email: string;
+    lastLogin: Date | null;
+    companyName: string;
+  }
+
   interface Props {
     data: {
       hasActiveEvent: boolean;
@@ -75,6 +84,8 @@
       totalStudents: number;
       companies: Company[];
       totalCompanies: number;
+      hosts: Host[];
+      totalHosts: number;
       isAdmin: boolean;
       loggedIn: boolean;
       isHost: boolean;
@@ -92,6 +103,9 @@
 
   // Filter states for Company
   let companyNameFilter = $state("");
+
+  // Filter states for Host
+  let hostNameFilter = $state("");
 
   // UI states
   let expandedStudents = $state(new Set<string>());
@@ -138,6 +152,17 @@
     })
   );
 
+  // Computed filtered hosts
+  let filteredHosts = $derived(
+    data.hosts.filter((host) => {
+      const matchesHostName =
+        !hostNameFilter ||
+        host.name.toLowerCase().includes(hostNameFilter.toLowerCase());
+
+      return matchesHostName;
+    })
+  );
+
   function toggleStudentExpansion(studentId: string) {
     if (expandedStudents.has(studentId)) {
       expandedStudents.delete(studentId);
@@ -164,6 +189,8 @@
       lotteryStatusFilter = "All";
     } else if (selectedTab === "Company") {
       companyNameFilter = "";
+    } else if (selectedTab === "Host") {
+      hostNameFilter = "";
     }
   }
 
@@ -680,14 +707,104 @@
       {/if}
 
       {#if selectedTab === "Host"}
-        <Card>
-          <CardContent class="p-6 text-center">
-            <h3 class="text-lg font-semibold mb-2">Host Management</h3>
-            <p class="text-gray-600">
-              Host management interface coming soon...
+        <!-- Host Management Section -->
+        <div class="mb-6">
+          <h2 class="text-2xl font-semibold mb-4">Host Management</h2>
+
+          <!-- Filters -->
+          <Card class="mb-4">
+            <CardHeader>
+              <CardTitle class="text-lg">Filters</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <Label for="hostName">Host Name</Label>
+                  <Input
+                    id="hostName"
+                    bind:value={hostNameFilter}
+                    placeholder="Search by host name..."
+                  />
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <Button variant="outline" onclick={clearFilters}>
+                  Clear Filters
+                </Button>
+                <Button
+                  variant="outline"
+                  onclick={() => window.location.reload()}
+                >
+                  Refresh
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <!-- Results Summary -->
+          <div class="mb-4">
+            <p class="text-sm text-gray-600">
+              Results: {filteredHosts.length} hosts found
             </p>
-          </CardContent>
-        </Card>
+          </div>
+
+          <!-- Host List -->
+          <div class="space-y-4">
+            {#each filteredHosts as host (host.id)}
+              <Card class="hover:shadow-md transition-shadow">
+                <CardContent class="p-6">
+                  <!-- Host Header -->
+                  <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-4">
+                      <div class="flex items-center space-x-2">
+                        <User class="h-5 w-5 text-gray-500" />
+                        <span class="font-semibold text-lg">
+                          {host.name}
+                        </span>
+                        <Badge variant="outline">{host.companyName}</Badge>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                      <HostEditModal {host} />
+                    </div>
+                  </div>
+
+                  <!-- Host Information -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="flex items-center space-x-2">
+                      <Mail class="h-4 w-4 text-gray-500" />
+                      <span class="text-sm">{host.email}</span>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                      <Calendar class="h-4 w-4 text-gray-500" />
+                      <span class="text-sm text-gray-600">
+                        Last Login: {formatDate(host.lastLogin)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            {/each}
+          </div>
+
+          {#if filteredHosts.length === 0}
+            <Card>
+              <CardContent class="p-6 text-center">
+                <User class="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 class="text-lg font-semibold mb-2">No Hosts Found</h3>
+                <p class="text-gray-600 mb-4">
+                  No hosts match your current filters.
+                </p>
+                <Button variant="outline" onclick={clearFilters}>
+                  Clear All Filters
+                </Button>
+              </CardContent>
+            </Card>
+          {/if}
+        </div>
       {/if}
 
       {#if selectedTab === "Position"}
