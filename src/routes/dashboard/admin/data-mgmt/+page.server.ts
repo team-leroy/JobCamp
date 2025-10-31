@@ -35,7 +35,12 @@ export const load: PageServerLoad = async ({ locals }) => {
             hasActiveEvent: false,
             activeEvent: null,
             students: [],
-            totalStudents: 0
+            totalStudents: 0,
+            companies: [],
+            totalCompanies: 0,
+            isAdmin: true,
+            loggedIn: true,
+            isHost: !!locals.user.host
         };
     }
 
@@ -159,6 +164,44 @@ export const load: PageServerLoad = async ({ locals }) => {
         };
     });
 
+    // Get companies from the active event's school
+    const companies = await prisma.company.findMany({
+        where: {
+            schoolId: { in: schoolIds }
+        },
+        include: {
+            hosts: {
+                include: {
+                    positions: {
+                        where: {
+                            eventId: activeEvent.id,
+                            isPublished: true
+                        }
+                    }
+                }
+            }
+        },
+        orderBy: {
+            companyName: 'asc'
+        }
+    });
+
+    // Transform company data for the UI
+    const transformedCompanies = companies.map(company => {
+        // Count active positions for this company in the current event
+        const positionCount = company.hosts.reduce((count, host) => {
+            return count + host.positions.length;
+        }, 0);
+
+        return {
+            id: company.id,
+            companyName: company.companyName,
+            companyDescription: company.companyDescription,
+            companyUrl: company.companyUrl || '',
+            activePositionCount: positionCount
+        };
+    });
+
     return {
         hasActiveEvent: true,
         activeEvent: {
@@ -167,7 +210,12 @@ export const load: PageServerLoad = async ({ locals }) => {
             date: activeEvent.date
         },
         students: transformedStudents,
-        totalStudents: transformedStudents.length
+        totalStudents: transformedStudents.length,
+        companies: transformedCompanies,
+        totalCompanies: transformedCompanies.length,
+        isAdmin: true,
+        loggedIn: true,
+        isHost: !!locals.user.host
     };
 };
 
@@ -417,6 +465,39 @@ export const actions: Actions = {
         } catch (error) {
             console.error('Error exporting students:', error);
             return new Response("Failed to export students", { status: 500 });
+        }
+    },
+
+    updateCompany: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const companyId = formData.get('companyId')?.toString();
+            const companyName = formData.get('companyName')?.toString();
+            const companyDescription = formData.get('companyDescription')?.toString();
+            const companyUrl = formData.get('companyUrl')?.toString();
+
+            if (!companyId || !companyName || !companyDescription) {
+                return { success: false, message: "Missing required fields" };
+            }
+
+            // Update company record
+            await prisma.company.update({
+                where: { id: companyId },
+                data: {
+                    companyName,
+                    companyDescription,
+                    companyUrl: companyUrl || null
+                }
+            });
+
+            return { success: true, message: "Company updated successfully" };
+        } catch (error) {
+            console.error('Error updating company:', error);
+            return { success: false, message: "Failed to update company" };
         }
     }
 };
