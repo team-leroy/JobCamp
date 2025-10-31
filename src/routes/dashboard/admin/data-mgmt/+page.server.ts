@@ -65,6 +65,11 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             },
             positionsSignedUpFor: {
+                where: {
+                    position: {
+                        eventId: activeEvent.id
+                    }
+                },
                 include: {
                     position: {
                         include: {
@@ -493,6 +498,11 @@ export const actions: Actions = {
                         }
                     },
                     positionsSignedUpFor: {
+                        where: {
+                            position: {
+                                eventId: activeEvent.id
+                            }
+                        },
                         include: {
                             position: {
                                 include: {
