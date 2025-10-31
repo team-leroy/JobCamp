@@ -361,8 +361,9 @@ Continue with deletion?`;
           </div>
         </div>
         <p class="text-xs text-gray-500 mt-3 italic">
-          💡 Tip: The system will automatically prevent deletion if students
-          have signed up or lottery has been run.
+          💡 Tip: The system will automatically prevent deletion if the event is
+          active (deactivate it first by activating another event). Deletion is
+          also prevented if students have signed up or if lottery has been run.
         </p>
       </div>
     {/if}
