@@ -208,6 +208,7 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
             isAdmin: true,
             loggedIn: true,
             isHost: !!locals.user.host,
+            userRole: userInfo.role,
             selectedEvent,
             allEvents,
             lotteryStats,

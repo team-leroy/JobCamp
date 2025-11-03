@@ -3,6 +3,7 @@
   import EventManagementWidget from "$lib/components/admin/EventManagementWidget.svelte";
   import EventControlsWidget from "$lib/components/admin/EventControlsWidget.svelte";
   import ImportantDatesWidget from "$lib/components/admin/ImportantDatesWidget.svelte";
+  import AdminUsersWidget from "$lib/components/admin/AdminUsersWidget.svelte";
   import { Button } from "$lib/components/ui/button";
   import {
     Card,
@@ -21,14 +22,24 @@
     displayOrder: number;
   }
 
+  interface ReadOnlyAdmin {
+    id: string;
+    email: string;
+    createdAt: Date;
+    lastLogin: Date;
+    adminOfSchools: Array<{ id: string; name: string }>;
+  }
+
   interface PageData {
     isAdmin: boolean;
     loggedIn: boolean;
     isHost: boolean;
+    userRole: string | null;
     schoolEvents: EventWithStats[];
     upcomingEvent?: EventWithStats | null;
     schools?: Array<{ id: string; name: string }>;
     importantDates: ImportantDate[];
+    readOnlyAdmins: ReadOnlyAdmin[];
   }
 
   interface FormResult {
@@ -41,17 +52,24 @@
     isAdmin,
     loggedIn,
     isHost,
+    userRole,
     schoolEvents,
     upcomingEvent,
     importantDates,
+    readOnlyAdmins,
   }: {
     isAdmin: boolean;
     loggedIn: boolean;
     isHost: boolean;
+    userRole: string | null;
     schoolEvents: EventWithStats[];
     upcomingEvent?: EventWithStats | null;
     importantDates: ImportantDate[];
+    readOnlyAdmins: ReadOnlyAdmin[];
   } = data;
+
+  // Check if user is full admin (can see Admin Users tab)
+  const isFullAdmin = userRole === "FULL_ADMIN";
 
   // Track active tab
   let activeTab = $state("controls");
@@ -114,6 +132,17 @@
           >
             Event History
           </button>
+          {#if isFullAdmin}
+            <button
+              class="py-2 px-1 border-b-2 font-medium text-sm {activeTab ===
+              'users'
+                ? 'border-purple-500 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+              onclick={() => setActiveTab("users")}
+            >
+              Admin Users
+            </button>
+          {/if}
         </nav>
       </div>
 
@@ -275,6 +304,12 @@
             </div>
           </CardContent>
         </Card>
+      {:else if activeTab === "users"}
+        <AdminUsersWidget
+          {readOnlyAdmins}
+          schools={data.schools || []}
+          {form}
+        />
       {/if}
     </div>
   </div>

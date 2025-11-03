@@ -2,6 +2,8 @@ import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { createEvent, activateEvent, getSchoolEvents, deleteEvent, archiveEvent } from '$lib/server/eventManagement';
+import { isFullAdmin, canAccessFullAdminFeatures } from '$lib/server/roleUtils';
+import { hashPassword } from '$lib/server/auth';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -18,6 +20,11 @@ export const load: PageServerLoad = async ({ locals }) => {
     });
 
     if (!userInfo?.adminOfSchools?.length) {
+        redirect(302, "/dashboard");
+    }
+
+    // Check if user has full admin access (read-only admins cannot access event management)
+    if (!canAccessFullAdminFeatures(userInfo)) {
         redirect(302, "/dashboard");
     }
 
@@ -104,14 +111,45 @@ export const load: PageServerLoad = async ({ locals }) => {
         })
         : [];
 
+    // Load read-only admin users for this school (only if user is FULL_ADMIN)
+    const readOnlyAdmins = isFullAdmin(userInfo)
+        ? await prisma.user.findMany({
+            where: {
+                role: 'READ_ONLY_ADMIN',
+                adminOfSchools: {
+                    some: {
+                        id: { in: schoolIds }
+                    }
+                }
+            },
+            select: {
+                id: true,
+                email: true,
+                createdAt: true,
+                lastLogin: true,
+                adminOfSchools: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        })
+        : [];
+
     return {
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host,
+        userRole: userInfo.role,
         schools,
         schoolEvents: eventsWithFilteredStats,
         upcomingEvent,
-        importantDates
+        importantDates,
+        readOnlyAdmins
     };
 };
 
@@ -553,6 +591,201 @@ export const actions: Actions = {
                 success: false,
                 message: error instanceof Error ? error.message : 'Unknown error'
             };
+        }
+    },
+
+    createReadOnlyAdmin: async ({ request, locals }) => {
+        try {
+            if (!locals.user) {
+                return { success: false, message: 'Not authenticated' };
+            }
+
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!isFullAdmin(userInfo!)) {
+                return { success: false, message: 'Only full admins can create read-only admin accounts' };
+            }
+
+            const formData = await request.formData();
+            const email = formData.get('email')?.toString();
+            const password = formData.get('password')?.toString();
+            const schoolId = formData.get('schoolId')?.toString();
+
+            if (!email || !password || !schoolId) {
+                return { success: false, message: 'Email, password, and school are required' };
+            }
+
+            // Validate email format
+            if (!email.includes('@')) {
+                return { success: false, message: 'Invalid email format' };
+            }
+
+            // Check if email already exists
+            const existingUser = await prisma.user.findUnique({
+                where: { email }
+            });
+
+            if (existingUser) {
+                return { success: false, message: 'Email already exists' };
+            }
+
+            // Verify the school belongs to the admin
+            const schoolIds = userInfo!.adminOfSchools.map(s => s.id);
+            if (!schoolIds.includes(schoolId)) {
+                return { success: false, message: 'Invalid school selection' };
+            }
+
+            // Hash password
+            const { hash, salt } = await hashPassword(password);
+
+            // Create read-only admin user
+            await prisma.user.create({
+                data: {
+                    email,
+                    passwordHash: hash,
+                    passwordSalt: salt,
+                    emailVerified: true, // No email verification required
+                    lastLogin: new Date(),
+                    role: 'READ_ONLY_ADMIN',
+                    adminOfSchools: {
+                        connect: { id: schoolId }
+                    }
+                }
+            });
+
+            return { success: true, message: 'Read-only admin created successfully' };
+        } catch (error) {
+            console.error('Error creating read-only admin:', error);
+            return { success: false, message: 'Failed to create read-only admin' };
+        }
+    },
+
+    updateReadOnlyAdmin: async ({ request, locals }) => {
+        try {
+            if (!locals.user) {
+                return { success: false, message: 'Not authenticated' };
+            }
+
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!isFullAdmin(userInfo!)) {
+                return { success: false, message: 'Only full admins can update read-only admin accounts' };
+            }
+
+            const formData = await request.formData();
+            const userId = formData.get('userId')?.toString();
+            const email = formData.get('email')?.toString();
+            const password = formData.get('password')?.toString();
+            const schoolId = formData.get('schoolId')?.toString();
+
+            if (!userId || !email || !schoolId) {
+                return { success: false, message: 'User ID, email, and school are required' };
+            }
+
+            // Verify the user is a read-only admin
+            const targetUser = await prisma.user.findUnique({
+                where: { id: userId },
+                include: { adminOfSchools: true }
+            });
+
+            if (!targetUser || targetUser.role !== 'READ_ONLY_ADMIN') {
+                return { success: false, message: 'User not found or is not a read-only admin' };
+            }
+
+            // Verify the school belongs to the admin
+            const schoolIds = userInfo!.adminOfSchools.map(s => s.id);
+            if (!schoolIds.includes(schoolId)) {
+                return { success: false, message: 'Invalid school selection' };
+            }
+
+            // Check if email is being changed and if it's already taken
+            if (email !== targetUser.email) {
+                const existingUser = await prisma.user.findUnique({
+                    where: { email }
+                });
+                if (existingUser) {
+                    return { success: false, message: 'Email already exists' };
+                }
+            }
+
+            // Update user
+            const updateData: {
+                email: string;
+                adminOfSchools: { set: Array<{ id: string }> };
+                passwordHash?: string;
+                passwordSalt?: string;
+            } = {
+                email,
+                adminOfSchools: {
+                    set: [{ id: schoolId }]
+                }
+            };
+
+            // Update password if provided
+            if (password) {
+                const { hash, salt } = await hashPassword(password);
+                updateData.passwordHash = hash;
+                updateData.passwordSalt = salt;
+            }
+
+            await prisma.user.update({
+                where: { id: userId },
+                data: updateData
+            });
+
+            return { success: true, message: 'Read-only admin updated successfully' };
+        } catch (error) {
+            console.error('Error updating read-only admin:', error);
+            return { success: false, message: 'Failed to update read-only admin' };
+        }
+    },
+
+    deleteReadOnlyAdmin: async ({ request, locals }) => {
+        try {
+            if (!locals.user) {
+                return { success: false, message: 'Not authenticated' };
+            }
+
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!isFullAdmin(userInfo!)) {
+                return { success: false, message: 'Only full admins can delete read-only admin accounts' };
+            }
+
+            const formData = await request.formData();
+            const userId = formData.get('userId')?.toString();
+
+            if (!userId) {
+                return { success: false, message: 'User ID is required' };
+            }
+
+            // Verify the user is a read-only admin
+            const targetUser = await prisma.user.findUnique({
+                where: { id: userId }
+            });
+
+            if (!targetUser || targetUser.role !== 'READ_ONLY_ADMIN') {
+                return { success: false, message: 'User not found or is not a read-only admin' };
+            }
+
+            // Delete the user (sessions will be cascade deleted)
+            await prisma.user.delete({
+                where: { id: userId }
+            });
+
+            return { success: true, message: 'Read-only admin deleted successfully' };
+        } catch (error) {
+            console.error('Error deleting read-only admin:', error);
+            return { success: false, message: 'Failed to delete read-only admin' };
         }
     }
 };

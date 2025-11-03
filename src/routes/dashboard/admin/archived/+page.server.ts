@@ -185,6 +185,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host,
+        userRole: userInfo.role,
         schools,
         archivedEvents: allArchivedEvents,
         selectedEvent,

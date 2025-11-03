@@ -7,6 +7,7 @@
     isAdmin,
     loggedIn,
     isHost,
+    userRole,
     archivedEvents,
     selectedEvent,
     selectedEventStats,
@@ -32,7 +33,7 @@
   }
 </script>
 
-<Navbar {isAdmin} {loggedIn} {isHost} />
+<Navbar {isAdmin} {loggedIn} {isHost} {userRole} />
 
 <div class="w-full mt-28 flex flex-col items-center">
   <div class="max-w-6xl w-full px-4">

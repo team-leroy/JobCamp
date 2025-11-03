@@ -31,13 +31,13 @@
     const target = event.target as HTMLSelectElement;
     const eventId = target.value;
     selectedEventId = eventId;
-    
+
     // Navigate to the same page with the selected event ID
     const url = new URL(window.location.href);
     if (eventId) {
-      url.searchParams.set('eventId', eventId);
+      url.searchParams.set("eventId", eventId);
     } else {
-      url.searchParams.delete('eventId');
+      url.searchParams.delete("eventId");
     }
     goto(url.toString());
   }
@@ -797,7 +797,12 @@
   });
 </script>
 
-<Navbar loggedIn={data.loggedIn} isHost={data.isHost} isAdmin={data.isAdmin} />
+<Navbar
+  loggedIn={data.loggedIn}
+  isHost={data.isHost}
+  isAdmin={data.isAdmin}
+  userRole={data.userRole}
+/>
 
 <div class="h-24"></div>
 
@@ -812,7 +817,10 @@
   <!-- Event Selector -->
   {#if data.allEvents && data.allEvents.length > 0}
     <div class="mb-6">
-      <label for="event-selector" class="block text-sm font-medium text-gray-700 mb-2">
+      <label
+        for="event-selector"
+        class="block text-sm font-medium text-gray-700 mb-2"
+      >
         Select Event to View:
       </label>
       <select
@@ -824,14 +832,25 @@
         {#each data.allEvents as event}
           <option value={event.id}>
             {event.name || `Event ${event.date.toLocaleDateString()}`}
-            {event.isActive ? ' (Active)' : event.isArchived ? ' (Archived)' : ' (Draft)'}
+            {event.isActive
+              ? " (Active)"
+              : event.isArchived
+                ? " (Archived)"
+                : " (Draft)"}
           </option>
         {/each}
       </select>
       {#if data.selectedEvent}
         <p class="mt-2 text-sm text-gray-600">
-          Viewing data for: <span class="font-medium">{data.selectedEvent.name || `Event ${data.selectedEvent.date.toLocaleDateString()}`}</span>
-          {data.selectedEvent.isActive ? ' (Active Event)' : data.selectedEvent.isArchived ? ' (Archived Event)' : ' (Draft Event)'}
+          Viewing data for: <span class="font-medium"
+            >{data.selectedEvent.name ||
+              `Event ${data.selectedEvent.date.toLocaleDateString()}`}</span
+          >
+          {data.selectedEvent.isActive
+            ? " (Active Event)"
+            : data.selectedEvent.isArchived
+              ? " (Archived Event)"
+              : " (Draft Event)"}
         </p>
       {/if}
     </div>

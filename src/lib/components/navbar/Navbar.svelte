@@ -13,10 +13,22 @@
     loggedIn,
     isHost,
     isAdmin,
+    userRole = null,
     showSignupLogin = true,
     studentAccountsEnabled = true,
     companyAccountsEnabled = true,
+  }: {
+    loggedIn: boolean;
+    isHost: boolean;
+    isAdmin: boolean;
+    userRole?: string | null;
+    showSignupLogin?: boolean;
+    studentAccountsEnabled?: boolean;
+    companyAccountsEnabled?: boolean;
   } = $props();
+
+  // Check if user is full admin (can see Messaging, Lottery, Event Mgmt)
+  const isFullAdmin = isAdmin && userRole === "FULL_ADMIN";
 
   let collapsed = $state(false);
   let form = $state<HTMLFormElement | undefined>(undefined);
@@ -43,27 +55,33 @@
       >
       <div class="hidden md:flex flex-row gap-4 mr-4 items-center">
         {#if isAdmin}
-          <Button href="/messaging" variant="link" class="text-white text-xl"
-            >Messaging</Button
-          >
+          {#if isFullAdmin}
+            <Button href="/messaging" variant="link" class="text-white text-xl"
+              >Messaging</Button
+            >
+          {/if}
           <Button
             href="/dashboard/admin/data-mgmt"
             variant="link"
             class="text-white text-xl">Edit/Search Data</Button
           >
-          <Button href="/lottery" variant="link" class="text-white text-xl"
-            >Lottery</Button
-          >
+          {#if isFullAdmin}
+            <Button href="/lottery" variant="link" class="text-white text-xl"
+              >Lottery</Button
+            >
+          {/if}
           <Button
             href="/visualizations"
             variant="link"
             class="text-white text-xl">Visualizations</Button
           >
-          <Button
-            href="/dashboard/admin/event-mgmt"
-            variant="link"
-            class="text-white text-xl">Event Mgmt</Button
-          >
+          {#if isFullAdmin}
+            <Button
+              href="/dashboard/admin/event-mgmt"
+              variant="link"
+              class="text-white text-xl">Event Mgmt</Button
+            >
+          {/if}
           <Button href="/dashboard" variant="link" class="text-white text-xl"
             >Dashboard</Button
           >
@@ -77,6 +95,15 @@
               </span>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
+              <DropdownMenu.Item asChild>
+                <a
+                  href="/settings"
+                  class="flex items-center cursor-pointer px-2 py-1.5"
+                >
+                  <User class="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </a>
+              </DropdownMenu.Item>
               <DropdownMenu.Item>
                 <form
                   method="POST"
@@ -144,12 +171,15 @@
                 </span>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
-                <!-- <DropdownMenu.Item>
-                            <button class="nav-dropdown-button">
-                                <Settings class="mr-2 h-4 w-4" />
-                                <span>Settings</span>
-                            </button>
-                        </DropdownMenu.Item> -->
+                <DropdownMenu.Item asChild>
+                  <a
+                    href="/settings"
+                    class="flex items-center cursor-pointer px-2 py-1.5"
+                  >
+                    <User class="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </a>
+                </DropdownMenu.Item>
                 <DropdownMenu.Item>
                   <form
                     method="POST"
@@ -187,18 +217,31 @@
     </div>
     <div class="flex flex-col gap-4 pb-5">
       {#if isAdmin}
-        <Button href="/messaging" variant="link" class="text-white text-xl"
-          >Messaging</Button
+        {#if isFullAdmin}
+          <Button href="/messaging" variant="link" class="text-white text-xl"
+            >Messaging</Button
+          >
+        {/if}
+        <Button
+          href="/dashboard/admin/data-mgmt"
+          variant="link"
+          class="text-white text-xl">Edit/Search Data</Button
         >
-        <Button href="/edit-data" variant="link" class="text-white text-xl"
-          >Edit Data</Button
-        >
-        <Button href="/lottery" variant="link" class="text-white text-xl"
-          >Lottery</Button
-        >
+        {#if isFullAdmin}
+          <Button href="/lottery" variant="link" class="text-white text-xl"
+            >Lottery</Button
+          >
+        {/if}
         <Button href="/visualizations" variant="link" class="text-white text-xl"
           >Visualizations</Button
         >
+        {#if isFullAdmin}
+          <Button
+            href="/dashboard/admin/event-mgmt"
+            variant="link"
+            class="text-white text-xl">Event Mgmt</Button
+          >
+        {/if}
         <Button href="/dashboard" variant="link" class="text-white text-xl"
           >Dashboard</Button
         >
@@ -212,6 +255,15 @@
             </span>
           </DropdownMenu.Trigger>
           <DropdownMenu.Content>
+            <DropdownMenu.Item asChild>
+              <a
+                href="/settings"
+                class="flex items-center cursor-pointer px-2 py-1.5"
+              >
+                <User class="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </a>
+            </DropdownMenu.Item>
             <DropdownMenu.Item>
               <form
                 method="POST"

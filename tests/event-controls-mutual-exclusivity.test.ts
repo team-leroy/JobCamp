@@ -14,6 +14,12 @@ vi.mock('$lib/server/prisma', () => ({
   }
 }));
 
+// Mock auth module to avoid Lucia initialization issues
+vi.mock('$lib/server/auth', () => ({
+  hashPassword: vi.fn().mockResolvedValue({ hash: 'mocked-hash', salt: 'mocked-salt' }),
+  verifyPassword: vi.fn().mockResolvedValue(true)
+}));
+
 describe('Event Controls Mutual Exclusivity', () => {
   const mockLocals = {
     user: {
@@ -25,6 +31,7 @@ describe('Event Controls Mutual Exclusivity', () => {
 
   const mockUserInfo = {
     id: 'admin-user-1',
+    role: 'FULL_ADMIN' as const,
     adminOfSchools: [{ id: 'school-1' }]
   };
 

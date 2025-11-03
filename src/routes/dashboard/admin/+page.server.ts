@@ -255,6 +255,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host,
+        userRole: userInfo.role,
         upcomingEvent,
         schools,
         studentStats,

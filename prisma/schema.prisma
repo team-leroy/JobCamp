@@ -147,6 +147,11 @@ model Host {
   @@index([companyId], map: "Host_companyId_fkey")
 }
 
+enum UserRole {
+  FULL_ADMIN
+  READ_ONLY_ADMIN
+}
+
 model User {
   id             String    @id @default(cuid())
   email          String    @unique
@@ -155,6 +160,7 @@ model User {
   emailVerified  Boolean   @default(false)
   lastLogin      DateTime
   createdAt      DateTime  @default(now())
+  role           UserRole? // Only used for admin users, null for students/hosts
   host           Host?
   sessions       Session[]
   student        Student?

@@ -162,3 +162,19 @@ export const isMobilePhone = new RegExp(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\
 export const schoolEmailCheck = (schoolEmailDomain: string) => {
     return new RegExp('[A-Za-z0-9._%+-]+'+schoolEmailDomain);
 }
+
+/**
+ * Hash a password for storage
+ */
+export async function hashPassword(password: string): Promise<{ hash: string; salt: string }> {
+	const passwordSalt = generateRandomString(16, passwordSaltCharacters);
+	const passwordHash = await scrypt.hash(password, passwordSalt);
+	return { hash: passwordHash, salt: passwordSalt };
+}
+
+/**
+ * Verify a password against stored hash and salt
+ */
+export async function verifyPassword(password: string, salt: string, hash: string): Promise<boolean> {
+	return await scrypt.verify(password, salt, hash);
+}

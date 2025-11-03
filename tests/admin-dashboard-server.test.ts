@@ -46,6 +46,12 @@ vi.mock('../src/lib/server/eventManagement', () => ({
   getSchoolEvents: vi.fn()
 }));
 
+// Mock auth module to avoid Lucia initialization issues
+vi.mock('../src/lib/server/auth', () => ({
+  hashPassword: vi.fn().mockResolvedValue({ hash: 'mocked-hash', salt: 'mocked-salt' }),
+  verifyPassword: vi.fn().mockResolvedValue(true)
+}));
+
 import { prisma } from '../src/lib/server/prisma';
 import { createEvent, activateEvent, archiveEvent, getSchoolEvents } from '../src/lib/server/eventManagement';
 
@@ -55,6 +61,7 @@ describe('Admin Dashboard Server Actions', () => {
     email: 'admin@school.edu',
     emailVerified: true,
     host: null,
+    role: 'FULL_ADMIN' as const,
     adminOfSchools: [{ id: 'school-1', name: 'Test School' }]
   };
 

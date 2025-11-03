@@ -115,11 +115,13 @@
       isAdmin: boolean;
       loggedIn: boolean;
       isHost: boolean;
+      userRole: string | null;
+      canEdit: boolean;
     };
   }
 
   let { data }: Props = $props();
-  const { isAdmin, loggedIn, isHost } = data;
+  const { isAdmin, loggedIn, isHost, userRole, canEdit } = data;
 
   // Filter states for Student
   let lastNameFilter = $state("");
@@ -301,7 +303,7 @@
   }
 </script>
 
-<Navbar {isAdmin} {loggedIn} {isHost} />
+<Navbar {isAdmin} {loggedIn} {isHost} {userRole} />
 
 <div class="w-full mt-28 flex flex-col items-center">
   <div class="max-w-6xl w-full px-4">
@@ -494,7 +496,9 @@
                         {/if}
                       </Button>
 
-                      <StudentEditModal {student} />
+                      {#if canEdit}
+                        <StudentEditModal {student} />
+                      {/if}
                     </div>
                   </div>
 
@@ -690,7 +694,9 @@
                         {/if}
                       </Button>
 
-                      <CompanyEditModal {company} />
+                      {#if canEdit}
+                        <CompanyEditModal {company} />
+                      {/if}
                     </div>
                   </div>
 
@@ -827,7 +833,9 @@
                     </div>
 
                     <div class="flex items-center space-x-2">
-                      <HostEditModal {host} />
+                      {#if canEdit}
+                        <HostEditModal {host} />
+                      {/if}
                     </div>
                   </div>
 
@@ -872,7 +880,9 @@
         <div class="mb-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-semibold">Position Management</h2>
-            <CreatePositionModal careers={data.careers} />
+            {#if canEdit}
+              <CreatePositionModal careers={data.careers} />
+            {/if}
           </div>
 
           <!-- Filters -->
@@ -961,7 +971,9 @@
                         {/if}
                       </Button>
 
-                      <PositionEditModal {position} careers={data.careers} />
+                      {#if canEdit}
+                        <PositionEditModal {position} careers={data.careers} />
+                      {/if}
                     </div>
                   </div>
 

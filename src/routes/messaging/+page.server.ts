@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
+import { canAccessFullAdminFeatures } from '$lib/server/roleUtils';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -20,6 +21,11 @@ export const load: PageServerLoad = async ({ locals }) => {
         redirect(302, "/dashboard");
     }
 
+    // Check if user has full admin access (read-only admins cannot access messaging)
+    if (!canAccessFullAdminFeatures(userInfo)) {
+        redirect(302, "/dashboard");
+    }
+
     // Load messaging-specific data
     //const messages = await prisma.message.findMany({
     //    where: { schoolId: { in: userInfo.adminOfSchools.map(s => s.id) } },
@@ -29,6 +35,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     return {
         isAdmin: true,
         loggedIn: true,
-        isHost: !!locals.user.host
+        isHost: !!locals.user.host,
+        userRole: userInfo.role
     };
 };

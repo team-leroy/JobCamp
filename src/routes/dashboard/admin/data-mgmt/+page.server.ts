@@ -5,6 +5,7 @@ import { careers } from '$lib/appconfig';
 import { scrypt } from '$lib/server/hash';
 import crypto from 'node:crypto';
 import { getCurrentGrade, getGraduatingClassYear } from '$lib/server/gradeUtils';
+import { canWriteAdminData } from '$lib/server/roleUtils';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -49,7 +50,9 @@ export const load: PageServerLoad = async ({ locals }) => {
             careers: careers,
             isAdmin: true,
             loggedIn: true,
-            isHost: !!locals.user.host
+            isHost: !!locals.user.host,
+            userRole: userInfo.role,
+            canEdit: canWriteAdminData(userInfo)
         };
     }
 
@@ -330,7 +333,9 @@ export const load: PageServerLoad = async ({ locals }) => {
         careers: careers,
         isAdmin: true,
         loggedIn: true,
-        isHost: !!locals.user.host
+        isHost: !!locals.user.host,
+        userRole: userInfo.role,
+        canEdit: canWriteAdminData(userInfo)
     };
 };
 
@@ -403,6 +408,16 @@ export const actions: Actions = {
     updateStudent: async ({ request, locals }) => {
         if (!locals.user) {
             return { success: false, message: "Not authenticated" };
+        }
+
+        // Check if user has write permissions
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canWriteAdminData(userInfo!)) {
+            return { success: false, message: "You do not have permission to edit data" };
         }
 
         try {
@@ -693,6 +708,15 @@ export const actions: Actions = {
             return { success: false, message: "Not authenticated" };
         }
 
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canWriteAdminData(userInfo!)) {
+            return { success: false, message: "You do not have permission to edit data" };
+        }
+
         try {
             const formData = await request.formData();
             const companyId = formData.get('companyId')?.toString();
@@ -724,6 +748,15 @@ export const actions: Actions = {
     updateHost: async ({ request, locals }) => {
         if (!locals.user) {
             return { success: false, message: "Not authenticated" };
+        }
+
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canWriteAdminData(userInfo!)) {
+            return { success: false, message: "You do not have permission to edit data" };
         }
 
         try {
@@ -767,6 +800,15 @@ export const actions: Actions = {
     updatePosition: async ({ request, locals }) => {
         if (!locals.user) {
             return { success: false, message: "Not authenticated" };
+        }
+
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canWriteAdminData(userInfo!)) {
+            return { success: false, message: "You do not have permission to edit data" };
         }
 
         try {
@@ -818,6 +860,15 @@ export const actions: Actions = {
     createPosition: async ({ request, locals }) => {
         if (!locals.user) {
             return { success: false, message: "Not authenticated" };
+        }
+
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canWriteAdminData(userInfo!)) {
+            return { success: false, message: "You do not have permission to create positions" };
         }
 
         try {

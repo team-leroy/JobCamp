@@ -3,6 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import { startLotteryJob } from '$lib/server/lottery';
 import { prisma } from '$lib/server/prisma';
 import { getCurrentGrade } from '$lib/server/gradeUtils';
+import { canAccessFullAdminFeatures } from '$lib/server/roleUtils';
 
 export const load: PageServerLoad = async ({ locals }) => {
     console.log('Lottery page load started');
@@ -26,6 +27,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     if (!userInfo?.adminOfSchools?.length) {
         console.log('User not admin, redirecting to dashboard');
+        redirect(302, "/dashboard");
+    }
+
+    // Check if user has full admin access (read-only admins cannot access lottery)
+    if (!canAccessFullAdminFeatures(userInfo)) {
+        console.log('User is read-only admin, redirecting to dashboard');
         redirect(302, "/dashboard");
     }
 
@@ -235,6 +242,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host,
+        userRole: userInfo.role,
         lotteryData: {
             isRunning: !!runningLottery,
             progress: runningLottery?.progress || 0,
