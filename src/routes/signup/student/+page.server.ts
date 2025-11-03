@@ -8,6 +8,7 @@ import { prisma } from '$lib/server/prisma';
 import { AuthError } from '$lib/server/authConstants';
 import { sendEmailVerificationEmail, sendPermissionSlipEmail } from '$lib/server/email';
 import { getNavbarData } from '$lib/server/navbarData';
+import { getGraduatingClassYearOptions } from '$lib/server/gradeUtils';
 
 
 export const load: PageServerLoad = async (event) => {
@@ -37,7 +38,17 @@ export const load: PageServerLoad = async (event) => {
     // Get navbar data
     const navbarData = await getNavbarData();
 
-    return { form, schoolMapping, ...navbarData };
+    // Calculate graduating class year options based on active event date
+    const graduatingClassYearOptions = activeEvent?.date
+        ? getGraduatingClassYearOptions(activeEvent.date)
+        : [];
+
+    return { 
+        form, 
+        schoolMapping, 
+        graduatingClassYearOptions,
+        ...navbarData 
+    };
 };
 
 export const actions: Actions = {
@@ -78,7 +89,7 @@ export const actions: Actions = {
                         create: {
                             firstName: form.data.firstName, // TODO: lastName
                             lastName: form.data.lastName,
-                            grade: form.data.grade,
+                            graduatingClassYear: form.data.graduatingClassYear,
                             phone: form.data.phone,
                             parentEmail: form.data.parentEmail,
                             school: {

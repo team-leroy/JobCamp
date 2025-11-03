@@ -62,20 +62,23 @@
       >{/if}
 
     <div class="flex w-96 justify-between">
-      <label for="grade">Grade</label>
+      <label for="graduatingClassYear">Graduating Class</label>
       <select
         class="px-2 py-2 rounded w-52 min-w-52 border"
-        name="grade"
-        bind:value={$form.grade}
+        name="graduatingClassYear"
+        bind:value={$form.graduatingClassYear}
       >
-        {#each [9, 10, 11, 12] as grade}
-          <option value={grade} selected={$form.grade == grade}
-            >{grade}th Grade</option
+        {#each data.graduatingClassYearOptions as classYear}
+          <option
+            value={classYear}
+            selected={$form.graduatingClassYear == classYear}
+            >Class of {classYear}</option
           >
         {/each}
       </select>
     </div>
-    {#if $errors.grade}<span class="text-sm text-red-500">{$errors.grade}</span
+    {#if $errors.graduatingClassYear}<span class="text-sm text-red-500"
+        >{$errors.graduatingClassYear}</span
       >{/if}
 
     <div class="flex w-96 justify-between">

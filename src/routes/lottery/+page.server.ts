@@ -2,6 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { startLotteryJob } from '$lib/server/lottery';
 import { prisma } from '$lib/server/prisma';
+import { getCurrentGrade } from '$lib/server/gradeUtils';
 
 export const load: PageServerLoad = async ({ locals }) => {
     console.log('Lottery page load started');
@@ -136,16 +137,24 @@ export const load: PageServerLoad = async ({ locals }) => {
     }
 
     // Get all students for manual assignment dropdown
-    const students = await prisma.student.findMany({
+    const studentsRaw = await prisma.student.findMany({
         where: { schoolId },
         orderBy: { lastName: 'asc' },
         select: {
             id: true,
             firstName: true,
             lastName: true,
-            grade: true
+            graduatingClassYear: true
         }
     });
+
+    // Convert graduatingClassYear to grade for display
+    const students = studentsRaw.map(student => ({
+        ...student,
+        grade: student.graduatingClassYear && activeEvent
+            ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
+            : null
+    }));
 
     // Get all positions from the active event for manual assignment dropdown
     const positions = await prisma.position.findMany({
@@ -199,7 +208,9 @@ export const load: PageServerLoad = async ({ locals }) => {
                 id: ma.student.id,
                 firstName: ma.student.firstName,
                 lastName: ma.student.lastName,
-                grade: ma.student.grade
+                grade: ma.student.graduatingClassYear && activeEvent
+                    ? getCurrentGrade(ma.student.graduatingClassYear, activeEvent.date)
+                    : null
             } : undefined,
             position: ma.position ? {
                 id: ma.position.id,

@@ -4,7 +4,7 @@ import { isMobilePhone } from "$lib/server/auth";
 
 export const createStudentSchema = () => {
     return z.object({
-        grade: z.number().int().min(9).max(12),
+        graduatingClassYear: z.number().int().min(2025).max(2035),
         firstName: z.string().min(1),
         lastName: z.string().min(1),
         parentEmail: z.string().email("Please enter a valid email."),

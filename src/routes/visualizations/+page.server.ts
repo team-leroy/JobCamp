@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
+import { getCurrentGrade } from '$lib/server/gradeUtils';
 
 interface Locals {
     user?: {
@@ -639,11 +640,15 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
 
 async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) {
     try {
-        // Get the event to determine activation date for filtering
+        // Get the event to determine activation date for filtering and event date for grade conversion
         const event = await prisma.event.findUnique({
             where: { id: activeEventId },
-            select: { activatedAt: true, createdAt: true }
+            select: { activatedAt: true, createdAt: true, date: true }
         });
+        
+        if (!event) {
+            throw new Error('Event not found');
+        }
         
         const eventStartDate = event?.activatedAt || event?.createdAt;
         
@@ -787,7 +792,15 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
         }> = [];
 
         for (const student of studentsWithChoices) {
-            const grade = student.grade;
+            // Convert graduatingClassYear to grade
+            const grade = student.graduatingClassYear 
+                ? getCurrentGrade(student.graduatingClassYear, event.date)
+                : null;
+            
+            if (grade === null) {
+                continue; // Skip students without graduatingClassYear
+            }
+            
             const choiceCount = student.positionsSignedUpFor.length;
             
             // Grade distribution
@@ -815,7 +828,7 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
             if (choiceCount === 0) {
                 studentsWithNoChoices.push({
                     name: `${student.firstName} ${student.lastName}`,
-                    grade: student.grade
+                    grade: grade
                 });
             }
 
@@ -823,7 +836,7 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
             if (choiceCount >= 5) {
                 studentsWithManyChoices.push({
                     name: `${student.firstName} ${student.lastName}`,
-                    grade: student.grade,
+                    grade: grade,
                     choiceCount
                 });
             }

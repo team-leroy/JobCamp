@@ -1,4 +1,5 @@
 import { prisma } from './prisma.js';
+import { getCurrentGrade } from './gradeUtils.js';
 
 export interface EventData {
   name?: string;
@@ -574,20 +575,40 @@ export async function graduateStudents(schoolId: string, studentIds: string[]): 
 }
 
 /**
- * Get Grade 12 students eligible for graduation
+ * Get students eligible for graduation (Class of event year)
+ * For an event in year YYYY, Class of YYYY = seniors (Grade 12)
  */
 export async function getGraduationEligibleStudents(schoolId: string) {
-  return await prisma.student.findMany({
+  // Get the active event to determine which class year to graduate
+  const activeEvent = await prisma.event.findFirst({
     where: {
       schoolId: schoolId,
-      grade: 12,
+      isActive: true
+    },
+    select: { date: true }
+  });
+
+  if (!activeEvent) {
+    return [];
+  }
+
+  // Determine the graduation year (school year ending year)
+  const graduationYear = activeEvent.date.getMonth() >= 6 // July-December
+    ? activeEvent.date.getFullYear() + 1
+    : activeEvent.date.getFullYear();
+
+  // Find students with graduatingClassYear matching the event's graduation year
+  const students = await prisma.student.findMany({
+    where: {
+      schoolId: schoolId,
+      graduatingClassYear: graduationYear,
       isActive: true
     },
     select: {
       id: true,
       firstName: true,
       lastName: true,
-      grade: true,
+      graduatingClassYear: true,
       phone: true,
       parentEmail: true
     },
@@ -596,6 +617,12 @@ export async function getGraduationEligibleStudents(schoolId: string) {
       { firstName: 'asc' }
     ]
   });
+
+  // Add computed grade field for backward compatibility (showing Grade 12)
+  return students.map(student => ({
+    ...student,
+    grade: 12 // Always Grade 12 for graduation-eligible students
+  }));
 }
 
 /**
@@ -612,7 +639,7 @@ export async function getGraduatedStudents(schoolId: string) {
       id: true,
       firstName: true,
       lastName: true,
-      grade: true,
+      graduatingClassYear: true,
       graduatedAt: true,
       phone: true,
       parentEmail: true
@@ -701,8 +728,12 @@ export async function getArchivedEventStats(eventId: string) {
     }
   });
 
+  // Convert graduatingClassYear to grade for distribution statistics
   const gradeDistribution = students.reduce((acc, student) => {
-    acc[student.grade] = (acc[student.grade] || 0) + 1;
+    if (student.graduatingClassYear) {
+      const grade = getCurrentGrade(student.graduatingClassYear, event.date);
+      acc[grade] = (acc[grade] || 0) + 1;
+    }
     return acc;
   }, {} as Record<number, number>);
 

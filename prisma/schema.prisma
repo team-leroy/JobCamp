@@ -87,7 +87,7 @@ model Attachment {
 model Student {
   id                    String                     @id @default(cuid())
   phone                 String
-  grade                 Int
+  graduatingClassYear   Int
   parentEmail           String
   schoolId              String?
   userId                String?                    @unique

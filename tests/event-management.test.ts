@@ -750,8 +750,8 @@ describe('Event Management Functions', () => {
               company: { id: 'company1', companyName: 'Test Company' }
             },
             students: [
-              { studentId: 'student1', student: { id: 'student1', grade: 9 } },
-              { studentId: 'student2', student: { id: 'student2', grade: 10 } }
+              { studentId: 'student1', student: { id: 'student1', graduatingClassYear: 2028 } }, // Grade 9 (for Dec 2024 event)
+              { studentId: 'student2', student: { id: 'student2', graduatingClassYear: 2027 } }  // Grade 10
             ]
           },
           {
@@ -761,18 +761,21 @@ describe('Event Management Functions', () => {
               company: { id: 'company2', companyName: 'Another Company' }
             },
             students: [
-              { studentId: 'student1', student: { id: 'student1', grade: 9 } },
-              { studentId: 'student3', student: { id: 'student3', grade: 11 } }
+              { studentId: 'student1', student: { id: 'student1', graduatingClassYear: 2028 } }, // Grade 9
+              { studentId: 'student3', student: { id: 'student3', graduatingClassYear: 2026 } }  // Grade 11
             ]
           }
         ]
       };
 
       vi.mocked(prisma).event.findUnique.mockResolvedValue(mockEvent);
+      // Mock students with graduatingClassYear (for test event date Dec 2024: school year ends 2025)
+      // Grade 9 = Class of 2028, Grade 10 = Class of 2027, Grade 11 = Class of 2026
+      const schoolYearEnding = testDate.getMonth() >= 6 ? testDate.getFullYear() + 1 : testDate.getFullYear();
       vi.mocked(prisma).student.findMany.mockResolvedValue([
-        { id: 'student1', grade: 9 },
-        { id: 'student2', grade: 10 },
-        { id: 'student3', grade: 11 }
+        { id: 'student1', graduatingClassYear: schoolYearEnding + 3 }, // Grade 9
+        { id: 'student2', graduatingClassYear: schoolYearEnding + 2 }, // Grade 10
+        { id: 'student3', graduatingClassYear: schoolYearEnding + 1 }  // Grade 11
       ]);
       vi.mocked(prisma).permissionSlipSubmission.count.mockResolvedValue(2);
 

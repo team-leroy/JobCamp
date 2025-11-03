@@ -14,7 +14,7 @@ vi.mock('../src/lib/server/prisma', () => ({
     },
     student: {
       count: vi.fn(),
-      groupBy: vi.fn()
+      findMany: vi.fn()
     },
     company: {
       count: vi.fn()
@@ -95,7 +95,7 @@ describe('Admin Dashboard Statistics', () => {
 
       // Verify that student and company statistics queries are NOT called
       expect(prisma.student.count).not.toHaveBeenCalled();
-      expect(prisma.student.groupBy).not.toHaveBeenCalled();
+      expect(prisma.student.findMany).not.toHaveBeenCalled();
       expect(prisma.company.count).not.toHaveBeenCalled();
       expect(prisma.position.count).not.toHaveBeenCalled();
       expect(prisma.position.aggregate).not.toHaveBeenCalled();
@@ -138,11 +138,13 @@ describe('Admin Dashboard Statistics', () => {
       
       vi.mocked(prisma.positionsOnStudents.count).mockResolvedValue(75); // totalStudentChoices
       
-      vi.mocked(prisma.student.groupBy).mockResolvedValue([
-        { grade: 9, _count: { grade: 40 } },
-        { grade: 10, _count: { grade: 35 } },
-        { grade: 11, _count: { grade: 45 } },
-        { grade: 12, _count: { grade: 30 } }
+      // Mock students with graduatingClassYear (for April 2024 event: school year ends 2024)
+      // Grade 12 = Class of 2024, Grade 11 = Class of 2025, Grade 10 = Class of 2026, Grade 9 = Class of 2027
+      vi.mocked(prisma.student.findMany).mockResolvedValue([
+        ...Array(40).fill({ graduatingClassYear: 2027 }), // Grade 9
+        ...Array(35).fill({ graduatingClassYear: 2026 }), // Grade 10
+        ...Array(45).fill({ graduatingClassYear: 2025 }), // Grade 11
+        ...Array(30).fill({ graduatingClassYear: 2024 })  // Grade 12
       ]);
 
       // Mock company statistics
@@ -263,7 +265,7 @@ describe('Admin Dashboard Statistics', () => {
       vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);
       vi.mocked(prisma.student.count).mockResolvedValue(0);
       vi.mocked(prisma.positionsOnStudents.count).mockResolvedValue(0);
-      vi.mocked(prisma.student.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.student.findMany).mockResolvedValue([]);
       vi.mocked(prisma.company.count).mockResolvedValue(0);
       vi.mocked(prisma.position.count).mockResolvedValue(0);
       vi.mocked(prisma.position.aggregate).mockResolvedValue({ _sum: { slots: null } });
@@ -290,10 +292,11 @@ describe('Admin Dashboard Statistics', () => {
       vi.mocked(prisma.student.count).mockResolvedValue(0);
       vi.mocked(prisma.permissionSlipSubmission.count).mockResolvedValue(0);
       vi.mocked(prisma.positionsOnStudents.count).mockResolvedValue(0);
-      vi.mocked(prisma.student.groupBy).mockResolvedValue([
-        { grade: 10, _count: { grade: 20 } }
-        // Missing grades 9, 11, 12
-      ]);
+      // Mock only Grade 10 students 
+      // For April 2024 event: school year ends 2024, Grade 10 = Class of 2024 + 2 = Class of 2026
+      vi.mocked(prisma.student.findMany).mockResolvedValue(
+        Array(20).fill({ graduatingClassYear: 2026 }) // Grade 10 for 2024 event
+      );
       vi.mocked(prisma.company.count).mockResolvedValue(0);
       vi.mocked(prisma.position.count).mockResolvedValue(0);
       vi.mocked(prisma.position.aggregate).mockResolvedValue({ _sum: { slots: 0 } });

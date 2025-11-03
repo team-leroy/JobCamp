@@ -10,7 +10,7 @@ vi.mock('$lib/server/prisma', () => ({
         event: { findFirst: vi.fn() },
         company: { count: vi.fn() },
         position: { count: vi.fn(), aggregate: vi.fn() },
-        student: { count: vi.fn(), groupBy: vi.fn() },
+        student: { count: vi.fn(), findMany: vi.fn() },
         positionsOnStudents: { count: vi.fn() },
         permissionSlipSubmission: { count: vi.fn() }
     }
@@ -78,11 +78,12 @@ describe('Admin Dashboard Statistics', () => {
             vi.mocked(prisma.permissionSlipSubmission.count).mockResolvedValue(45); // permissionSlipsSigned
             vi.mocked(prisma.student.count).mockResolvedValueOnce(5); // studentsWithoutChoices
             vi.mocked(prisma.positionsOnStudents.count).mockResolvedValue(120); // totalStudentChoices
-            vi.mocked(prisma.student.groupBy).mockResolvedValue([
-                { grade: 9, _count: { grade: 12 } },
-                { grade: 10, _count: { grade: 13 } },
-                { grade: 11, _count: { grade: 15 } },
-                { grade: 12, _count: { grade: 10 } }
+            // Mock students with graduatingClassYear (for March 2025 event: Grade 9=2028, 10=2027, 11=2026, 12=2025)
+            vi.mocked(prisma.student.findMany).mockResolvedValue([
+                ...Array(12).fill({ graduatingClassYear: 2028 }), // Grade 9
+                ...Array(13).fill({ graduatingClassYear: 2027 }), // Grade 10
+                ...Array(15).fill({ graduatingClassYear: 2026 }), // Grade 11
+                ...Array(10).fill({ graduatingClassYear: 2025 })  // Grade 12
             ]);
 
             const event = createMockEvent({ user: mockUser, session: null });
@@ -152,11 +153,12 @@ describe('Admin Dashboard Statistics', () => {
             vi.mocked(prisma.permissionSlipSubmission.count).mockResolvedValue(45);
             vi.mocked(prisma.student.count).mockResolvedValueOnce(5);
             vi.mocked(prisma.positionsOnStudents.count).mockResolvedValue(120);
-            vi.mocked(prisma.student.groupBy).mockResolvedValue([
-                { grade: 9, _count: { grade: 12 } },
-                { grade: 10, _count: { grade: 13 } },
-                { grade: 11, _count: { grade: 15 } },
-                { grade: 12, _count: { grade: 10 } }
+            // Mock students with graduatingClassYear (for March 2025 event: Grade 9=2028, 10=2027, 11=2026, 12=2025)
+            vi.mocked(prisma.student.findMany).mockResolvedValue([
+                ...Array(12).fill({ graduatingClassYear: 2028 }), // Grade 9
+                ...Array(13).fill({ graduatingClassYear: 2027 }), // Grade 10
+                ...Array(15).fill({ graduatingClassYear: 2026 }), // Grade 11
+                ...Array(10).fill({ graduatingClassYear: 2025 })  // Grade 12
             ]);
 
             const event = createMockEvent({ user: mockUser, session: null });
@@ -195,11 +197,12 @@ describe('Admin Dashboard Statistics', () => {
             vi.mocked(prisma.permissionSlipSubmission.count).mockResolvedValue(0);
             vi.mocked(prisma.student.count).mockResolvedValueOnce(50);
             vi.mocked(prisma.positionsOnStudents.count).mockResolvedValue(0);
-            vi.mocked(prisma.student.groupBy).mockResolvedValue([
-                { grade: 9, _count: { grade: 12 } },
-                { grade: 10, _count: { grade: 13 } },
-                { grade: 11, _count: { grade: 15 } },
-                { grade: 12, _count: { grade: 10 } }
+            // Mock students with graduatingClassYear (for March 2025 event: Grade 9=2028, 10=2027, 11=2026, 12=2025)
+            vi.mocked(prisma.student.findMany).mockResolvedValue([
+                ...Array(12).fill({ graduatingClassYear: 2028 }), // Grade 9
+                ...Array(13).fill({ graduatingClassYear: 2027 }), // Grade 10
+                ...Array(15).fill({ graduatingClassYear: 2026 }), // Grade 11
+                ...Array(10).fill({ graduatingClassYear: 2025 })  // Grade 12
             ]);
 
             const event = createMockEvent({ user: mockUser, session: null });
@@ -249,11 +252,12 @@ describe('Admin Dashboard Statistics', () => {
             vi.mocked(prisma.permissionSlipSubmission.count).mockResolvedValue(0);
             vi.mocked(prisma.student.count).mockResolvedValueOnce(50);
             vi.mocked(prisma.positionsOnStudents.count).mockResolvedValue(0);
-            vi.mocked(prisma.student.groupBy).mockResolvedValue([
-                { grade: 9, _count: { grade: 12 } },
-                { grade: 10, _count: { grade: 13 } },
-                { grade: 11, _count: { grade: 15 } },
-                { grade: 12, _count: { grade: 10 } }
+            // Mock students with graduatingClassYear (for March 2025 event: Grade 9=2028, 10=2027, 11=2026, 12=2025)
+            vi.mocked(prisma.student.findMany).mockResolvedValue([
+                ...Array(12).fill({ graduatingClassYear: 2028 }), // Grade 9
+                ...Array(13).fill({ graduatingClassYear: 2027 }), // Grade 10
+                ...Array(15).fill({ graduatingClassYear: 2026 }), // Grade 11
+                ...Array(10).fill({ graduatingClassYear: 2025 })  // Grade 12
             ]);
 
             const event = createMockEvent({ user: mockUser, session: null });

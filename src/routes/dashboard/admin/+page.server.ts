@@ -2,6 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { archiveEvent, getGraduationEligibleStudents, graduateStudents } from '$lib/server/eventManagement';
+import { getCurrentGrade } from '$lib/server/gradeUtils';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -117,9 +118,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Grade distribution (active students who logged in since event creation)
-            prisma.student.groupBy({
-                by: ['grade'],
+            // Get students to calculate grade distribution (active students who logged in since event creation)
+            prisma.student.findMany({
                 where: { 
                     schoolId: { in: schoolIds },
                     isActive: true,
@@ -129,16 +129,28 @@ export const load: PageServerLoad = async ({ locals }) => {
                         }
                     }
                 },
-                _count: { grade: true }
+                select: {
+                    graduatingClassYear: true
+                }
             })
         ]);
 
-        // Convert grade distribution to object
+        // Convert graduatingClassYear to grade and calculate distribution
+        const gradeCounts: Record<number, number> = { 9: 0, 10: 0, 11: 0, 12: 0 };
+        gradeDistribution.forEach(student => {
+            if (student.graduatingClassYear) {
+                const grade = getCurrentGrade(student.graduatingClassYear, upcomingEvent.date);
+                if (grade >= 9 && grade <= 12) {
+                    gradeCounts[grade] = (gradeCounts[grade] || 0) + 1;
+                }
+            }
+        });
+
         gradeStats = {
-            freshman: gradeDistribution.find(g => g.grade === 9)?._count.grade || 0,
-            sophomore: gradeDistribution.find(g => g.grade === 10)?._count.grade || 0,
-            junior: gradeDistribution.find(g => g.grade === 11)?._count.grade || 0,
-            senior: gradeDistribution.find(g => g.grade === 12)?._count.grade || 0
+            freshman: gradeCounts[9] || 0,
+            sophomore: gradeCounts[10] || 0,
+            junior: gradeCounts[11] || 0,
+            senior: gradeCounts[12] || 0
         };
 
         studentStats = {

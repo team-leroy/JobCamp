@@ -1,4 +1,5 @@
 import { prisma } from './prisma.js';
+import { getCurrentGrade } from './gradeUtils.js';
 
 export async function startLotteryJob(adminId: string) {
     // Get admin's school to find active event
@@ -151,8 +152,18 @@ async function runLotteryInBackground(jobId: string) {
             throw new Error('No positions found for the active event. Cannot run lottery without positions.');
         }
 
+        // Get the event with date for grade conversion
+        const event = await prisma.event.findUnique({
+            where: { id: eventId },
+            select: { date: true }
+        });
+
+        if (!event) {
+            throw new Error('Event not found');
+        }
+
         // Get all students and their preferences for this specific event
-        const students = await prisma.student.findMany({
+        const studentsRaw = await prisma.student.findMany({
             where: { schoolId },
             include: {
                 positionsSignedUpFor: {
@@ -170,10 +181,23 @@ async function runLotteryInBackground(jobId: string) {
         });
 
         // Check if students have made choices for the active event
-        const studentsWithChoices = students.filter(s => s.positionsSignedUpFor.length > 0);
-        if (studentsWithChoices.length === 0) {
+        const studentsWithChoicesRaw = studentsRaw.filter(s => s.positionsSignedUpFor.length > 0);
+        if (studentsWithChoicesRaw.length === 0) {
             throw new Error('No student choices found for the active event. The event may be in draft mode or students have not yet signed up. Please ensure the event is properly configured and students have access before running the lottery.');
         }
+
+        // Convert graduatingClassYear to grade for lottery algorithm
+        // The lottery algorithm needs grade for sorting, but we store graduatingClassYear
+        const students = studentsWithChoicesRaw.map(student => ({
+            id: student.id,
+            grade: student.graduatingClassYear 
+                ? getCurrentGrade(student.graduatingClassYear, event.date)
+                : 9, // Default to 9 if missing (shouldn't happen)
+            positionsSignedUpFor: student.positionsSignedUpFor.map(pos => ({
+                positionId: pos.positionId,
+                rank: pos.rank
+            }))
+        }));
 
         // Apply manual assignments first
         const manualAssignments = new Map();

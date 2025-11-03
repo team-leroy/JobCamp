@@ -4,6 +4,7 @@ import { prisma } from '$lib/server/prisma';
 import { careers } from '$lib/appconfig';
 import { scrypt } from '$lib/server/hash';
 import crypto from 'node:crypto';
+import { getCurrentGrade, getGraduatingClassYear } from '$lib/server/gradeUtils';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -144,15 +145,20 @@ export const load: PageServerLoad = async ({ locals }) => {
     });
 
     // Transform student data for the UI
+    // Convert graduatingClassYear to grade for display
     const transformedStudents = students.map(student => {
         const lotteryResult = lotteryMap.get(student.id);
         const permissionSlip = student.permissionSlips[0];
+        const grade = student.graduatingClassYear 
+            ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
+            : null;
         
         return {
             id: student.id,
             firstName: student.firstName,
             lastName: student.lastName,
-            grade: student.grade,
+            grade: grade,
+            graduatingClassYear: student.graduatingClassYear,
             phone: student.phone,
             email: student.user.email,
             parentEmail: student.parentEmail,
@@ -413,13 +419,38 @@ export const actions: Actions = {
                 return { success: false, message: "Missing required fields" };
             }
 
+            // Get active event to convert grade to graduatingClassYear
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const schoolIds = userInfo.adminOfSchools.map(s => s.id);
+            const activeEvent = await prisma.event.findFirst({
+                where: {
+                    schoolId: { in: schoolIds },
+                    isActive: true
+                }
+            });
+
+            if (!activeEvent) {
+                return { success: false, message: "No active event found" };
+            }
+
+            // Convert grade to graduatingClassYear
+            const graduatingClassYear = getGraduatingClassYear(parseInt(grade), activeEvent.date);
+
             // Update student record
             await prisma.student.update({
                 where: { id: studentId },
                 data: {
                     firstName,
                     lastName,
-                    grade: parseInt(grade),
+                    graduatingClassYear,
                     phone,
                     parentEmail
                 }
@@ -574,12 +605,17 @@ export const actions: Actions = {
             });
 
             // Transform and filter students
+            // Convert graduatingClassYear to grade for filtering and display
             const filteredStudents = students.filter(student => {
                 const matchesLastName = !lastNameFilter || 
                     student.lastName.toLowerCase().includes(lastNameFilter.toLowerCase());
                 
+                // Convert graduatingClassYear to grade for filtering
+                const grade = student.graduatingClassYear 
+                    ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
+                    : null;
                 const matchesGrade = gradeFilter === "All" || 
-                    student.grade.toString() === gradeFilter;
+                    (grade !== null && grade.toString() === gradeFilter);
                 
                 const permissionSlip = student.permissionSlips[0];
                 const permissionSlipStatus = permissionSlip ? 'Complete' : 'Not Started';
@@ -596,10 +632,15 @@ export const actions: Actions = {
                 const permissionSlip = student.permissionSlips[0];
                 const lotteryResult = lotteryMap.get(student.id);
                 
+                // Convert graduatingClassYear to grade for display
+                const grade = student.graduatingClassYear 
+                    ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
+                    : null;
+                
                 return {
                     firstName: student.firstName,
                     lastName: student.lastName,
-                    grade: student.grade,
+                    grade: grade,
                     phone: student.phone || '',
                     email: student.user.email || '',
                     parentEmail: student.parentEmail || '',
