@@ -28,6 +28,12 @@
   } = $props();
 
   // Check if user is full admin (can see Messaging, Lottery, Event Mgmt)
+  console.log("🔍 Navbar Debug:", {
+    isAdmin,
+    userRole,
+    comparison: userRole === "FULL_ADMIN",
+    isFullAdmin: isAdmin && userRole === "FULL_ADMIN",
+  });
   const isFullAdmin = isAdmin && userRole === "FULL_ADMIN";
 
   let collapsed = $state(false);

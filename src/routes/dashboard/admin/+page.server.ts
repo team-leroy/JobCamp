@@ -251,7 +251,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         };
     }
 
-    return {
+    const result = {
         isAdmin: true,
         loggedIn: true,
         isHost: !!locals.user.host,
@@ -260,7 +260,11 @@ export const load: PageServerLoad = async ({ locals }) => {
         schools,
         studentStats,
         companyStats
-    };  
+    };
+    
+    console.log('🔍 Admin Dashboard Load:', { userId: userInfo.id, email: userInfo.email, role: userInfo.role, userRole: result.userRole });
+    
+    return result;
 };
 
 export const actions: Actions = {
