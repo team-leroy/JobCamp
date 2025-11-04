@@ -642,13 +642,16 @@ export const actions: Actions = {
             const { hash, salt } = await hashPassword(password);
 
             // Create read-only admin user
+            // Note: lastLogin will be set to createdAt initially and updated on first actual login
+            const now = new Date();
             await prisma.user.create({
                 data: {
                     email,
                     passwordHash: hash,
                     passwordSalt: salt,
                     emailVerified: true, // No email verification required
-                    lastLogin: new Date(),
+                    lastLogin: now,
+                    createdAt: now,
                     role: 'READ_ONLY_ADMIN',
                     adminOfSchools: {
                         connect: { id: schoolId }

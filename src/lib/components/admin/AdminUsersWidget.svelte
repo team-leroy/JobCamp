@@ -48,6 +48,7 @@
   } = $props();
 
   let createDialogOpen = $state(false);
+  let editDialogOpen = $state(false);
   let editingAdmin = $state<AdminUser | null>(null);
   let showPassword = $state(false);
   let showPasswordEdit = $state(false);
@@ -58,7 +59,21 @@
       year: "numeric",
       month: "short",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
+  }
+
+  function formatDateOrNever(date: Date | string, createdAt: Date | string) {
+    const d = date instanceof Date ? date : new Date(date);
+    const c = createdAt instanceof Date ? createdAt : new Date(createdAt);
+    
+    // If lastLogin equals createdAt (within 1 second), they've never logged in
+    if (Math.abs(d.getTime() - c.getTime()) < 1000) {
+      return "Never";
+    }
+    
+    return formatDate(d);
   }
 
   function handleDeleteAdmin(admin: AdminUser) {
@@ -228,17 +243,20 @@
                     </p>
                     <p>
                       <strong>Last Login:</strong>
-                      {formatDate(admin.lastLogin)}
+                      {formatDateOrNever(admin.lastLogin, admin.createdAt)}
                     </p>
                   </div>
                 </div>
                 <div class="flex gap-2">
-                  <Dialog>
+                  <Dialog bind:open={editDialogOpen}>
                     <DialogTrigger>
                       <Button
                         variant="outline"
                         size="sm"
-                        onclick={() => (editingAdmin = admin)}
+                        onclick={() => {
+                          editingAdmin = admin;
+                          editDialogOpen = true;
+                        }}
                       >
                         <Edit class="h-4 w-4" />
                       </Button>
@@ -251,7 +269,14 @@
                         method="POST"
                         action="?/updateReadOnlyAdmin"
                         class="space-y-4"
-                        use:enhance
+                        use:enhance={() => {
+                          return async ({ result, update }) => {
+                            await update();
+                            if (result.type === "success") {
+                              editDialogOpen = false;
+                            }
+                          };
+                        }}
                       >
                         <input
                           type="hidden"
@@ -313,7 +338,11 @@
                           </select>
                         </div>
                         <div class="flex justify-end gap-2">
-                          <Button type="button" variant="outline">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onclick={() => (editDialogOpen = false)}
+                          >
                             Cancel
                           </Button>
                           <Button type="submit">Save Changes</Button>
