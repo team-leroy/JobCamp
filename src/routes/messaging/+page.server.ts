@@ -12,7 +12,7 @@ import {
     getStudentsWithFewSlots,
     getStudentsAssignedInLottery,
     getStudentsUnassignedInLottery,
-    getAllCompanyContactsForEvent,
+    getAllCompanyAccountHoldersAndHostContactsForEvent,
     getStudentDetailedData,
     getCompanyDetailedData,
     formatStudentDataForEmail,
@@ -143,20 +143,39 @@ export const actions: Actions = {
                     recipients = await getStudentsUnassignedInLottery(schoolId);
                     break;
                 case 'all_company_contacts':
-                    recipients = await getAllCompanyContactsForEvent(schoolId);
+                    recipients = await getAllCompanyAccountHoldersAndHostContactsForEvent(schoolId);
                     break;
                 default:
                     return { success: false, message: 'Invalid recipient type' };
             }
 
+            console.log('📊 Recipients received from messaging.ts:', recipients.length);
+
+            // Map recipients to preview format
+            const preview = recipients.slice(0, 10).map(r => {
+                // StudentRecipient has firstName/lastName
+                if ('firstName' in r && 'lastName' in r) {
+                    return {
+                        name: `${r.firstName} ${r.lastName}`,
+                        email: r.email,
+                        phone: r.phone
+                    };
+                }
+                // Company/Host contacts have name property
+                return {
+                    name: r.name || 'Unknown',
+                    email: r.email,
+                    phone: undefined
+                };
+            });
+
+            console.log('📊 Preview slice (first 10):', preview.length);
+            console.log('📊 Returning result:', { success: true, count: recipients.length, previewLength: preview.length });
+
             return {
                 success: true,
                 count: recipients.length,
-                preview: recipients.slice(0, 10).map(r => ({
-                    name: r.firstName ? `${r.firstName} ${r.lastName}` : r.name || r.companyName,
-                    email: r.email,
-                    phone: r.phone
-                }))
+                preview
             };
         } catch (error) {
             console.error('Error previewing recipients:', error);

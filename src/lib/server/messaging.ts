@@ -66,7 +66,10 @@ export async function getAllStudents(schoolId: string): Promise<StudentRecipient
     }
   });
 
-  return students.map(s => ({
+  // Filter out students without user accounts to prevent crashes
+  const studentsWithAccounts = students.filter(s => s.user !== null);
+
+  return studentsWithAccounts.map(s => ({
     id: s.id,
     firstName: s.firstName,
     lastName: s.lastName,

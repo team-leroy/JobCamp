@@ -85,18 +85,42 @@
     previewData = null;
   }
 
-  async function handlePreview(event: SubmitEvent) {
-    event.preventDefault();
-    const formData = new FormData(event.target as HTMLFormElement);
+  async function handlePreview(formElement: HTMLFormElement) {
+    const formData = new FormData(formElement);
 
-    const response = await fetch("?/previewRecipients", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("?/previewRecipients", {
+        method: "POST",
+        body: formData,
+      });
 
-    const result = await response.json();
-    if (result.type === "success" && result.data) {
-      previewData = result.data;
+      const result = await response.json();
+
+      // SvelteKit uses devalue serialization - need to deserialize properly
+      if (result.type === "success" && result.data) {
+        const { deserialize } = await import("$app/forms");
+        const deserialized = deserialize(JSON.stringify(result));
+        
+        if (deserialized.type === "success" && deserialized.data) {
+          const actionResult = deserialized.data;
+          
+          if (actionResult.success) {
+            previewData = {
+              count: actionResult.count,
+              preview: actionResult.preview,
+            };
+          } else {
+            console.error("Preview failed:", actionResult.message);
+            previewData = null;
+          }
+        }
+      } else {
+        console.error("Preview failed: Invalid response format");
+        previewData = null;
+      }
+    } catch (error) {
+      console.error("Error fetching preview:", error);
+      previewData = null;
     }
   }
 
@@ -337,7 +361,7 @@
                   onclick={(e) => {
                     const form = e.currentTarget.closest("form");
                     if (form) {
-                      handlePreview(new Event("submit") as SubmitEvent);
+                      handlePreview(form);
                     }
                   }}
                 >

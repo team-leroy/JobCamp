@@ -10,13 +10,13 @@ Add these to your `.env` file:
 
 ```bash
 # SendGrid Configuration (Email)
-SENDGRID_API_KEY=SG.your_api_key_here
+SENDGRID_API_KEY=your-sendgrid-api-key-here
 SENDGRID_FROM_EMAIL=admin@jobcamp.org
 SENDGRID_FROM_NAME=JobCamp
 
 # Twilio Configuration (SMS)
-TWILIO_ACCOUNT_SID=your_account_sid_here
-TWILIO_AUTH_TOKEN=your_auth_token_here
+TWILIO_ACCOUNT_SID=your-twilio-account-sid-here
+TWILIO_AUTH_TOKEN=your-twilio-auth-token-here
 TWILIO_PHONE_NUMBER=+15551234567
 
 # Environment Flag
