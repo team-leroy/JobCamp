@@ -43,6 +43,7 @@ model School {
   lotteryConfiguration LotteryConfiguration?
   students             Student[]
   admins               User[]                @relation("SchoolAdmins")
+  messages             Message[]
 }
 
 model Position {
@@ -165,6 +166,7 @@ model User {
   sessions       Session[]
   student        Student?
   adminOfSchools School[]  @relation("SchoolAdmins")
+  sentMessages   Message[]
 }
 
 model Session {
@@ -318,4 +320,46 @@ model ImportantDate {
 
   @@index([eventId, displayOrder])
   @@index([eventId, date])
+}
+
+enum MessageType {
+  EMAIL
+  SMS
+}
+
+enum RecipientType {
+  STUDENTS
+  STUDENTS_INCOMPLETE_PERMISSION_SLIP
+  STUDENTS_NO_PICKS
+  STUDENTS_FEW_PICKS
+  STUDENTS_FEW_SLOTS
+  COMPANIES_ALL
+  COMPANIES_ACCOUNT_HOLDERS
+  POST_LOTTERY_ASSIGNED
+  POST_LOTTERY_UNASSIGNED
+  INDIVIDUAL_STUDENT
+  INDIVIDUAL_COMPANY
+}
+
+model Message {
+  id                String        @id @default(cuid())
+  senderId          String
+  senderEmail       String
+  schoolId          String
+  eventId           String?
+  messageType       MessageType
+  recipientType     RecipientType
+  recipientCount    Int
+  subject           String?       // For emails only
+  includeParents    Boolean       @default(false) // For student emails
+  sentAt            DateTime      @default(now())
+  status            String        @default("sent") // sent, failed, partial
+  errorMessage      String?       @db.VarChar(1024)
+  
+  sender            User          @relation(fields: [senderId], references: [id])
+  school            School        @relation(fields: [schoolId], references: [id])
+  
+  @@index([schoolId, sentAt])
+  @@index([eventId, sentAt])
+  @@index([senderId])
 }
