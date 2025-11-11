@@ -109,7 +109,11 @@
           if (actionResult.success) {
             previewData = {
               count: actionResult.count as number,
-              preview: actionResult.preview as Array<{ name: string; email?: string; phone?: string }>,
+              preview: actionResult.preview as Array<{
+                name: string;
+                email?: string;
+                phone?: string;
+              }>,
             };
           } else {
             console.error("Preview failed:", actionResult.message);
@@ -150,7 +154,11 @@
           if (actionResult.success) {
             companyPreviewData = {
               count: actionResult.count as number,
-              preview: actionResult.preview as Array<{ name: string; email?: string; phone?: string }>,
+              preview: actionResult.preview as Array<{
+                name: string;
+                email?: string;
+                phone?: string;
+              }>,
             };
           } else {
             console.error("Company preview failed:", actionResult.message);
@@ -235,6 +243,7 @@
             year: "numeric",
             month: "long",
             day: "numeric",
+            timeZone: "UTC",
           })}
         </p>
       </div>
@@ -411,7 +420,9 @@
                   type="button"
                   variant="outline"
                   onclick={(e: MouseEvent) => {
-                    const form = (e.currentTarget as HTMLElement).closest("form");
+                    const form = (e.currentTarget as HTMLElement).closest(
+                      "form"
+                    );
                     if (form) {
                       handlePreview(form);
                     }
@@ -475,11 +486,11 @@
               <div class="p-3 bg-blue-50 rounded-md text-sm">
                 <p class="font-medium">Recipients:</p>
                 <p class="text-gray-700">
-                  All account holders AND host contacts for positions in the
+                  All account holders AND host contacts for <strong>published positions</strong> in the
                   current event
                 </p>
                 <p class="text-xs text-gray-500 mt-1">
-                  (Automatically deduplicated if same email for both roles)
+                  (Only includes companies/hosts with published positions. Automatically deduplicated if same email for both roles)
                 </p>
               </div>
 
@@ -512,7 +523,9 @@
                   type="button"
                   variant="outline"
                   onclick={(e: MouseEvent) => {
-                    const form = (e.currentTarget as HTMLElement).closest("form");
+                    const form = (e.currentTarget as HTMLElement).closest(
+                      "form"
+                    );
                     if (form) {
                       handleCompanyPreview(form);
                     }

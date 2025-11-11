@@ -480,10 +480,12 @@ export async function getAllCompanyContactsForEvent(schoolId: string): Promise<A
 
   const emailSet = new Set<string>();
 
-  // Get all positions for the active event
+  // Get all PUBLISHED positions for the active event
+  // Only companies/hosts with published positions are considered active participants
   const positions = await prisma.position.findMany({
     where: {
-      eventId: activeEvent.id
+      eventId: activeEvent.id,
+      isPublished: true  // Only include published positions
     },
     include: {
       host: {
