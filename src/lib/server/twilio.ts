@@ -3,7 +3,7 @@
  * Wrapper for sending SMS messages via Twilio API
  */
 
-import { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, IS_PRODUCTION } from '$env/static/private';
+import { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } from '$env/static/private';
 
 interface SendSMSOptions {
   to: string; // Phone number in E.164 format (e.g., +14155551234)
@@ -43,7 +43,8 @@ function formatPhoneNumber(phone: string): string {
  */
 export async function sendSMS(options: SendSMSOptions): Promise<SendSMSResult> {
   try {
-    const isSandbox = IS_PRODUCTION !== 'true';
+    // Check if we're in sandbox mode (staging/dev) - use Vite's built-in production detection
+    const isSandbox = !import.meta.env.PROD;
     
     // Format the phone number
     const toNumber = formatPhoneNumber(options.to);

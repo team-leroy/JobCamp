@@ -3,7 +3,7 @@
  * Wrapper for sending emails via SendGrid API
  */
 
-import { SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, SENDGRID_FROM_NAME, IS_PRODUCTION } from '$env/static/private';
+import { SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, SENDGRID_FROM_NAME } from '$env/static/private';
 
 interface EmailRecipient {
   email: string;
@@ -28,8 +28,8 @@ interface SendEmailResult {
  */
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   try {
-    // Check if we're in sandbox mode (staging/dev)
-    const isSandbox = IS_PRODUCTION !== 'true';
+    // Check if we're in sandbox mode (staging/dev) - use Vite's built-in production detection
+    const isSandbox = !import.meta.env.PROD;
     
     const payload = {
       personalizations: [

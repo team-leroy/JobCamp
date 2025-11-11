@@ -12,7 +12,7 @@ import {
     getStudentsWithFewSlots,
     getStudentsAssignedInLottery,
     getStudentsUnassignedInLottery,
-    getAllCompanyAccountHoldersAndHostContactsForEvent,
+    getAllCompanyContactsForEvent,
     getStudentDetailedData,
     getCompanyDetailedData,
     formatStudentDataForEmail,
@@ -143,13 +143,11 @@ export const actions: Actions = {
                     recipients = await getStudentsUnassignedInLottery(schoolId);
                     break;
                 case 'all_company_contacts':
-                    recipients = await getAllCompanyAccountHoldersAndHostContactsForEvent(schoolId);
+                    recipients = await getAllCompanyContactsForEvent(schoolId);
                     break;
                 default:
                     return { success: false, message: 'Invalid recipient type' };
             }
-
-            console.log('📊 Recipients received from messaging.ts:', recipients.length);
 
             // Map recipients to preview format
             const preview = recipients.slice(0, 10).map(r => {
@@ -168,9 +166,6 @@ export const actions: Actions = {
                     phone: undefined
                 };
             });
-
-            console.log('📊 Preview slice (first 10):', preview.length);
-            console.log('📊 Returning result:', { success: true, count: recipients.length, previewLength: preview.length });
 
             return {
                 success: true,
