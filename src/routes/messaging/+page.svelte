@@ -67,6 +67,7 @@
   // Company message states
   let companySubject = $state("");
   let companyMessage = $state("");
+  let companyPreviewData = $state<FormResult | null>(null);
 
   const studentRecipientOptions = [
     { value: "all_students", label: "All Students with Accounts" },
@@ -83,6 +84,7 @@
     activeTab = tab;
     // Reset form when changing tabs
     previewData = null;
+    companyPreviewData = null;
   }
 
   async function handlePreview(formElement: HTMLFormElement) {
@@ -106,8 +108,8 @@
 
           if (actionResult.success) {
             previewData = {
-              count: actionResult.count,
-              preview: actionResult.preview,
+              count: actionResult.count as number,
+              preview: actionResult.preview as Array<{ name: string; email?: string; phone?: string }>,
             };
           } else {
             console.error("Preview failed:", actionResult.message);
@@ -121,6 +123,47 @@
     } catch (error) {
       console.error("Error fetching preview:", error);
       previewData = null;
+    }
+  }
+
+  async function handleCompanyPreview(formElement: HTMLFormElement) {
+    const formData = new FormData(formElement);
+    // Add recipientType for company contacts
+    formData.set("recipientType", "all_company_contacts");
+
+    try {
+      const response = await fetch("?/previewRecipients", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      // SvelteKit uses devalue serialization - need to deserialize properly
+      if (result.type === "success" && result.data) {
+        const { deserialize } = await import("$app/forms");
+        const deserialized = deserialize(JSON.stringify(result));
+
+        if (deserialized.type === "success" && deserialized.data) {
+          const actionResult = deserialized.data;
+
+          if (actionResult.success) {
+            companyPreviewData = {
+              count: actionResult.count as number,
+              preview: actionResult.preview as Array<{ name: string; email?: string; phone?: string }>,
+            };
+          } else {
+            console.error("Company preview failed:", actionResult.message);
+            companyPreviewData = null;
+          }
+        }
+      } else {
+        console.error("Company preview failed: Invalid response format");
+        companyPreviewData = null;
+      }
+    } catch (error) {
+      console.error("Error fetching company preview:", error);
+      companyPreviewData = null;
     }
   }
 
@@ -268,8 +311,8 @@
               use:enhance
             >
               <div>
-                <Label for="student-recipient-type">Recipient Group</Label>
                 <FilterSelect
+                  label="Recipient Group"
                   options={studentRecipientOptions}
                   bind:value={recipientType}
                   placeholder="Select recipients"
@@ -367,8 +410,8 @@
                 <Button
                   type="button"
                   variant="outline"
-                  onclick={(e) => {
-                    const form = e.currentTarget.closest("form");
+                  onclick={(e: MouseEvent) => {
+                    const form = (e.currentTarget as HTMLElement).closest("form");
                     if (form) {
                       handlePreview(form);
                     }
@@ -382,7 +425,7 @@
                 </Button>
               </div>
 
-              {#if previewData}
+              {#if previewData && previewData.count !== undefined}
                 <div class="mt-4 p-4 bg-gray-50 rounded-lg">
                   <p class="font-medium">
                     Will send to {previewData.count} recipient(s)
@@ -463,10 +506,51 @@
                 />
               </div>
 
-              <Button type="submit">
-                <Mail class="h-4 w-4 mr-2" />
-                Send Email to All Company Contacts
-              </Button>
+              <!-- Preview Recipients Button -->
+              <div class="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onclick={(e: MouseEvent) => {
+                    const form = (e.currentTarget as HTMLElement).closest("form");
+                    if (form) {
+                      handleCompanyPreview(form);
+                    }
+                  }}
+                >
+                  <Eye class="h-4 w-4 mr-2" />
+                  Preview Recipients
+                </Button>
+                <Button type="submit">
+                  <Mail class="h-4 w-4 mr-2" />
+                  Send Email to All Company Contacts
+                </Button>
+              </div>
+
+              {#if companyPreviewData && companyPreviewData.count !== undefined}
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <p class="font-medium">
+                    Will send to {companyPreviewData.count} recipient(s)
+                  </p>
+                  {#if companyPreviewData.preview && companyPreviewData.preview.length > 0}
+                    <div class="mt-2 text-sm text-gray-600">
+                      <p class="font-medium">Preview (first 10):</p>
+                      <ul class="list-disc list-inside mt-1">
+                        {#each companyPreviewData.preview as recipient}
+                          <li>
+                            {recipient.name} ({recipient.email})
+                          </li>
+                        {/each}
+                      </ul>
+                      {#if companyPreviewData.count > 10}
+                        <p class="mt-1 italic">
+                          ...and {companyPreviewData.count - 10} more
+                        </p>
+                      {/if}
+                    </div>
+                  {/if}
+                </div>
+              {/if}
             </form>
           </CardContent>
         </Card>
@@ -607,7 +691,19 @@
               method="POST"
               action="?/sendIndividualMessage"
               class="space-y-4"
-              use:enhance
+              use:enhance={() => {
+                return async ({ result }) => {
+                  if (result.type === "success") {
+                    // Clear form after successful send
+                    individualRecipientType = "student"; // Reset to default
+                    selectedStudentId = "";
+                    selectedCompanyId = "";
+                    individualSubject = "";
+                    individualMessage = "";
+                    loadedData = "";
+                  }
+                };
+              }}
             >
               <div>
                 <Label>Recipient Type</Label>
