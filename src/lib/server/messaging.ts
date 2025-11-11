@@ -144,11 +144,6 @@ export async function getStudentsWithNoJobPicks(schoolId: string): Promise<Stude
     where: {
       schoolId,
       isActive: true,
-      permissionSlips: {
-        some: {
-          eventId: activeEvent.id
-        }
-      },
       positionsSignedUpFor: {
         none: {
           position: {
@@ -166,7 +161,10 @@ export async function getStudentsWithNoJobPicks(schoolId: string): Promise<Stude
     }
   });
 
-  return students.map(s => ({
+  // Filter out students without user accounts to prevent crashes
+  const studentsWithAccounts = students.filter(s => s.user !== null);
+
+  return studentsWithAccounts.map(s => ({
     id: s.id,
     firstName: s.firstName,
     lastName: s.lastName,
