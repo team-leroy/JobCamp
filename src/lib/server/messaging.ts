@@ -654,19 +654,10 @@ export async function getStudentDetailedData(studentId: string, schoolId: string
         }
       },
       lotteryResult: {
-        where: {
-          lotteryJob: {
-            eventId: activeEvent?.id
-          }
-        },
         include: {
-          position: {
+          host: {
             include: {
-              host: {
-                include: {
-                  company: true
-                }
-              }
+              company: true
             }
           }
         }
@@ -683,6 +674,10 @@ export async function getStudentDetailedData(studentId: string, schoolId: string
   if (!student) {
     return null;
   }
+
+  // Check if lottery result is for the active event
+  const hasLotteryResult = student.lotteryResult && 
+    student.lotteryResult.eventId === activeEvent?.id;
 
   return {
     id: student.id,
@@ -701,17 +696,17 @@ export async function getStudentDetailedData(studentId: string, schoolId: string
       contactName: p.position.contact_name,
       contactEmail: p.position.contact_email
     })),
-    lotteryAssignment: student.lotteryResult[0] ? {
-      title: student.lotteryResult[0].position.title,
-      companyName: student.lotteryResult[0].position.host.company?.companyName || 'Unknown',
-      contactName: student.lotteryResult[0].position.contact_name,
-      contactEmail: student.lotteryResult[0].position.contact_email,
-      address: student.lotteryResult[0].position.address,
-      instructions: student.lotteryResult[0].position.instructions,
-      attire: student.lotteryResult[0].position.attire,
-      arrival: student.lotteryResult[0].position.arrival,
-      start: student.lotteryResult[0].position.start,
-      end: student.lotteryResult[0].position.end
+    lotteryAssignment: hasLotteryResult ? {
+      title: student.lotteryResult.title,
+      companyName: student.lotteryResult.host.company?.companyName || 'Unknown',
+      contactName: student.lotteryResult.contact_name,
+      contactEmail: student.lotteryResult.contact_email,
+      address: student.lotteryResult.address,
+      instructions: student.lotteryResult.instructions,
+      attire: student.lotteryResult.attire,
+      arrival: student.lotteryResult.arrival,
+      start: student.lotteryResult.start,
+      end: student.lotteryResult.end
     } : null
   };
 }
