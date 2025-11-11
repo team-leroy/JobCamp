@@ -180,7 +180,7 @@ Or use Cloud Secret Manager for sensitive values.
 ### SMS Not Sending
 
 - Verify phone number format (E.164: +1XXXXXXXXXX)
-- Check student opted in (`allowPhoneMessaging = true`)
+- Verify student has a phone number on file (all students agree to SMS during signup)
 - Ensure Twilio number has SMS capabilities
 - Check Twilio account balance
 

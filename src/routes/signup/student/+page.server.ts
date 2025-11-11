@@ -6,7 +6,7 @@ import { zod } from "sveltekit-superforms/adapters";
 import { generateEmailVerificationCode, generatePermissionSlipCode, schoolEmailCheck, signup } from '$lib/server/auth';
 import { prisma } from '$lib/server/prisma';
 import { AuthError } from '$lib/server/authConstants';
-import { sendEmailVerificationEmail, sendPermissionSlipEmail } from '$lib/server/email';
+import { sendEmailVerificationEmail, sendPermissionSlipEmail, formatEmailDate, type EventEmailData } from '$lib/server/email';
 import { getNavbarData } from '$lib/server/navbarData';
 import { getGraduatingClassYearOptions } from '$lib/server/gradeUtils';
 
@@ -107,9 +107,23 @@ export const actions: Actions = {
         const code = await generateEmailVerificationCode(userId, user.email)
         await sendEmailVerificationEmail(userId, user.email, code);
 
-        generatePermissionSlipCode(userId).then(
-            (code) => sendPermissionSlipEmail(form.data.parentEmail, code, form.data.firstName)
-        );
+        // Get active event for permission slip email
+        const activeEvent = await prisma.event.findFirst({
+            where: { isActive: true }
+        });
+
+        if (activeEvent) {
+            const eventData: EventEmailData = {
+                eventName: activeEvent.name || 'JobCamp',
+                eventDate: formatEmailDate(activeEvent.date),
+                schoolName: school.name,
+                schoolId: school.id
+            };
+
+            generatePermissionSlipCode(userId).then(
+                (code) => sendPermissionSlipEmail(form.data.parentEmail, code, form.data.firstName, eventData)
+            );
+        }
 
         redirect(302, "/verify-email");
     }

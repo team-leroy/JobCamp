@@ -486,11 +486,13 @@
               <div class="p-3 bg-blue-50 rounded-md text-sm">
                 <p class="font-medium">Recipients:</p>
                 <p class="text-gray-700">
-                  All account holders AND host contacts for <strong>published positions</strong> in the
-                  current event
+                  All account holders AND host contacts for <strong
+                    >published positions</strong
+                  > in the current event
                 </p>
                 <p class="text-xs text-gray-500 mt-1">
-                  (Only includes companies/hosts with published positions. Automatically deduplicated if same email for both roles)
+                  (Only includes companies/hosts with published positions.
+                  Automatically deduplicated if same email for both roles)
                 </p>
               </div>
 

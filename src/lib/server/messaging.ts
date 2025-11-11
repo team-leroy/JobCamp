@@ -12,7 +12,6 @@ export interface StudentRecipient {
   email: string;
   phone: string;
   parentEmail: string;
-  allowPhoneMessaging: boolean;
 }
 
 export interface CompanyRecipient {
@@ -75,8 +74,7 @@ export async function getAllStudents(schoolId: string): Promise<StudentRecipient
     lastName: s.lastName,
     email: s.user!.email,
     phone: s.phone,
-    parentEmail: s.parentEmail,
-    allowPhoneMessaging: s.allowPhoneMessaging
+    parentEmail: s.parentEmail
   }));
 }
 
@@ -120,8 +118,7 @@ export async function getStudentsWithIncompletePermissionSlip(schoolId: string):
     lastName: s.lastName,
     email: s.user!.email,
     phone: s.phone,
-    parentEmail: s.parentEmail,
-    allowPhoneMessaging: s.allowPhoneMessaging
+    parentEmail: s.parentEmail
   }));
 }
 
@@ -170,8 +167,7 @@ export async function getStudentsWithNoJobPicks(schoolId: string): Promise<Stude
     lastName: s.lastName,
     email: s.user!.email,
     phone: s.phone,
-    parentEmail: s.parentEmail,
-    allowPhoneMessaging: s.allowPhoneMessaging
+    parentEmail: s.parentEmail
   }));
 }
 
@@ -227,8 +223,7 @@ export async function getStudentsWithFewPicks(schoolId: string, maxPicks: number
     lastName: s.lastName,
     email: s.user!.email,
     phone: s.phone,
-    parentEmail: s.parentEmail,
-    allowPhoneMessaging: s.allowPhoneMessaging
+    parentEmail: s.parentEmail
   }));
 }
 
@@ -287,8 +282,7 @@ export async function getStudentsWithFewSlots(schoolId: string, maxSlots: number
     lastName: s.lastName,
     email: s.user!.email,
     phone: s.phone,
-    parentEmail: s.parentEmail,
-    allowPhoneMessaging: s.allowPhoneMessaging
+    parentEmail: s.parentEmail
   }));
 }
 
@@ -346,8 +340,7 @@ export async function getStudentsAssignedInLottery(schoolId: string): Promise<St
     lastName: s.lastName,
     email: s.user!.email,
     phone: s.phone,
-    parentEmail: s.parentEmail,
-    allowPhoneMessaging: s.allowPhoneMessaging
+    parentEmail: s.parentEmail
   }));
 }
 
@@ -414,8 +407,7 @@ export async function getStudentsUnassignedInLottery(schoolId: string): Promise<
     lastName: s.lastName,
     email: s.user!.email,
     phone: s.phone,
-    parentEmail: s.parentEmail,
-    allowPhoneMessaging: s.allowPhoneMessaging
+    parentEmail: s.parentEmail
   }));
 }
 

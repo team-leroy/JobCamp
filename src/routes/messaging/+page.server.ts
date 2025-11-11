@@ -270,13 +270,13 @@ export const actions: Actions = {
                     return { success: false, message: result.error || 'Failed to send emails' };
                 }
             } else if (messageType === 'sms') {
-                // Filter students who opted in to SMS
+                // All students have agreed to SMS by signing up, just check for phone numbers
                 const smsRecipients = students
-                    .filter(s => s.allowPhoneMessaging && s.phone)
+                    .filter(s => s.phone)
                     .map(s => s.phone);
 
                 if (smsRecipients.length === 0) {
-                    return { success: false, message: 'No students have opted in to receive SMS messages' };
+                    return { success: false, message: 'No students have phone numbers' };
                 }
 
                 const result = await sendBulkSMS(smsRecipients, message);
