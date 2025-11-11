@@ -100,10 +100,10 @@
       if (result.type === "success" && result.data) {
         const { deserialize } = await import("$app/forms");
         const deserialized = deserialize(JSON.stringify(result));
-        
+
         if (deserialized.type === "success" && deserialized.data) {
           const actionResult = deserialized.data;
-          
+
           if (actionResult.success) {
             previewData = {
               count: actionResult.count,
@@ -144,11 +144,20 @@
     });
 
     const result = await response.json();
-    if (result.type === "success" && result.data?.data) {
-      loadedData = result.data.data;
-      // Insert into message if empty
-      if (!individualMessage) {
-        individualMessage = loadedData;
+
+    // Deserialize SvelteKit form action response
+    if (result.type === "success" && result.data) {
+      const { deserialize } = await import("$app/forms");
+      const deserialized = deserialize(result.data);
+
+      // Devalue deserializes to an array where:
+      // [0] = reference map, [1] = success value, [2] = data value
+      if (Array.isArray(deserialized) && deserialized[1] && deserialized[2]) {
+        loadedData = deserialized[2];
+        // Insert into message if empty
+        if (!individualMessage) {
+          individualMessage = loadedData;
+        }
       }
     }
   }
