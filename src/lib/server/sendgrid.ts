@@ -3,7 +3,7 @@
  * Wrapper for sending emails via SendGrid API
  */
 
-import { SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, SENDGRID_FROM_NAME } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 interface EmailRecipient {
   email: string;
@@ -42,8 +42,8 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
         }
       ],
       from: {
-        email: SENDGRID_FROM_EMAIL || 'admin@jobcamp.org',
-        name: SENDGRID_FROM_NAME || 'JobCamp'
+        email: env.SENDGRID_FROM_EMAIL || 'admin@jobcamp.org',
+        name: env.SENDGRID_FROM_NAME || 'JobCamp'
       },
       content: [
         {
@@ -69,7 +69,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+        'Authorization': `Bearer ${env.SENDGRID_API_KEY || ''}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)

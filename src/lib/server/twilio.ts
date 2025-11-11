@@ -3,7 +3,7 @@
  * Wrapper for sending SMS messages via Twilio API
  */
 
-import { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 interface SendSMSOptions {
   to: string; // Phone number in E.164 format (e.g., +14155551234)
@@ -62,17 +62,17 @@ export async function sendSMS(options: SendSMSOptions): Promise<SendSMSResult> {
     // Create the request body (URL-encoded form data for Twilio)
     const formData = new URLSearchParams({
       To: toNumber,
-      From: TWILIO_PHONE_NUMBER,
+      From: env.TWILIO_PHONE_NUMBER || '',
       Body: options.message
     });
 
     // Make request to Twilio API
     const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+      `https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID || ''}/Messages.json`,
       {
         method: 'POST',
         headers: {
-          'Authorization': 'Basic ' + Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64'),
+          'Authorization': 'Basic ' + Buffer.from(`${env.TWILIO_ACCOUNT_SID || ''}:${env.TWILIO_AUTH_TOKEN || ''}`).toString('base64'),
           'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: formData.toString()
