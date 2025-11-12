@@ -30,6 +30,8 @@
   import PositionEditModal from "./PositionEditModal.svelte";
   import CreatePositionModal from "./CreatePositionModal.svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
+  import FilteredStudentMessenger from "$lib/components/admin/FilteredStudentMessenger.svelte";
+  import { MessageSquare } from "lucide-svelte";
 
   interface Student {
     id: string;
@@ -446,6 +448,37 @@
                 >
                   Export CSV
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <!-- Message Filtered Students Widget -->
+          {#if filteredStudents.length > 0 && canEdit}
+            <Card class="mb-4">
+              <CardHeader>
+                <CardTitle class="flex items-center gap-2">
+                  <MessageSquare class="h-5 w-5" />
+                  Message Filtered Students
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FilteredStudentMessenger
+                  studentIds={filteredStudents.map((s) => s.id)}
+                  studentCount={filteredStudents.length}
+                />
+              </CardContent>
+            </Card>
+          {/if}
+
+          <!-- Student List -->
+          <Card>
+            <CardHeader>
+              <CardTitle class="text-lg">
+                Students ({filteredStudents.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div class="space-y-2">
                 <Button
                   variant="outline"
                   onclick={() => window.location.reload()}

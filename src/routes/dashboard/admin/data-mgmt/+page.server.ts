@@ -5,7 +5,9 @@ import { careers } from '$lib/appconfig';
 import { scrypt } from '$lib/server/hash';
 import crypto from 'node:crypto';
 import { getCurrentGrade, getGraduatingClassYear } from '$lib/server/gradeUtils';
-import { canWriteAdminData } from '$lib/server/roleUtils';
+import { canWriteAdminData, canAccessFullAdminFeatures } from '$lib/server/roleUtils';
+import { sendBulkEmail } from '$lib/server/sendgrid';
+import { sendBulkSMS } from '$lib/server/twilio';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -942,6 +944,230 @@ export const actions: Actions = {
         } catch (error) {
             console.error('Error creating position:', error);
             return { success: false, message: "Failed to create position" };
+        }
+    },
+
+    previewFilteredStudents: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        // Check if user has full admin access (messaging requires full admin)
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canAccessFullAdminFeatures(userInfo!)) {
+            return { success: false, message: "You do not have permission to send messages" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const studentIdsJson = formData.get('studentIds')?.toString();
+            const messageType = formData.get('messageType')?.toString();
+            const includeParents = formData.get('includeParents') === 'on';
+
+            if (!studentIdsJson) {
+                return { success: false, message: "No students selected" };
+            }
+
+            const studentIds = JSON.parse(studentIdsJson);
+
+            if (!Array.isArray(studentIds) || studentIds.length === 0) {
+                return { success: false, message: "No students selected" };
+            }
+
+            // Fetch students by IDs
+            const students = await prisma.student.findMany({
+                where: {
+                    id: { in: studentIds },
+                    isActive: true
+                },
+                include: {
+                    user: {
+                        select: {
+                            email: true
+                        }
+                    }
+                }
+            });
+
+            if (students.length === 0) {
+                return { success: false, message: "No valid students found" };
+            }
+
+            // Build preview list
+            const preview = [];
+
+            if (messageType === 'email') {
+                // Add student emails
+                for (const student of students) {
+                    if (student.user?.email) {
+                        preview.push({
+                            name: `${student.firstName} ${student.lastName}`,
+                            email: student.user.email
+                        });
+                    }
+                }
+
+                // Add parent emails if requested
+                if (includeParents) {
+                    for (const student of students) {
+                        if (student.parentEmail) {
+                            preview.push({
+                                name: `${student.firstName} ${student.lastName} (Parent)`,
+                                email: student.parentEmail
+                            });
+                        }
+                    }
+                }
+            } else if (messageType === 'sms') {
+                // Add student phone numbers
+                for (const student of students) {
+                    if (student.phone) {
+                        preview.push({
+                            name: `${student.firstName} ${student.lastName}`,
+                            phone: student.phone
+                        });
+                    }
+                }
+            }
+
+            return {
+                success: true,
+                count: preview.length,
+                preview: preview.slice(0, 50) // Limit preview to 50 for performance
+            };
+        } catch (error) {
+            console.error('Error previewing recipients:', error);
+            return { success: false, message: "Failed to preview recipients" };
+        }
+    },
+
+    sendToFilteredStudents: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        // Check if user has full admin access (messaging requires full admin)
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canAccessFullAdminFeatures(userInfo!)) {
+            return { success: false, message: "You do not have permission to send messages" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const studentIdsJson = formData.get('studentIds')?.toString();
+            const messageType = formData.get('messageType')?.toString();
+            const includeParents = formData.get('includeParents') === 'on';
+            const subject = formData.get('subject')?.toString();
+            const message = formData.get('message')?.toString();
+
+            if (!studentIdsJson) {
+                return { success: false, message: "No students selected" };
+            }
+
+            if (!message) {
+                return { success: false, message: "Message is required" };
+            }
+
+            if (messageType === 'email' && !subject) {
+                return { success: false, message: "Subject is required for emails" };
+            }
+
+            const studentIds = JSON.parse(studentIdsJson);
+
+            if (!Array.isArray(studentIds) || studentIds.length === 0) {
+                return { success: false, message: "No students selected" };
+            }
+
+            // Fetch students by IDs
+            const students = await prisma.student.findMany({
+                where: {
+                    id: { in: studentIds },
+                    isActive: true
+                },
+                include: {
+                    user: {
+                        select: {
+                            email: true
+                        }
+                    }
+                }
+            });
+
+            if (students.length === 0) {
+                return { success: false, message: "No valid students found" };
+            }
+
+            let successCount = 0;
+            let failCount = 0;
+
+            if (messageType === 'email') {
+                const emailRecipients: string[] = [];
+
+                // Add student emails
+                for (const student of students) {
+                    if (student.user?.email) {
+                        emailRecipients.push(student.user.email);
+                    }
+                }
+
+                // Add parent emails if requested
+                if (includeParents) {
+                    for (const student of students) {
+                        if (student.parentEmail) {
+                            emailRecipients.push(student.parentEmail);
+                        }
+                    }
+                }
+
+                if (emailRecipients.length === 0) {
+                    return { success: false, message: 'No valid email addresses found' };
+                }
+
+                const result = await sendBulkEmail(emailRecipients, subject!, message);
+                if (result.success) {
+                    successCount = emailRecipients.length;
+                } else {
+                    return { success: false, message: result.error || 'Failed to send emails' };
+                }
+            } else if (messageType === 'sms') {
+                // All students have agreed to SMS by signing up, just check for phone numbers
+                const smsRecipients = students
+                    .filter(s => s.phone)
+                    .map(s => s.phone);
+
+                if (smsRecipients.length === 0) {
+                    return { success: false, message: 'No students have phone numbers' };
+                }
+
+                const result = await sendBulkSMS(smsRecipients, message);
+                successCount = result.sent;
+                failCount = result.failed;
+
+                if (failCount > 0) {
+                    return { 
+                        success: true, 
+                        message: `Sent ${successCount} SMS, ${failCount} failed`,
+                        count: successCount
+                    };
+                }
+            }
+
+            return {
+                success: true,
+                message: `Successfully sent ${messageType === 'email' ? 'emails' : 'SMS messages'}`,
+                count: successCount
+            };
+        } catch (error) {
+            console.error('Error sending messages:', error);
+            return { success: false, message: "Failed to send messages" };
         }
     }
 };
