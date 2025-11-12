@@ -43,8 +43,9 @@ function formatPhoneNumber(phone: string): string {
  */
 export async function sendSMS(options: SendSMSOptions): Promise<SendSMSResult> {
   try {
-    // Check if we're in sandbox mode (staging/dev) - use Vite's built-in production detection
-    const isSandbox = !import.meta.env.PROD;
+    // Check if we're in sandbox mode - controlled by environment variable
+    // Set TWILIO_SANDBOX_MODE=true in staging, TWILIO_SANDBOX_MODE=false in production
+    const isSandbox = env.TWILIO_SANDBOX_MODE === 'true';
     
     // Format the phone number
     const toNumber = formatPhoneNumber(options.to);

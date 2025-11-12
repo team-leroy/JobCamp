@@ -12,7 +12,9 @@ export const SENDER = { name: "JobCamp", email: "admin@jobcamp.org" };
  * Send email using SendGrid
  */
 async function sendEmailViaSendGrid(to: string, subject: string, html: string): Promise<void> {
-    const isSandbox = !import.meta.env.PROD;
+    // Check if we're in sandbox mode - controlled by environment variable
+    // Set SENDGRID_SANDBOX_MODE=true in staging, SENDGRID_SANDBOX_MODE=false in production
+    const isSandbox = env.SENDGRID_SANDBOX_MODE === 'true';
     
     const payload = {
         personalizations: [{

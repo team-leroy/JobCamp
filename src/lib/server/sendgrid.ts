@@ -28,8 +28,9 @@ interface SendEmailResult {
  */
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   try {
-    // Check if we're in sandbox mode (staging/dev) - use Vite's built-in production detection
-    const isSandbox = !import.meta.env.PROD;
+    // Check if we're in sandbox mode - controlled by environment variable
+    // Set SENDGRID_SANDBOX_MODE=true in staging, SENDGRID_SANDBOX_MODE=false in production
+    const isSandbox = env.SENDGRID_SANDBOX_MODE === 'true';
     
     const payload = {
       personalizations: [
