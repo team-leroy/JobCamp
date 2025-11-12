@@ -49,6 +49,11 @@ async function sendEmailViaSendGrid(to: string, subject: string, html: string): 
         const errorText = await response.text();
         throw new Error(`SendGrid API error: ${errorText}`);
     }
+
+    if (isSandbox) {
+        console.log('📧 [SANDBOX MODE] Transactional email would be sent to:', to);
+        console.log('📧 Subject:', subject);
+    }
 }
 
 export type EmailParams = { [index: string]: string }
