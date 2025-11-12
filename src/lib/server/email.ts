@@ -1,5 +1,4 @@
 import { env } from "$env/dynamic/private";
-import { MailtrapClient } from "mailtrap";
 import verificationEmail from "$lib/emails/emailVerification.html?raw";
 import resetPasswordEmail from "$lib/emails/resetPassword.html?raw";
 import permissionSlipEmail from "$lib/emails/permissionSlip.html?raw";
@@ -7,9 +6,48 @@ import positionUpdateEmail from "$lib/emails/positionUpdate.html?raw";
 import lotteryResults from "$lib/emails/lotteryResults.html?raw";
 import { prisma } from './prisma';
 
-export const emailClient = new MailtrapClient({ token: env.MAILTRAP_TOKEN || '' });
-
 export const SENDER = { name: "JobCamp", email: "admin@jobcamp.org" };
+
+/**
+ * Send email using SendGrid
+ */
+async function sendEmailViaSendGrid(to: string, subject: string, html: string): Promise<void> {
+    const isSandbox = !import.meta.env.PROD;
+    
+    const payload = {
+        personalizations: [{
+            to: [{ email: to }],
+            subject: subject
+        }],
+        from: {
+            email: env.SENDGRID_FROM_EMAIL || 'admin@jobcamp.org',
+            name: env.SENDGRID_FROM_NAME || 'JobCamp'
+        },
+        content: [{
+            type: 'text/html',
+            value: html
+        }],
+        mail_settings: {
+            sandbox_mode: {
+                enable: isSandbox
+            }
+        }
+    };
+
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${env.SENDGRID_API_KEY || ''}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`SendGrid API error: ${errorText}`);
+    }
+}
 
 export type EmailParams = { [index: string]: string }
 
@@ -120,37 +158,33 @@ export function formatImportantDatesHtml(dates: ImportantDateData[]): string {
     }).join('\n            ');
 }
 
-export async function sendEmailLotteryEmail(email:string) {
-    await emailClient.send({
-        from: SENDER,
-        to:  [{ email: email }],
-        subject: "JobCamp lottery results are out!",
-        html: lotteryResults
-    });
+export async function sendEmailLotteryEmail(email: string) {
+    await sendEmailViaSendGrid(
+        email,
+        "JobCamp lottery results are out!",
+        lotteryResults
+    );
 }
 
 export async function sendEmailVerificationEmail(uid: string, email: string, code: string) {
     try {
-        await emailClient.send({
-            from: SENDER,
-            to:  [{ email: email }],
-            subject: "Verify JobCamp Email",
-            html: renderEmailTemplate(verificationEmail, {uid, code})
-        });
+        await sendEmailViaSendGrid(
+            email,
+            "Verify JobCamp Email",
+            renderEmailTemplate(verificationEmail, {uid, code})
+        );
     } catch (error) {
         console.warn('Email service not configured or failed to send verification email:', error);
-
     }
 }
 
 export async function sendPasswordResetEmail(uid: string, email: string, code: string) {
     try {
-        await emailClient.send({
-            from: SENDER,
-            to:  [{ email: email }],
-            subject: "Reset JobCamp Password",
-            html: renderEmailTemplate(resetPasswordEmail, {uid, code})
-        });
+        await sendEmailViaSendGrid(
+            email,
+            "Reset JobCamp Password",
+            renderEmailTemplate(resetPasswordEmail, {uid, code})
+        );
     } catch (error) {
         console.warn('Email service not configured or failed to send password reset email:', error);
     }
@@ -164,11 +198,10 @@ export async function sendPermissionSlipEmail(
 ) {
     const previousEventStats = await getPreviousEventStats(eventData.schoolId);
     
-    await emailClient.send({
-        from: SENDER,
-        to:  [{ email: parentEmail }],
-        subject: `Permission Slip for ${name}`,
-        html: renderEmailTemplate(permissionSlipEmail, {
+    await sendEmailViaSendGrid(
+        parentEmail,
+        `Permission Slip for ${name}`,
+        renderEmailTemplate(permissionSlipEmail, {
             link: "https://jobcamp.org/permission-slip/"+code,
             name: name,
             eventName: eventData.eventName,
@@ -176,7 +209,7 @@ export async function sendPermissionSlipEmail(
             schoolName: eventData.schoolName,
             previousEventStats: previousEventStats
         })
-    });
+    );
 }
 
 export async function sendPositionUpdateEmail(
@@ -194,19 +227,20 @@ export async function sendPositionUpdateEmail(
         assignmentNotificationDate: twoWeeksBefore
     };
 
+    const emailHtml = renderEmailTemplate(positionUpdateEmail, emailParams);
+    const subject = `JobCamp.org position published for ${eventData.eventDate}`;
+
     if (hostEmail != position.contact_email) {
-        await emailClient.send({
-            from: SENDER,
-            to:  [{ email: position.contact_email }],
-            subject: `JobCamp.org position published for ${eventData.eventDate}`,
-            html: renderEmailTemplate(positionUpdateEmail, emailParams)
-        });
+        await sendEmailViaSendGrid(
+            position.contact_email,
+            subject,
+            emailHtml
+        );
     }
 
-    await emailClient.send({
-        from: SENDER,
-        to:  [{ email: hostEmail }],
-        subject: `JobCamp.org position published for ${eventData.eventDate}`,
-        html: renderEmailTemplate(positionUpdateEmail, emailParams)
-    });
+    await sendEmailViaSendGrid(
+        hostEmail,
+        subject,
+        emailHtml
+    );
 }
