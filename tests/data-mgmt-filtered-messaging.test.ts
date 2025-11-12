@@ -264,11 +264,14 @@ describe('Data Management Filtered Student Messaging', () => {
 
       expect(result.success).toBe(true);
       expect(result.count).toBe(2);
-      expect(sendBulkEmail).toHaveBeenCalledWith(
-        ['alice@school.edu', 'bob@school.edu'],
-        'Test Subject',
-        'Test message'
-      );
+      expect(sendBulkEmail).toHaveBeenCalledWith({
+        to: [
+          { email: 'alice@school.edu', name: 'Alice Smith' },
+          { email: 'bob@school.edu', name: 'Bob Jones' }
+        ],
+        subject: 'Test Subject',
+        html: 'Test message'
+      });
     });
 
     it('should send SMS to filtered students', async () => {

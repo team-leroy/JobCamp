@@ -1109,12 +1109,15 @@ export const actions: Actions = {
             let failCount = 0;
 
             if (messageType === 'email') {
-                const emailRecipients: string[] = [];
+                const emailRecipients: Array<{email: string, name: string}> = [];
 
                 // Add student emails
                 for (const student of students) {
                     if (student.user?.email) {
-                        emailRecipients.push(student.user.email);
+                        emailRecipients.push({
+                            email: student.user.email,
+                            name: `${student.firstName} ${student.lastName}`
+                        });
                     }
                 }
 
@@ -1122,7 +1125,10 @@ export const actions: Actions = {
                 if (includeParents) {
                     for (const student of students) {
                         if (student.parentEmail) {
-                            emailRecipients.push(student.parentEmail);
+                            emailRecipients.push({
+                                email: student.parentEmail,
+                                name: `${student.firstName} ${student.lastName} (Parent)`
+                            });
                         }
                     }
                 }
@@ -1131,7 +1137,11 @@ export const actions: Actions = {
                     return { success: false, message: 'No valid email addresses found' };
                 }
 
-                const result = await sendBulkEmail(emailRecipients, subject!, message);
+                const result = await sendBulkEmail({
+                    to: emailRecipients,
+                    subject: subject!,
+                    html: message.replace(/\n/g, '<br>')
+                });
                 if (result.success) {
                     successCount = emailRecipients.length;
                 } else {
