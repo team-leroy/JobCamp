@@ -24,6 +24,32 @@ interface SendEmailResult {
 }
 
 /**
+ * Deduplicate email recipients by normalized email address
+ */
+function dedupeRecipients(recipients: EmailRecipient[]): EmailRecipient[] {
+	const seen = new Set<string>();
+	const unique: EmailRecipient[] = [];
+
+	for (const recipient of recipients) {
+		if (!recipient.email) continue;
+
+		const trimmedEmail = recipient.email.trim();
+		if (!trimmedEmail) continue;
+
+		const normalized = trimmedEmail.toLowerCase();
+		if (seen.has(normalized)) continue;
+
+		seen.add(normalized);
+		unique.push({
+			...recipient,
+			email: trimmedEmail
+		});
+	}
+
+	return unique;
+}
+
+/**
  * Send an email via SendGrid
  */
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
@@ -32,12 +58,21 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     // Set SENDGRID_SANDBOX_MODE=true in staging, SENDGRID_SANDBOX_MODE=false in production
     const isSandbox = env.SENDGRID_SANDBOX_MODE === 'true';
     
-    const payload = {
+		const recipients = dedupeRecipients(options.to);
+
+		if (recipients.length === 0) {
+			return {
+				success: false,
+				error: 'SendGrid error: No valid email recipients provided'
+			};
+		}
+
+		const payload = {
       personalizations: [
         {
-          to: options.to.map(r => ({ 
+					to: recipients.map((r) => ({
             email: r.email, 
-            name: r.name 
+						name: r.name
           })),
           subject: options.subject
         }
@@ -88,10 +123,10 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     // Get message ID from response headers
     const messageId = response.headers.get('X-Message-Id');
 
-    if (isSandbox) {
-      console.log('📧 [SANDBOX MODE] Email would be sent to:', options.to.map(r => r.email).join(', '));
-      console.log('📧 Subject:', options.subject);
-    }
+		if (isSandbox) {
+			console.log('📧 [SANDBOX MODE] Email would be sent to:', recipients.map((r) => r.email).join(', '));
+			console.log('📧 Subject:', options.subject);
+		}
 
     return {
       success: true,
@@ -112,11 +147,20 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
  */
 export async function sendBulkEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   const BATCH_SIZE = 1000;
+	const dedupedRecipients = dedupeRecipients(options.to);
+
+	if (dedupedRecipients.length === 0) {
+		return {
+			success: false,
+			error: 'SendGrid error: No valid email recipients provided'
+		};
+	}
+
   const batches: EmailRecipient[][] = [];
   
   // Split recipients into batches
-  for (let i = 0; i < options.to.length; i += BATCH_SIZE) {
-    batches.push(options.to.slice(i, i + BATCH_SIZE));
+	for (let i = 0; i < dedupedRecipients.length; i += BATCH_SIZE) {
+		batches.push(dedupedRecipients.slice(i, i + BATCH_SIZE));
   }
 
   const results: SendEmailResult[] = [];
