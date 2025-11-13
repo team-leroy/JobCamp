@@ -33,8 +33,9 @@ export const load: PageServerLoad = async (event) => {
 
     const schools = await prisma.school.findMany();
     const schoolMapping = Object.fromEntries(schools.map((val) => [val.id, val.name]));
+    const primarySchoolDomain = schools[0]?.emailDomain ?? undefined;
 
-    const form = await superValidate(zod(createStudentSchema()));
+    const form = await superValidate(zod(createStudentSchema(primarySchoolDomain)));
 
     // Get navbar data
     const navbarData = await getNavbarData();
@@ -52,13 +53,13 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
     default: async (event) => {
         const { request } = event;
-        const form = await superValidate(request, zod(createStudentSchema()));
+        const school = await prisma.school.findFirst(); // TODO: SCHOOL FIELD for multiple schools
+        const form = await superValidate(request, zod(createStudentSchema(school?.emailDomain)));
 
         if (!form.valid) {
             return fail(400, { form });
         }
 
-        const school = (await prisma.school.findFirst()); // TODO: SCHOOL FIELD for multiple schools
         if (!school) {
             return message(form, "Database Error");
         }
@@ -67,8 +68,23 @@ export const actions: Actions = {
             return setError(form, "email", "Please enter a valid school email.")
         }
 
-        if (form.data.parentEmail == form.data.email) {
-            return setError(form, "parentEmail", "Please enter a different email.")
+        const studentEmailNormalized = form.data.email.trim().toLowerCase();
+        const parentEmailNormalized = form.data.parentEmail.trim().toLowerCase();
+        const schoolDomainNormalized = school.emailDomain.trim().toLowerCase();
+        const schoolDomainWithAt = schoolDomainNormalized.startsWith('@')
+            ? schoolDomainNormalized
+            : `@${schoolDomainNormalized}`;
+
+        if (parentEmailNormalized === studentEmailNormalized) {
+            return setError(form, "parentEmail", "Please enter a different email.");
+        }
+
+        if (parentEmailNormalized.endsWith(schoolDomainWithAt)) {
+            return setError(
+                form,
+                "parentEmail",
+                `Parent email cannot use school email domain (${schoolDomainWithAt}). Please provide a different email.`
+            );
         }
 
         const activeEvent = await prisma.event.findFirst({

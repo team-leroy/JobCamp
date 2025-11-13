@@ -3,7 +3,26 @@ import { z } from "zod";
 const phonePattern =
 	/^(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}$/;
 
-export const createStudentSchema = () => {
+const normalizeDomain = (domain: string) => {
+	const trimmed = domain.trim().toLowerCase();
+	if (!trimmed) return "";
+	return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+};
+
+export const createStudentSchema = (schoolEmailDomain?: string) => {
+	const normalizedDomain = schoolEmailDomain ? normalizeDomain(schoolEmailDomain) : "";
+
+	let parentEmailSchema = z
+		.string()
+		.email("Please enter a valid email.");
+
+	if (normalizedDomain) {
+		parentEmailSchema = parentEmailSchema.refine(
+			(value) => !value.toLowerCase().trim().endsWith(normalizedDomain),
+			`Parent email cannot use school email domain (${normalizedDomain}). Please provide a different email.`
+		);
+	}
+
 	return z.object({
 		grade: z
 			.string()
@@ -13,7 +32,7 @@ export const createStudentSchema = () => {
 			),
 		firstName: z.string().min(2, "First name must contain at least 2 characters."),
 		lastName: z.string().min(2, "Last name must contain at least 2 characters."),
-		parentEmail: z.string().email("Please enter a valid email."),
+		parentEmail: parentEmailSchema,
 		phone: z
 			.string()
 			.refine(
