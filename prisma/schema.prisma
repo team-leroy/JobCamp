@@ -70,7 +70,6 @@ model Position {
   host               Host                  @relation(fields: [hostId], references: [id])
   students           PositionsOnStudents[]
   prefillSettings    PrefillSetting[]
-  studentsAttending  Student[]
   lotteryAssignments LotteryResults[]
 
   @@index([eventId], map: "Position_eventId_fkey")
