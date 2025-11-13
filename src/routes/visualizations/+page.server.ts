@@ -661,75 +661,106 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
 
         const totalAvailableSlots = allPositions.reduce((sum, p) => sum + p.slots, 0);
 
-        // Get students who participated in this event
-        // For archived events, fall back to students with position choices if no participation records exist
-        let studentsWithChoices = await prisma.student.findMany({
-            where: {
-                schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
-                eventParticipation: {
-                    some: {
-                        eventId: activeEventId
-                    }
+        // Build base student query depending on event state
+        const baseStudentWhere = {
+            schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
+        };
+
+        const studentInclude = {
+            user: {
+                select: {
+                    lastLogin: true
                 }
             },
-            include: {
-                positionsSignedUpFor: {
-                    where: {
-                        position: {
-                            eventId: activeEventId
-                        }
-                    },
-                    include: {
-                        position: {
-                            include: {
-                                host: {
-                                    include: {
-                                        company: true
-                                    }
+            positionsSignedUpFor: {
+                where: {
+                    position: {
+                        eventId: activeEventId
+                    }
+                },
+                orderBy: { rank: 'asc' },
+                include: {
+                    position: {
+                        include: {
+                            host: {
+                                include: {
+                                    company: true
                                 }
                             }
                         }
-                    },
-                    orderBy: { rank: 'asc' }
+                    }
                 }
             }
-        });
-        
-        // If no participation records found (e.g., for old archived events), fall back to students with choices
-        if (studentsWithChoices.length === 0) {
+        };
+
+        let studentsWithChoices: Awaited<ReturnType<typeof prisma.student.findMany>> = [];
+
+        if (eventData?.isActive) {
+            // For active events, include students who have logged in since the event started
+            const activeStudentWhere: Prisma.StudentWhereInput = {
+                ...baseStudentWhere,
+                isActive: true
+            };
+
+            if (eventStartDate) {
+                activeStudentWhere.user = {
+                    is: {
+                        lastLogin: {
+                            gte: eventStartDate
+                        }
+                    }
+                };
+            }
+
+            studentsWithChoices = await prisma.student.findMany({
+                where: activeStudentWhere,
+                include: studentInclude
+            });
+        } else {
+            // For archived events, prefer students with recorded participation, fall back to those with choices
             studentsWithChoices = await prisma.student.findMany({
                 where: {
-                    schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
-                    positionsSignedUpFor: {
+                    ...baseStudentWhere,
+                    eventParticipation: {
                         some: {
-                            position: {
-                                eventId: activeEventId
-                            }
+                            eventId: activeEventId
                         }
                     }
                 },
-                include: {
-                    positionsSignedUpFor: {
-                        where: {
-                            position: {
-                                eventId: activeEventId
-                            }
-                        },
-                        include: {
-                            position: {
-                                include: {
-                                    host: {
-                                        include: {
-                                            company: true
-                                        }
-                                    }
+                include: studentInclude
+            });
+
+            if (studentsWithChoices.length === 0) {
+                studentsWithChoices = await prisma.student.findMany({
+                    where: {
+                        ...baseStudentWhere,
+                        positionsSignedUpFor: {
+                            some: {
+                                position: {
+                                    eventId: activeEventId
                                 }
                             }
-                        },
-                        orderBy: { rank: 'asc' }
-                    }
-                }
-            });
+                        }
+                    },
+                    include: studentInclude
+                });
+            }
+        }
+
+        // If still no students found, return zeroed stats
+        if (studentsWithChoices.length === 0) {
+            return {
+                totalStudents: 0,
+                totalAvailableSlots,
+                gradeDistribution: {},
+                choiceDistribution: {},
+                slotAvailability: {},
+                studentsWithNoChoices: [],
+                studentsWithManyChoices: [],
+                averageChoices: 0,
+                averageChoicesPerStudent: 0,
+                totalChoices: 0
+            };
         }
 
         // Grade distribution
