@@ -1,7 +1,7 @@
 import { redirect } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 import { prisma } from "$lib/server/prisma";
-import { generatePermissionSlipCode } from "$lib/server/auth";
+import { generatePermissionSlipCode, schoolEmailCheck } from "$lib/server/auth";
 import { sendPermissionSlipEmail, formatEmailDate, type EventEmailData } from "$lib/server/email";
 import { getPermissionSlipStatus } from "$lib/server/permissionSlips";
 import { trackStudentParticipation, getActiveEventIdForSchool } from "$lib/server/studentParticipation";
@@ -115,6 +115,7 @@ export const load: PageServerLoad = async (event) => {
         lotteryPublished,
         showLotteryResult,
         activeEventName: permissionSlipStatus.eventName,
+        activeEventDate: activeEvent?.date ? activeEvent.date.toISOString() : null,
         hasActiveEvent: permissionSlipStatus.hasActiveEvent,
         positions,
         importantDates
@@ -123,37 +124,64 @@ export const load: PageServerLoad = async (event) => {
 
 
 export const actions: Actions = {
-    sendPermissionSlip: async({ request, locals }) => {
-            const data = await request.formData();
-            console.log(data);
-            
-            const parentEmail = await data.get("parent-email");
-            if (!parentEmail) {
-                return { sent: false, err: true };
-            }
-    
-            const id = locals.user?.id;
-            if (!id) {
-                redirect(302, "/login");
-            }
-    
-            const user = await prisma.user.findFirst({ 
-                where: { id }, 
-                include: { 
-                    student: {
-                        include: {
-                            school: true
-                        }
+    sendPermissionSlip: async ({ request, locals }) => {
+        const data = await request.formData();
+
+        const parentEmailRaw = data.get("parent-email")?.toString().trim();
+        if (!parentEmailRaw) {
+            return { sent: false, err: true };
+        }
+
+        const id = locals.user?.id;
+        if (!id) {
+            redirect(302, "/login");
+        }
+
+        const user = await prisma.user.findFirst({
+            where: { id },
+            include: {
+                student: {
+                    include: {
+                        school: true
                     }
                 }
-            });
-            
-            const firstName = user?.student?.firstName;
-            const student = user?.student;
-            if (!firstName || !student || !student.school) {
-                redirect(302, "/login");
             }
-            
+        });
+
+        const firstName = user?.student?.firstName;
+        const student = user?.student;
+        const school = student?.school;
+        if (!firstName || !student || !school) {
+            redirect(302, "/login");
+        }
+
+        const normalizedSchoolDomain = school.emailDomain?.trim().toLowerCase();
+        const schoolDomainPattern =
+            normalizedSchoolDomain && normalizedSchoolDomain.length > 0
+                ? schoolEmailCheck(normalizedSchoolDomain)
+                : null;
+        const displaySchoolDomain =
+            normalizedSchoolDomain && normalizedSchoolDomain.length > 0
+                ? normalizedSchoolDomain.startsWith("@")
+                    ? normalizedSchoolDomain
+                    : `@${normalizedSchoolDomain}`
+                : "";
+
+        const normalizedParentEmail = parentEmailRaw.toLowerCase();
+        if (
+            schoolDomainPattern &&
+            schoolDomainPattern.test(normalizedParentEmail)
+        ) {
+            return {
+                sent: false,
+                err: true,
+                reason: "school-domain",
+                schoolDomain: displaySchoolDomain
+            };
+        }
+
+        const parentEmail = parentEmailRaw;
+    
             // Get active event for email templating
             const activeEvent = await prisma.event.findFirst({
                 where: {
@@ -163,7 +191,7 @@ export const actions: Actions = {
             });
 
             if (!activeEvent) {
-                return { sent: false, err: true };
+                return { sent: false, err: true, reason: "school-domain" };
             }
 
             const eventData: EventEmailData = {

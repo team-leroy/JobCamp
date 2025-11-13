@@ -10,7 +10,8 @@
   let { data, form } = $props();
 
   // Format date for display
-  function formatDate(date: Date): string {
+  function formatDate(date: string | Date | null): string {
+    if (!date) return "";
     return new Date(date).toLocaleDateString("en-US", {
       weekday: "short",
       year: "numeric",
@@ -21,6 +22,81 @@
   }
 
   let positions = $state({ posList: data.positions });
+
+  const permissionSlipStatus = (() => {
+    if (data.permissionSlipCompleted) {
+      return {
+        label: "Completed",
+        tone: "text-emerald-600",
+        helper: "You're cleared to participate.",
+      };
+    }
+
+    return {
+      label: "Needs Action",
+      tone: "text-amber-600",
+      helper:
+        "Ask your parent to sign the permission slip so you can pick jobs.",
+    };
+  })();
+
+  const lotterySummary = (() => {
+    if (!data.lotteryPublished) {
+      return {
+        label: "Not Published",
+        tone: "text-slate-500",
+        helper: "We’ll email you once lottery results are released.",
+      };
+    }
+
+    if (data.lotteryResult) {
+      return {
+        label: "Assigned",
+        tone: "text-emerald-600",
+        helper: "Review the details of your assigned position below.",
+      };
+    }
+
+    return {
+      label: "Pending",
+      tone: "text-amber-600",
+      helper: "Lottery is published — results will appear here soon.",
+    };
+  })();
+
+  const nextStepSummary = (() => {
+    if (!data.hasActiveEvent) {
+      return {
+        label: "Waiting for Event",
+        tone: "text-slate-500",
+        helper:
+          "We’ll let you know as soon as the next JobCamp event launches.",
+      };
+    }
+
+    if (!data.permissionSlipCompleted) {
+      return {
+        label: "Complete Permission Slip",
+        tone: "text-amber-600",
+        helper:
+          "Get the permission slip signed so you can add your favorite jobs.",
+      };
+    }
+
+    if (!data.studentSignupsEnabled) {
+      return {
+        label: "Signups Closed",
+        tone: "text-slate-500",
+        helper: "You can review your picks, but changes are currently locked.",
+      };
+    }
+
+    return {
+      label: "Build Your Picks",
+      tone: "text-emerald-600",
+      helper: "Add or reorder your favorite jobs below.",
+    };
+  })();
 
   const deletePosition = async (posID: string) => {
     // Optimistically update UI
@@ -119,6 +195,104 @@
 </script>
 
 <Navbar loggedIn={true} isHost={false} isAdmin={false} />
+
+<section class="w-full border-b bg-slate-50/60 mb-6 mt-16 sm:mt-20">
+  <div
+    class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8"
+  >
+    <div class="space-y-1">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Active Event
+      </p>
+      {#if data.hasActiveEvent}
+        <h1 class="text-xl font-semibold text-slate-900">
+          {data.activeEventName ?? "JobCamp"}
+        </h1>
+        {#if data.activeEventDate}
+          <p class="text-sm text-slate-600">
+            {formatDate(data.activeEventDate)}
+          </p>
+        {/if}
+      {:else}
+        <h1 class="text-xl font-semibold text-slate-900">
+          No active event yet
+        </h1>
+        <p class="text-sm text-slate-600">
+          We'll send an email as soon as the next JobCamp event opens.
+        </p>
+      {/if}
+    </div>
+
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-lg border bg-white p-3 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Permission Slip
+        </p>
+        <p
+          class={"mt-1 text-lg font-semibold text-slate-900 " +
+            permissionSlipStatus.tone}
+        >
+          {permissionSlipStatus.label}
+        </p>
+        <p class="mt-1 text-xs text-slate-600 leading-snug">
+          {permissionSlipStatus.helper}
+        </p>
+      </div>
+
+      <div class="rounded-lg border bg-white p-3 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Favorite Jobs
+        </p>
+        <p class="mt-1 text-2xl font-semibold text-slate-900">
+          {positions.posList.length}
+        </p>
+        <p class="mt-1 text-xs text-slate-600 leading-snug">
+          {#if positions.posList.length === 0}
+            {#if data.permissionSlipCompleted}
+              Start exploring positions to build your list.
+            {:else}
+              You must have the permission slip signed before you can pick jobs.
+            {/if}
+          {:else if positions.posList.length === 1}
+            You've selected one favorite so far.
+          {:else}
+            You have {positions.posList.length} jobs ranked in your list.
+          {/if}
+        </p>
+      </div>
+
+      <div class="rounded-lg border bg-white p-3 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Lottery Status
+        </p>
+        <p
+          class={"mt-1 text-lg font-semibold text-slate-900 " +
+            lotterySummary.tone}
+        >
+          {lotterySummary.label}
+        </p>
+        <p class="mt-1 text-xs text-slate-600 leading-snug">
+          {lotterySummary.helper}
+        </p>
+      </div>
+
+      <div class="rounded-lg border bg-white p-3 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Next Step
+        </p>
+        <p
+          class={"mt-1 text-lg font-semibold text-slate-900 " +
+            nextStepSummary.tone}
+        >
+          {nextStepSummary.label}
+        </p>
+        <p class="mt-1 text-xs text-slate-600 leading-snug">
+          {nextStepSummary.helper}
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <div class="flex flex-col md:flex-row w-full min-h-screen pt-20">
   <div
@@ -303,11 +477,18 @@
           >
           {#if form && form.sent}
             <span class="text-green-500 text-lg font-bold pb-1.5">Sent</span>
-          {/if}
-          {#if form && form.err}
-            <span class="text-green-500 text-lg font-bold pb-1.5"
-              >Internal Error</span
-            >
+          {:else if form?.err}
+            {#if form?.reason === "school-domain"}
+              <span class="text-red-500 text-sm font-semibold pb-1.5">
+                Parent email cannot use school email domain (
+                {form.schoolDomain ?? "@lgsstudent.org"}). Please provide a
+                different email.
+              </span>
+            {:else}
+              <span class="text-red-500 text-sm font-semibold pb-1.5">
+                Internal error. Please try again.
+              </span>
+            {/if}
           {/if}
         </form>
       </div>
