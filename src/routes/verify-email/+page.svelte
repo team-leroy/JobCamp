@@ -1,9 +1,15 @@
 <script lang="ts">
   import Button from "$lib/components/ui/button/button.svelte";
+  import { buttonVariants } from "$lib/components/ui/button/index.js";
 
   var { data } = $props();
 
   var formEl: HTMLFormElement;
+
+  const loginLinkClasses = buttonVariants({
+    variant: "link",
+    class: "-mb-32 text-lg",
+  });
 </script>
 
 <div
@@ -21,7 +27,5 @@
     >
   </form>
 
-  <Button variant="link" class="-mb-32 text-lg" href="/login"
-    >Return to login</Button
-  >
+  <a href="/login" class={loginLinkClasses}>Return to login</a>
 </div>

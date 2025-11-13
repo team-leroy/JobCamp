@@ -50,6 +50,8 @@ export const load: PageServerLoad = async (event) => {
     };
 };
 
+const enforceSchoolEmailDomain = true; // TEMP: allow non-school emails for verification testing
+
 export const actions: Actions = {
     default: async (event) => {
         const { request } = event;
@@ -64,7 +66,7 @@ export const actions: Actions = {
             return message(form, "Database Error");
         }
 
-        if (!schoolEmailCheck(school.emailDomain).test(form.data.email)) {
+        if (enforceSchoolEmailDomain && !schoolEmailCheck(school.emailDomain).test(form.data.email)) {
             return setError(form, "email", "Please enter a valid school email.")
         }
 
