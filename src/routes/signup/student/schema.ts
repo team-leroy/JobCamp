@@ -11,8 +11,8 @@ export const createStudentSchema = () => {
 				(value) => ["9", "10", "11", "12"].includes(value),
 				{ message: "Please select a grade between 9-12." }
 			),
-		firstName: z.string().min(1),
-		lastName: z.string().min(1),
+		firstName: z.string().min(2, "First name must contain at least 2 characters."),
+		lastName: z.string().min(2, "Last name must contain at least 2 characters."),
 		parentEmail: z.string().email("Please enter a valid email."),
 		phone: z
 			.string()
