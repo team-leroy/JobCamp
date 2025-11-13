@@ -444,27 +444,7 @@ async function main() {
     [1, 2]
   );
 
-  // Simulate lottery results for Event 1
-  await prisma.student.update({
-    where: { id: event1Students[0].id },
-    data: { lotteryPositionId: event1Positions[0].id },
-  });
-  await prisma.student.update({
-    where: { id: event1Students[1].id },
-    data: { lotteryPositionId: event1Positions[1].id },
-  });
-  await prisma.student.update({
-    where: { id: event1Students[2].id },
-    data: { lotteryPositionId: event1Positions[2].id },
-  });
-  await prisma.student.update({
-    where: { id: event1Students[4].id },
-    data: { lotteryPositionId: event1Positions[4].id },
-  });
-  await prisma.student.update({
-    where: { id: event1Students[5].id },
-    data: { lotteryPositionId: event1Positions[0].id },
-  });
+  // Lottery results now stored via LotteryResults entries; no direct student updates needed.
 
   // ===== 3. ARCHIVED EVENT #2 (SPRING 2024) =====
   console.log("\n🌸 Creating Archived Event #2: Spring 2024 Job Shadow...");
@@ -702,27 +682,7 @@ async function main() {
     [1, 2]
   ); // Mia - new
 
-  // Simulate lottery results for Event 2
-  await prisma.student.update({
-    where: { id: event2Students[0].id },
-    data: { lotteryPositionId: event2Positions[0].id },
-  });
-  await prisma.student.update({
-    where: { id: event2Students[1].id },
-    data: { lotteryPositionId: event2Positions[1].id },
-  });
-  await prisma.student.update({
-    where: { id: event2Students[5].id },
-    data: { lotteryPositionId: event2Positions[2].id },
-  });
-  await prisma.student.update({
-    where: { id: event2Students[6].id },
-    data: { lotteryPositionId: event2Positions[3].id },
-  });
-  await prisma.student.update({
-    where: { id: event2Students[8].id },
-    data: { lotteryPositionId: event2Positions[4].id },
-  });
+  // Lottery results stored in LotteryResults; no direct updates to student records needed.
 
   // ===== 4. ACTIVE EVENT (FALL 2024) =====
   console.log("\n🍂 Creating Active Event: Fall 2024 Job Shadow...");

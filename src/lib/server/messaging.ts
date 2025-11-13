@@ -3,6 +3,7 @@
  * Handles recipient filtering and message composition for the messaging system
  */
 
+import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 
 export interface StudentRecipient {
@@ -317,31 +318,38 @@ export async function getStudentsAssignedInLottery(schoolId: string): Promise<St
   }
 
   // Get students with lottery results
-  const students = await prisma.student.findMany({
+  const assignments = await prisma.lotteryResults.findMany({
     where: {
-      schoolId,
-      isActive: true,
-      lotteryResult: {
-        lotteryJobId: latestLotteryJob.id
+      lotteryJobId: latestLotteryJob.id,
+      student: {
+        schoolId,
+        isActive: true
       }
     },
     include: {
-      user: {
-        select: {
-          email: true
+      student: {
+        include: {
+          user: {
+            select: {
+              email: true
+            }
+          }
         }
       }
     }
   });
 
-  return students.map(s => ({
-    id: s.id,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    email: s.user!.email,
-    phone: s.phone,
-    parentEmail: s.parentEmail
-  }));
+  return assignments
+    .map(({ student }) => student)
+    .filter((student): student is NonNullable<typeof student> => Boolean(student?.user))
+    .map((student) => ({
+      id: student.id,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      email: student.user!.email,
+      phone: student.phone,
+      parentEmail: student.parentEmail
+    }));
 }
 
 /**
@@ -374,24 +382,35 @@ export async function getStudentsUnassignedInLottery(schoolId: string): Promise<
     return [];
   }
 
-  // Get students who made picks but have no lottery result
-  const students = await prisma.student.findMany({
+  const assignedStudentIds = await prisma.lotteryResults.findMany({
     where: {
-      schoolId,
-      isActive: true,
-      positionsSignedUpFor: {
-        some: {
-          position: {
-            eventId: activeEvent.id
-          }
-        }
-      },
-      lotteryResult: {
-        none: {
-          lotteryJobId: latestLotteryJob.id
+      lotteryJobId: latestLotteryJob.id
+    },
+    select: {
+      studentId: true
+    }
+  });
+
+  const whereClause: Prisma.StudentWhereInput = {
+    schoolId,
+    isActive: true,
+    positionsSignedUpFor: {
+      some: {
+        position: {
+          eventId: activeEvent.id
         }
       }
-    },
+    }
+  };
+
+  const assignedIds = assignedStudentIds.map((result) => result.studentId);
+  if (assignedIds.length > 0) {
+    whereClause.id = { notIn: assignedIds };
+  }
+
+  // Get students who made picks but have no lottery result
+  const students = await prisma.student.findMany({
+    where: whereClause,
     include: {
       user: {
         select: {
@@ -562,6 +581,18 @@ export async function getAvailableSlotsAfterLottery(schoolId: string): Promise<A
     return [];
   }
 
+  const positionAssignments = await prisma.lotteryResults.groupBy({
+    by: ['positionId'],
+    where: {
+      lotteryJobId: latestLotteryJob.id
+    },
+    _count: {
+      positionId: true
+    }
+  });
+
+  const assignmentMap = new Map(positionAssignments.map((assignment) => [assignment.positionId, assignment._count.positionId]));
+
   // Get all positions and their assignments
   const positions = await prisma.position.findMany({
     where: {
@@ -577,24 +608,22 @@ export async function getAvailableSlotsAfterLottery(schoolId: string): Promise<A
             }
           }
         }
-      },
-      students: {
-        where: {
-          lotteryJobId: latestLotteryJob.id
-        }
       }
     }
   });
 
   const availableSlots = positions
-    .map(p => ({
-      positionId: p.id,
-      title: p.title,
-      companyName: p.host.company?.companyName || 'Unknown',
-      slots: p.slots,
-      assigned: p.students.length,
-      available: p.slots - p.students.length
-    }))
+    .map((position) => {
+      const assignedCount = assignmentMap.get(position.id) ?? 0;
+      return {
+        positionId: position.id,
+        title: position.title,
+        companyName: position.host.company?.companyName || 'Unknown',
+        slots: position.slots,
+        assigned: assignedCount,
+        available: position.slots - assignedCount
+      };
+    })
     .filter(p => p.available > 0)
     .sort((a, b) => b.available - a.available);
 
@@ -645,15 +674,6 @@ export async function getStudentDetailedData(studentId: string, schoolId: string
           rank: 'asc'
         }
       },
-      lotteryResult: {
-        include: {
-          host: {
-            include: {
-              company: true
-            }
-          }
-        }
-      },
       permissionSlips: {
         where: {
           eventId: activeEvent?.id
@@ -667,9 +687,42 @@ export async function getStudentDetailedData(studentId: string, schoolId: string
     return null;
   }
 
-  // Check if lottery result is for the active event
-  const hasLotteryResult = student.lotteryResult && 
-    student.lotteryResult.eventId === activeEvent?.id;
+  let lotteryAssignment = null;
+
+  if (activeEvent) {
+    const latestLotteryJob = await prisma.lotteryJob.findFirst({
+      where: {
+        eventId: activeEvent.id,
+        status: 'COMPLETED'
+      },
+      orderBy: {
+        completedAt: 'desc'
+      }
+    });
+
+    if (latestLotteryJob) {
+      lotteryAssignment = await prisma.lotteryResults.findFirst({
+        where: {
+          studentId: student.id,
+          lotteryJobId: latestLotteryJob.id
+        },
+        include: {
+          position: {
+            include: {
+              host: {
+                include: {
+                  company: true
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  const assignedPosition = lotteryAssignment?.position;
+  const hasLotteryResult = Boolean(assignedPosition && assignedPosition.eventId === activeEvent?.id);
 
   return {
     id: student.id,
@@ -689,16 +742,16 @@ export async function getStudentDetailedData(studentId: string, schoolId: string
       contactEmail: p.position.contact_email
     })),
     lotteryAssignment: hasLotteryResult ? {
-      title: student.lotteryResult.title,
-      companyName: student.lotteryResult.host.company?.companyName || 'Unknown',
-      contactName: student.lotteryResult.contact_name,
-      contactEmail: student.lotteryResult.contact_email,
-      address: student.lotteryResult.address,
-      instructions: student.lotteryResult.instructions,
-      attire: student.lotteryResult.attire,
-      arrival: student.lotteryResult.arrival,
-      start: student.lotteryResult.start,
-      end: student.lotteryResult.end
+      title: assignedPosition!.title,
+      companyName: assignedPosition!.host.company?.companyName || 'Unknown',
+      contactName: assignedPosition!.contact_name,
+      contactEmail: assignedPosition!.contact_email,
+      address: assignedPosition!.address,
+      instructions: assignedPosition!.instructions,
+      attire: assignedPosition!.attire,
+      arrival: assignedPosition!.arrival,
+      start: assignedPosition!.start,
+      end: assignedPosition!.end
     } : null
   };
 }

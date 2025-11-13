@@ -8,27 +8,27 @@ datasource db {
 }
 
 model Event {
-  id                      String                     @id @default(cuid())
+  id                      String                      @id @default(cuid())
   schoolId                String
   date                    DateTime
   displayLotteryResults   Boolean
-  isActive                Boolean                    @default(false)
-  isArchived              Boolean                    @default(false)
+  isActive                Boolean                     @default(false)
+  isArchived              Boolean                     @default(false)
   name                    String?
-  companyAccountsEnabled  Boolean                    @default(false)
-  companySignupsEnabled   Boolean                    @default(false)
-  lotteryPublished        Boolean                    @default(false)
-  studentAccountsEnabled  Boolean                    @default(false)
-  studentSignupsEnabled   Boolean                    @default(false)
-  companyDirectoryEnabled Boolean                    @default(false)
-  createdAt               DateTime                   @default(now())
+  companyAccountsEnabled  Boolean                     @default(false)
+  companySignupsEnabled   Boolean                     @default(false)
+  lotteryPublished        Boolean                     @default(false)
+  studentAccountsEnabled  Boolean                     @default(false)
+  studentSignupsEnabled   Boolean                     @default(false)
+  companyDirectoryEnabled Boolean                     @default(false)
+  createdAt               DateTime                    @default(now())
   activatedAt             DateTime?
-  school                  School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school                  School                      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   lotteryJobs             LotteryJob[]
   positions               Position[]
   permissionSlips         PermissionSlipSubmission[] // Track permission slips for this event
   studentParticipation    StudentEventParticipation[] // Track student participation in this event
-  importantDates          ImportantDate[]            // Important dates for this event
+  importantDates          ImportantDate[] // Important dates for this event
 
   @@index([schoolId, isArchived, date])
 }
@@ -47,30 +47,31 @@ model School {
 }
 
 model Position {
-  id                String                @id @default(cuid())
-  title             String
-  career            String
-  slots             Int
-  summary           String                @db.VarChar(1024)
-  contact_name      String
-  contact_email     String
-  address           String                @db.VarChar(1024)
-  instructions      String                @db.VarChar(1024)
-  attire            String                @db.VarChar(1024)
-  createdAt         DateTime              @default(now())
-  arrival           String
-  start             String
-  end               String
-  eventId           String
-  hostId            String
-  isPublished       Boolean               @default(false)
-  attachments       Attachment[]
-  manualAssignments ManualAssignment[]
-  event             Event                 @relation(fields: [eventId], references: [id])
-  host              Host                  @relation(fields: [hostId], references: [id])
-  students          PositionsOnStudents[]
-  prefillSettings   PrefillSetting[]
-  studentsAttending Student[]
+  id                 String                @id @default(cuid())
+  title              String
+  career             String
+  slots              Int
+  summary            String                @db.VarChar(1024)
+  contact_name       String
+  contact_email      String
+  address            String                @db.VarChar(1024)
+  instructions       String                @db.VarChar(1024)
+  attire             String                @db.VarChar(1024)
+  createdAt          DateTime              @default(now())
+  arrival            String
+  start              String
+  end                String
+  eventId            String
+  hostId             String
+  isPublished        Boolean               @default(false)
+  attachments        Attachment[]
+  manualAssignments  ManualAssignment[]
+  event              Event                 @relation(fields: [eventId], references: [id])
+  host               Host                  @relation(fields: [hostId], references: [id])
+  students           PositionsOnStudents[]
+  prefillSettings    PrefillSetting[]
+  studentsAttending  Student[]
+  lotteryAssignments LotteryResults[]
 
   @@index([eventId], map: "Position_eventId_fkey")
   @@index([hostId], map: "Position_hostId_fkey")
@@ -86,26 +87,24 @@ model Attachment {
 }
 
 model Student {
-  id                    String                     @id @default(cuid())
-  phone                 String
-  graduatingClassYear   Int
-  parentEmail           String
-  schoolId              String?
-  userId                String?                    @unique
-  lotteryPositionId     String?
-  firstName             String
-  lastName              String
-  isActive              Boolean                    @default(true)
-  graduatedAt           DateTime?
-  manualAssignments     ManualAssignment[]
-  positionsSignedUpFor  PositionsOnStudents[]
-  permissionSlips       PermissionSlipSubmission[]
-  eventParticipation    StudentEventParticipation[]
-  lotteryResult         Position?                  @relation(fields: [lotteryPositionId], references: [id])
-  school                School?                    @relation(fields: [schoolId], references: [id])
-  user                  User?                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String                      @id @default(cuid())
+  phone                String
+  graduatingClassYear  Int
+  parentEmail          String
+  schoolId             String?
+  userId               String?                     @unique
+  firstName            String
+  lastName             String
+  isActive             Boolean                     @default(true)
+  graduatedAt          DateTime?
+  manualAssignments    ManualAssignment[]
+  positionsSignedUpFor PositionsOnStudents[]
+  permissionSlips      PermissionSlipSubmission[]
+  eventParticipation   StudentEventParticipation[]
+  lotteryAssignments   LotteryResults[]
+  school               School?                     @relation(fields: [schoolId], references: [id])
+  user                 User?                       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([lotteryPositionId], map: "Student_lotteryPositionId_fkey")
   @@index([schoolId], map: "Student_schoolId_fkey")
   @@index([schoolId, isActive])
 }
@@ -243,19 +242,21 @@ model LotteryResults {
   positionId   String
   createdAt    DateTime   @default(now())
   lotteryJob   LotteryJob @relation(fields: [lotteryJobId], references: [id], onDelete: Cascade)
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  position     Position   @relation(fields: [positionId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, lotteryJobId])
   @@index([lotteryJobId], map: "LotteryResults_lotteryJobId_fkey")
 }
 
 model StudentEventParticipation {
-  id            String   @id @default(cuid())
-  studentId     String
-  eventId       String
+  id             String   @id @default(cuid())
+  studentId      String
+  eventId        String
   participatedAt DateTime @default(now())
-  createdAt     DateTime @default(now())
-  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, eventId])
   @@index([studentId], map: "StudentEventParticipation_studentId_fkey")
@@ -342,23 +343,23 @@ enum RecipientType {
 }
 
 model Message {
-  id                String        @id @default(cuid())
-  senderId          String
-  senderEmail       String
-  schoolId          String
-  eventId           String?
-  messageType       MessageType
-  recipientType     RecipientType
-  recipientCount    Int
-  subject           String?       // For emails only
-  includeParents    Boolean       @default(false) // For student emails
-  sentAt            DateTime      @default(now())
-  status            String        @default("sent") // sent, failed, partial
-  errorMessage      String?       @db.VarChar(1024)
-  
-  sender            User          @relation(fields: [senderId], references: [id])
-  school            School        @relation(fields: [schoolId], references: [id])
-  
+  id             String        @id @default(cuid())
+  senderId       String
+  senderEmail    String
+  schoolId       String
+  eventId        String?
+  messageType    MessageType
+  recipientType  RecipientType
+  recipientCount Int
+  subject        String? // For emails only
+  includeParents Boolean       @default(false) // For student emails
+  sentAt         DateTime      @default(now())
+  status         String        @default("sent") // sent, failed, partial
+  errorMessage   String?       @db.VarChar(1024)
+
+  sender User   @relation(fields: [senderId], references: [id])
+  school School @relation(fields: [schoolId], references: [id])
+
   @@index([schoolId, sentAt])
   @@index([eventId, sentAt])
   @@index([senderId])
