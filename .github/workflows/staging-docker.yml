@@ -86,5 +86,5 @@ jobs:
       - name: "Build and Push Container"
         run: |-
           DOCKER_TAG="ghcr.io/rylero/jobcampstaging:latest"
-          docker buildx build -f staging.Dockerfile --tag "${DOCKER_TAG}" --build-arg DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}" --build-arg MAILTRAP_TOKEN="${{ secrets.MAILTRAP_TOKEN }}" .
+          docker buildx build -f staging.Dockerfile --tag "${DOCKER_TAG}" --build-arg DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"  .
           docker push "${DOCKER_TAG}"
