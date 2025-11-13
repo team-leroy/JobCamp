@@ -1,16 +1,29 @@
-import { z } from "zod"
+import { z } from "zod";
 
-import { isMobilePhone } from "$lib/server/auth";
+const phonePattern =
+	/^(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}$/;
 
 export const createStudentSchema = () => {
-    return z.object({
-        graduatingClassYear: z.number().int().min(2025).max(2035),
-        firstName: z.string().min(1),
-        lastName: z.string().min(1),
-        parentEmail: z.string().email("Please enter a valid email."),
-        phone: z.string().refine((arg) => isMobilePhone.test(arg), "Please enter a valid phone number."),
-        allowPhoneMessaging: z.literal(true, { errorMap: () => ({ message: "You must allow SMS messaging." })}),
-        email: z.string().email("Please enter a valid email."),
-        password: z.string().min(8, "Password must be at least 8 characters long."),
-    });
-}
+	return z.object({
+		grade: z
+			.string()
+			.refine(
+				(value) => ["9", "10", "11", "12"].includes(value),
+				{ message: "Please select a grade between 9-12." }
+			),
+		firstName: z.string().min(1),
+		lastName: z.string().min(1),
+		parentEmail: z.string().email("Please enter a valid email."),
+		phone: z
+			.string()
+			.refine(
+				(value) => phonePattern.test(value),
+				"Please enter a valid phone number in format (XXX) XXX-XXXX."
+			),
+		allowPhoneMessaging: z.literal(true, {
+			errorMap: () => ({ message: "You must allow SMS messaging." })
+		}),
+		email: z.string().email("Please enter a valid school email."),
+		password: z.string().min(8, "Password must be at least 8 characters long.")
+	});
+};

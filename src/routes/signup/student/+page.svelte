@@ -62,27 +62,23 @@
       >{/if}
 
     <div class="flex w-96 justify-between">
-      <label for="graduatingClassYear">Graduating Class</label>
+      <label for="grade">Grade</label>
       <select
         class="px-2 py-2 rounded w-52 min-w-52 border"
-        name="graduatingClassYear"
-        bind:value={$form.graduatingClassYear}
+        name="grade"
+        bind:value={$form.grade}
       >
-        {#each data.graduatingClassYearOptions as classYear}
-          <option
-            value={classYear}
-            selected={$form.graduatingClassYear == classYear}
-            >Class of {classYear}</option
-          >
+        <option value="" disabled>Select grade</option>
+        {#each data.gradeOptions as grade}
+          <option value={grade}>Grade {grade}</option>
         {/each}
       </select>
     </div>
-    {#if $errors.graduatingClassYear}<span class="text-sm text-red-500"
-        >{$errors.graduatingClassYear}</span
+    {#if $errors.grade}<span class="text-sm text-red-500">{$errors.grade}</span
       >{/if}
 
     <div class="flex w-96 justify-between">
-      <label for="email">Email</label>
+      <label for="email">School Email</label>
       <Input
         class="px-2 py-0.5 rounded w-52 min-w-52"
         type="text"
@@ -97,8 +93,9 @@
       <label for="phone">Phone</label>
       <Input
         class="px-2 py-0.5 rounded w-52 min-w-52"
-        type="text"
+        type="tel"
         name="phone"
+        placeholder="(555) 555-5555"
         bind:value={$form.phone}
       />
     </div>

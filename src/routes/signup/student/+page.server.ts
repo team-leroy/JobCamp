@@ -8,7 +8,8 @@ import { prisma } from '$lib/server/prisma';
 import { AuthError } from '$lib/server/authConstants';
 import { sendEmailVerificationEmail, sendPermissionSlipEmail, formatEmailDate, type EventEmailData } from '$lib/server/email';
 import { getNavbarData } from '$lib/server/navbarData';
-import { getGraduatingClassYearOptions } from '$lib/server/gradeUtils';
+import { getGraduatingClassYear } from '$lib/server/gradeUtils';
+import { formatPhoneNumber } from '$lib/server/twilio';
 
 
 export const load: PageServerLoad = async (event) => {
@@ -38,15 +39,12 @@ export const load: PageServerLoad = async (event) => {
     // Get navbar data
     const navbarData = await getNavbarData();
 
-    // Calculate graduating class year options based on active event date
-    const graduatingClassYearOptions = activeEvent?.date
-        ? getGraduatingClassYearOptions(activeEvent.date)
-        : [];
+    const gradeOptions = ['9', '10', '11', '12'];
 
     return { 
         form, 
         schoolMapping, 
-        graduatingClassYearOptions,
+        gradeOptions,
         ...navbarData 
     };
 };
@@ -66,12 +64,23 @@ export const actions: Actions = {
         }
 
         if (!schoolEmailCheck(school.emailDomain).test(form.data.email)) {
-            return setError(form, "email", "Please enter your school email.")
+            return setError(form, "email", "Please enter a valid school email.")
         }
 
         if (form.data.parentEmail == form.data.email) {
             return setError(form, "parentEmail", "Please enter a different email.")
         }
+
+        const activeEvent = await prisma.event.findFirst({
+            where: { isActive: true }
+        });
+
+        const gradeNumber = Number(form.data.grade);
+        const graduatingClassYear = getGraduatingClassYear(
+            gradeNumber,
+            activeEvent?.date ?? new Date()
+        );
+        const normalizedPhone = formatPhoneNumber(form.data.phone);
 
         const userId = await signup(form.data.email, form.data.password, event);
         if (userId == AuthError.AccountExists) {
@@ -89,8 +98,8 @@ export const actions: Actions = {
                         create: {
                             firstName: form.data.firstName, // TODO: lastName
                             lastName: form.data.lastName,
-                            graduatingClassYear: form.data.graduatingClassYear,
-                            phone: form.data.phone,
+                            graduatingClassYear,
+                            phone: normalizedPhone,
                             parentEmail: form.data.parentEmail,
                             school: {
                                 connect: {
@@ -106,11 +115,6 @@ export const actions: Actions = {
         // runs in background while user is redirected
         const code = await generateEmailVerificationCode(userId, user.email)
         await sendEmailVerificationEmail(userId, user.email, code);
-
-        // Get active event for permission slip email
-        const activeEvent = await prisma.event.findFirst({
-            where: { isActive: true }
-        });
 
         if (activeEvent) {
             const eventData: EventEmailData = {

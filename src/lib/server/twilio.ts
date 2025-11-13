@@ -20,7 +20,7 @@ interface SendSMSResult {
  * Format phone number to E.164 format
  * Assumes US phone numbers if no country code provided
  */
-function formatPhoneNumber(phone: string): string {
+export function formatPhoneNumber(phone: string): string {
   // Remove all non-numeric characters
   const cleaned = phone.replace(/\D/g, '');
   
