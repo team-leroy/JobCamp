@@ -370,25 +370,46 @@
           <Accordion.Item value={position.id} class="my-2 relative">
             {#if data.studentSignupsEnabled}
               {#if i != positions.posList.length - 1}
-                <ArrowBigDown
-                  class={"absolute left-5 hover:cursor-pointer" +
+                <button
+                  type="button"
+                  class={"absolute left-5 hover:cursor-pointer z-10 p-1 [touch-action:manipulation]" +
                     (i == 0 ? " top-12" : " top-20")}
-                  size={32}
-                  onclick={() => moveUp(position.id)}
-                />
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    moveUp(position.id);
+                  }}
+                  aria-label="Move position down"
+                >
+                  <ArrowBigDown size={32} />
+                </button>
               {/if}
               {#if i != 0}
-                <ArrowBigUp
-                  class="absolute top-12 left-5 hover:cursor-pointer"
-                  size={32}
-                  onclick={() => moveDown(position.id)}
-                />
+                <button
+                  type="button"
+                  class="absolute top-12 left-5 hover:cursor-pointer z-10 p-1 [touch-action:manipulation]"
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    moveDown(position.id);
+                  }}
+                  aria-label="Move position up"
+                >
+                  <ArrowBigUp size={32} />
+                </button>
               {/if}
-              <Trash2Icon
-                class="absolute left-[20px] top-3 hover:cursor-pointer"
-                onclick={() => deletePosition(position.id)}
-                size={32}
-              />
+              <button
+                type="button"
+                class="absolute left-[20px] top-3 hover:cursor-pointer z-10 p-1 [touch-action:manipulation]"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  deletePosition(position.id);
+                }}
+                aria-label="Delete position"
+              >
+                <Trash2Icon size={32} />
+              </button>
             {/if}
             <Accordion.Trigger
               class={"text-xl text-left bg-slate-100 hover:bg-slate-200 rounded-t-sm px-5" +
