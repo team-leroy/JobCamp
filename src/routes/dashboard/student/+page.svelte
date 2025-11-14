@@ -68,7 +68,6 @@
     if (!data.hasActiveEvent) {
       return {
         label: "Waiting for Event",
-        tone: "text-slate-500",
         helper:
           "We’ll let you know as soon as the next JobCamp event launches.",
       };
@@ -77,7 +76,6 @@
     if (!data.permissionSlipCompleted) {
       return {
         label: "Complete Permission Slip",
-        tone: "text-amber-600",
         helper:
           "Get the permission slip signed so you can add your favorite jobs.",
       };
@@ -86,14 +84,12 @@
     if (!data.studentSignupsEnabled) {
       return {
         label: "Signups Closed",
-        tone: "text-slate-500",
         helper: "You can review your picks, but changes are currently locked.",
       };
     }
 
     return {
       label: "Build Your Picks",
-      tone: "text-emerald-600",
       helper: "Add or reorder your favorite jobs below.",
     };
   })();
@@ -224,6 +220,22 @@
     </div>
 
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        class="rounded-lg border border-orange-500 bg-orange-500 p-3 text-white shadow-sm"
+      >
+        <p
+          class="text-xs font-semibold uppercase tracking-wide text-orange-100"
+        >
+          Next Step
+        </p>
+        <p class="mt-1 text-lg font-semibold text-white">
+          {nextStepSummary.label}
+        </p>
+        <p class="mt-1 text-xs text-orange-50 leading-snug">
+          {nextStepSummary.helper}
+        </p>
+      </div>
+
       <div class="rounded-lg border bg-white p-3 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Permission Slip
@@ -273,21 +285,6 @@
         </p>
         <p class="mt-1 text-xs text-slate-600 leading-snug">
           {lotterySummary.helper}
-        </p>
-      </div>
-
-      <div class="rounded-lg border bg-white p-3 shadow-sm">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Next Step
-        </p>
-        <p
-          class={"mt-1 text-lg font-semibold text-slate-900 " +
-            nextStepSummary.tone}
-        >
-          {nextStepSummary.label}
-        </p>
-        <p class="mt-1 text-xs text-slate-600 leading-snug">
-          {nextStepSummary.helper}
         </p>
       </div>
     </div>
