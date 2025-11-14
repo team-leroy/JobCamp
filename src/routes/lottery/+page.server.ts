@@ -67,9 +67,9 @@ export const load: PageServerLoad = async ({ locals }) => {
     });
 
     let lotteryStats = null;
-    if (latestJob) {
+    if (latestJob && activeEvent) {
         // Calculate choice statistics
-        const stats = await calculateLotteryStats(latestJob.results);
+        const stats = await calculateLotteryStats(latestJob.results, activeEvent.id);
         
         // Get admin email
         const admin = await prisma.user.findUnique({
@@ -272,11 +272,18 @@ export const load: PageServerLoad = async ({ locals }) => {
     };
 }
 
-async function calculateLotteryStats(results: { studentId: string; positionId: string }[]) {
-    // Get all students who made choices
+async function calculateLotteryStats(results: { studentId: string; positionId: string }[], activeEventId: string) {
+    // Get all students who made choices for the active event
+    // Only count students who have positions from the active event
     const allStudentsWithChoices = await prisma.student.findMany({
         where: {
-            positionsSignedUpFor: { some: {} }
+            positionsSignedUpFor: {
+                some: {
+                    position: {
+                        eventId: activeEventId
+                    }
+                }
+            }
         },
         select: { id: true }
     });
@@ -302,9 +309,14 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
     };
 
     for (const result of results) {
-        // Get student's choices in order
+        // Get student's choices in order for the active event
         const studentChoices = await prisma.positionsOnStudents.findMany({
-            where: { studentId: result.studentId },
+            where: { 
+                studentId: result.studentId,
+                position: {
+                    eventId: activeEventId
+                }
+            },
             orderBy: { rank: 'asc' }
         });
 
