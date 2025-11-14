@@ -3,6 +3,7 @@ import type { Actions } from "./$types";
 import { lucia } from "$lib/server/auth";
 import type { PageServerLoad } from "./$types";
 import { prisma } from "$lib/server/prisma";
+import { needsContactInfoVerification } from "$lib/server/contactInfoVerification";
 
 interface UserData {
     userInfo: {
@@ -72,6 +73,23 @@ export const load: PageServerLoad = async ({ locals }) => {
                 message: "Student accounts are currently disabled. Please contact your administrator."
             };
         }
+
+        // Check if contact info verification is needed for the active event
+        const student = await prisma.student.findFirst({
+            where: { userId: locals.user.id }
+        });
+
+        if (student) {
+            const contactInfoVerificationNeeded = await needsContactInfoVerification(
+                student.id,
+                student.schoolId
+            );
+
+            if (contactInfoVerificationNeeded) {
+                redirect(302, "/verify-contact-info");
+            }
+        }
+
         redirect(302, "/dashboard/student");
     }
 

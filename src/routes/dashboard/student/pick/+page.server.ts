@@ -5,6 +5,7 @@ import { generatePermissionSlipCode } from '$lib/server/auth';
 import { sendPermissionSlipEmail } from '$lib/server/email';
 import { getPermissionSlipStatus } from '$lib/server/permissionSlips';
 import { trackStudentParticipation, getActiveEventIdForSchool } from '$lib/server/studentParticipation';
+import { needsContactInfoVerification } from '$lib/server/contactInfoVerification';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -54,6 +55,16 @@ export const load: PageServerLoad = async ({ locals }) => {
     const studentId = student?.id;
     if (!studentId) {
         redirect(302, "/login");
+    }
+
+    // Check if contact info verification is needed for the active event
+    const contactInfoVerificationNeeded = await needsContactInfoVerification(
+        studentId,
+        student.schoolId
+    );
+
+    if (contactInfoVerificationNeeded) {
+        redirect(302, "/verify-contact-info");
     }
 
     // Get permission slip status for the active event

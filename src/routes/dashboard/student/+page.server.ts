@@ -5,6 +5,7 @@ import { generatePermissionSlipCode, schoolEmailCheck } from "$lib/server/auth";
 import { sendPermissionSlipEmail, formatEmailDate, type EventEmailData } from "$lib/server/email";
 import { getPermissionSlipStatus } from "$lib/server/permissionSlips";
 import { trackStudentParticipation, getActiveEventIdForSchool } from "$lib/server/studentParticipation";
+import { needsContactInfoVerification } from "$lib/server/contactInfoVerification";
 
 export const load: PageServerLoad = async (event) => {
     if (!event.locals.user) {
@@ -20,6 +21,16 @@ export const load: PageServerLoad = async (event) => {
     
     if (!student) {
         redirect(302, "/dashboard");
+    }
+
+    // Check if contact info verification is needed for the active event
+    const contactInfoVerificationNeeded = await needsContactInfoVerification(
+        student.id,
+        student.schoolId
+    );
+
+    if (contactInfoVerificationNeeded) {
+        redirect(302, "/verify-contact-info");
     }
 
     // Check event controls for lottery result visibility

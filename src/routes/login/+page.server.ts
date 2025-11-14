@@ -111,6 +111,23 @@ export const actions: Actions = {
             redirect(302, "/verify-email");
         }
 
+        // Check if student needs to verify contact info for the active event
+        if (existingUser.student && activeEvent) {
+            const participation = await prisma.studentEventParticipation.findUnique({
+                where: {
+                    studentId_eventId: {
+                        studentId: existingUser.student.id,
+                        eventId: activeEvent.id
+                    }
+                }
+            });
+
+            // If no participation record exists, or if it exists but contact info hasn't been verified
+            if (!participation || !participation.contactInfoVerifiedAt) {
+                redirect(302, "/verify-contact-info");
+            }
+        }
+
         redirect(302, "/dashboard");
     }
 }
