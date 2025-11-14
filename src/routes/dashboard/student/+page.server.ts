@@ -7,6 +7,24 @@ import { getPermissionSlipStatus } from "$lib/server/permissionSlips";
 import { trackStudentParticipation, getActiveEventIdForSchool } from "$lib/server/studentParticipation";
 import { needsContactInfoVerification } from "$lib/server/contactInfoVerification";
 
+/**
+ * Check if lottery is published for the active event in a school
+ * Returns true if lottery is published (edits should be blocked), false otherwise
+ */
+async function isLotteryPublished(schoolId: string | null): Promise<boolean> {
+    if (!schoolId) return false;
+    
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            schoolId,
+            isActive: true
+        },
+        select: { lotteryPublished: true }
+    });
+    
+    return activeEvent?.lotteryPublished ?? false;
+}
+
 export const load: PageServerLoad = async (event) => {
     if (!event.locals.user) {
         redirect(302, "/login");
@@ -241,6 +259,11 @@ export const actions: Actions = {
             redirect(302, "/login");
         }
 
+        // Check if lottery is published - if so, prevent edits
+        if (await isLotteryPublished(student.schoolId)) {
+            return;
+        }
+
         const positions = posIds.map((val: string, i: number) => {
             return {
                 rank: i,
@@ -285,6 +308,26 @@ export const actions: Actions = {
             redirect(302, "/login");
         }
 
+        // Check if lottery is published - if so, prevent edits
+        if (await isLotteryPublished(student.schoolId)) {
+            return;
+        }
+
+        // Check if the record exists before trying to delete (makes it idempotent)
+        const existingRecord = await prisma.positionsOnStudents.findUnique({
+            where: {
+                positionId_studentId: {
+                    positionId: posId,
+                    studentId: studentId
+                }
+            }
+        });
+
+        // If record doesn't exist, nothing to delete - return early
+        if (!existingRecord) {
+            return;
+        }
+
         await prisma.positionsOnStudents.delete({
             where: {
                 positionId_studentId: {
@@ -300,19 +343,21 @@ export const actions: Actions = {
             orderBy: { rank: "asc" }
         });
 
-        await prisma.$transaction(
-            remainingPositions.map((pos, index) =>
-                prisma.positionsOnStudents.update({
-                    where: {
-                        positionId_studentId: {
-                            positionId: pos.positionId,
-                            studentId: studentId
-                        }
-                    },
-                    data: { rank: index }
-                })
-            )
-        );
+        if (remainingPositions.length > 0) {
+            await prisma.$transaction(
+                remainingPositions.map((pos, index) =>
+                    prisma.positionsOnStudents.update({
+                        where: {
+                            positionId_studentId: {
+                                positionId: pos.positionId,
+                                studentId: studentId
+                            }
+                        },
+                        data: { rank: index }
+                    })
+                )
+            );
+        }
     },
     move: async({ request, locals }) => {
         const data = await request.formData();
@@ -335,6 +380,11 @@ export const actions: Actions = {
             redirect(302, "/login");
         }
 
+        // Check if lottery is published - if so, prevent edits
+        if (await isLotteryPublished(student.schoolId)) {
+            return;
+        }
+
         const positions = await prisma.positionsOnStudents.findMany({
             where: { studentId: studentId },
             orderBy: { rank: "asc" }
@@ -346,12 +396,18 @@ export const actions: Actions = {
         const newIndex = dir === "up" ? currentIndex - 1 : currentIndex + 1;
         if (newIndex < 0 || newIndex >= positions.length) return;
 
+        // Verify both records still exist before updating
+        const currentPos = positions[currentIndex];
+        const newPos = positions[newIndex];
+        
+        if (!currentPos || !newPos) return;
+
         // Swap ranks
         await prisma.$transaction([
             prisma.positionsOnStudents.update({
                 where: {
                     positionId_studentId: {
-                        positionId: positions[currentIndex].positionId,
+                        positionId: currentPos.positionId,
                         studentId: studentId
                     }
                 },
@@ -360,7 +416,7 @@ export const actions: Actions = {
             prisma.positionsOnStudents.update({
                 where: {
                     positionId_studentId: {
-                        positionId: positions[newIndex].positionId,
+                        positionId: newPos.positionId,
                         studentId: studentId
                     }
                 },
