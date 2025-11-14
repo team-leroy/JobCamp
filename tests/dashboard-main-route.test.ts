@@ -18,8 +18,15 @@ vi.mock('../src/lib/server/prisma', () => ({
         position: {
             findMany: vi.fn(),
             delete: vi.fn()
+        },
+        student: {
+            findFirst: vi.fn()
         }
     }
+}));
+
+vi.mock('../src/lib/server/contactInfoVerification', () => ({
+    needsContactInfoVerification: vi.fn().mockResolvedValue(false)
 }));
 
 vi.mock('../src/lib/server/auth', () => ({
@@ -124,9 +131,16 @@ describe('Dashboard Main Route', () => {
         it('should redirect to student dashboard when user is student and student accounts are enabled', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
+            const mockStudent = {
+                id: 'student-123',
+                userId: 'user-123',
+                schoolId: 'school-123'
+            };
+            
             vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
             vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
             vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);
+            vi.mocked(prisma.student.findFirst).mockResolvedValue(mockStudent);
             
             try {
                 await load({ 
@@ -472,7 +486,14 @@ describe('Dashboard Main Route', () => {
         it('should correctly handle student access when student accounts are enabled but company accounts are disabled', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
+            const mockStudent = {
+                id: 'student-123',
+                userId: 'user-123',
+                schoolId: 'school-123'
+            };
+            
             vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
+            vi.mocked(prisma.student.findFirst).mockResolvedValue(mockStudent);
             vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
             vi.mocked(prisma.event.findFirst).mockResolvedValue({
                 ...mockActiveEvent,

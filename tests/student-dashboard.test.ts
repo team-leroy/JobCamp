@@ -26,6 +26,9 @@ const mockPrisma = {
     importantDate: {
         findMany: vi.fn()
     },
+    studentEventParticipation: {
+        findUnique: vi.fn()
+    },
     $transaction: vi.fn()
 };
 
@@ -41,6 +44,10 @@ vi.mock('$lib/server/permissionSlips', () => ({
         eventName: 'Test Event',
         hasActiveEvent: true
     })
+}));
+
+vi.mock('$lib/server/contactInfoVerification', () => ({
+    needsContactInfoVerification: vi.fn().mockResolvedValue(false)
 }));
 
 vi.mock('@sveltejs/kit', async () => {
