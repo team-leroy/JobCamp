@@ -69,7 +69,7 @@
       return {
         label: "Waiting for Event",
         helper:
-          "We’ll let you know as soon as the next JobCamp event launches.",
+          "We'll let you know as soon as the next JobCamp event launches.",
       };
     }
 
@@ -78,6 +78,15 @@
         label: "Complete Permission Slip",
         helper:
           "Get the permission slip signed so you can add your favorite jobs.",
+      };
+    }
+
+    // If lottery is published and student has been assigned, show review dates message
+    if (data.lotteryPublished && data.lotteryResult) {
+      return {
+        label: "Review important dates",
+        helper:
+          "Check the important dates section for upcoming deadlines and events.",
       };
     }
 
