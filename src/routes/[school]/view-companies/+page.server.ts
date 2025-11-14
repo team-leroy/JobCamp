@@ -33,6 +33,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     const directoryAccessible = Boolean(activeEvent?.isActive) && companyDirectoryEnabled;
 
     let positionData = [];
+    let archivedEventCompanies: string[] = [];
+    
     if (directoryAccessible) {
         positionData = await prisma.position.findMany({
             where: {
@@ -50,6 +52,39 @@ export const load: PageServerLoad = async ({ params, locals }) => {
                 }
             }
         });
+    } else {
+        // Get the last archived event for this school
+        const lastArchivedEvent = await prisma.event.findFirst({
+            where: {
+                schoolId: school.id,
+                isArchived: true
+            },
+            orderBy: {
+                date: 'desc'
+            },
+            include: {
+                positions: {
+                    include: {
+                        host: {
+                            include: {
+                                company: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Extract unique company names from the archived event
+        if (lastArchivedEvent) {
+            const companyNamesSet = new Set<string>();
+            lastArchivedEvent.positions.forEach(position => {
+                if (position.host?.company?.companyName) {
+                    companyNamesSet.add(position.host.company.companyName);
+                }
+            });
+            archivedEventCompanies = Array.from(companyNamesSet).sort();
+        }
     }
 
     // Get navbar data
@@ -64,6 +99,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         companyDirectoryEnabled,
         directoryAccessible,
         eventName: activeEvent?.name || null,
+        archivedEventCompanies,
         ...navbarData
     };
 }

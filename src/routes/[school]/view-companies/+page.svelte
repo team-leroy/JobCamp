@@ -56,45 +56,38 @@
 />
 
 {#if !data.directoryAccessible}
-  <!-- Directory Not Available Message -->
-  <div class="w-full mt-28 flex flex-col items-center">
-    <div class="max-w-2xl w-full px-4">
-      <div class="p-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
-        <div class="flex">
-          <div class="ml-3">
-            <h3 class="text-lg font-medium text-yellow-800">
-              Company Directory Not Available
-            </h3>
-            {#if !data.hasActiveEvent}
-              <p class="mt-2 text-sm text-yellow-700">
-                There are currently no active events. The company directory will
-                be available when a new event is created and enabled.
-              </p>
-            {:else if !data.directoryAccessible}
-              <p class="mt-2 text-sm text-yellow-700">
-                {data.eventName || "The current event"} is in preparation mode. The
-                company directory will be available when the event is enabled.
-              </p>
-            {:else if !data.companyDirectoryEnabled}
-              <p class="mt-2 text-sm text-yellow-700">
-                The company directory is currently disabled for {data.eventName ||
-                  "this event"}. Please check back later.
-              </p>
-            {/if}
-            {#if data.isAdmin}
-              <div class="mt-4 pt-4 border-t border-yellow-200">
-                <p class="text-sm text-yellow-600">
-                  As an administrator, you can manage event controls in the <a
-                    href="/dashboard/admin/event-mgmt"
-                    class="text-yellow-800 hover:underline font-medium"
-                    >Event Management</a
-                  > section.
-                </p>
-              </div>
-            {/if}
-          </div>
+  <!-- Show archived event companies list -->
+  <div class="w-full mt-28 flex flex-col items-center px-4">
+    <div class="max-w-6xl w-full">
+      <h2 class="text-2xl font-semibold text-slate-900 mb-6 text-center">
+        Below is a list of companies that participated in our last JobCamp event
+      </h2>
+      {#if data.archivedEventCompanies && data.archivedEventCompanies.length > 0}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {#each data.archivedEventCompanies as companyName}
+            <div
+              class="p-4 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+            >
+              <p class="text-slate-900 font-medium">{companyName}</p>
+            </div>
+          {/each}
         </div>
-      </div>
+      {:else}
+        <div class="text-center py-8 text-slate-600">
+          <p>No previous event data available.</p>
+        </div>
+      {/if}
+      {#if data.isAdmin}
+        <div class="mt-8 pt-4 border-t border-slate-200 text-center">
+          <p class="text-sm text-slate-600">
+            As an administrator, you can manage event controls in the <a
+              href="/dashboard/admin/event-mgmt"
+              class="text-blue-600 hover:underline font-medium"
+              >Event Management</a
+            > section.
+          </p>
+        </div>
+      {/if}
     </div>
   </div>
 {:else}
