@@ -13,8 +13,16 @@
 
 <div class="h-24"></div>
 
+{#if data.companyName}
+  <div class="mx-10 mb-4">
+    <h2 class="text-xl font-semibold text-slate-700">
+      Company: {data.companyName}
+    </h2>
+  </div>
+{/if}
+
 <h1 class="mx-10 my-2 text-2xl">
-  Positions for Los Gatos High School JobCamp day: {data.eventDate
+  Positions for {data.eventName}: {data.eventDate
     ? data.eventDate.toLocaleDateString("en-US", {
         weekday: "long",
         year: "numeric",

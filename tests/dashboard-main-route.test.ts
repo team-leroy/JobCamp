@@ -198,13 +198,28 @@ describe('Dashboard Main Route', () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
             const mockPositions = [
-                { id: 'pos-1', title: 'Software Engineer', attachments: [] },
-                { id: 'pos-2', title: 'Data Analyst', attachments: [] }
+                { id: 'pos-1', title: 'Software Engineer', attachments: [], isPublished: false },
+                { id: 'pos-2', title: 'Data Analyst', attachments: [], isPublished: true }
             ];
             
+            const mockCompanyName = 'Test Company';
+            const mockEventDate = new Date('2025-11-25');
+            
             vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(mockHostInfo);
-            vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);
+            // First call - basic host info
+            vi.mocked(prisma.host.findFirst).mockResolvedValueOnce(mockHostInfo);
+            // Second call - host with company
+            vi.mocked(prisma.host.findFirst).mockResolvedValueOnce({
+                ...mockHostInfo,
+                company: {
+                    companyName: mockCompanyName
+                }
+            });
+            vi.mocked(prisma.event.findFirst).mockResolvedValue({
+                ...mockActiveEvent,
+                name: 'Test Event',
+                date: mockEventDate
+            });
             vi.mocked(prisma.position.findMany).mockResolvedValue(mockPositions);
             
             const result = await load({ 
@@ -216,8 +231,10 @@ describe('Dashboard Main Route', () => {
                 userData: mockUser,
                 isCompany: true,
                 companySignupsEnabled: false,
-                eventName: "JobCamp",
-                hasUnpublishedPositions: true
+                eventName: "Test Event",
+                eventDate: mockEventDate,
+                hasUnpublishedPositions: true,
+                companyName: mockCompanyName
             });
             
             expect(prisma.position.findMany).toHaveBeenCalledWith({
@@ -513,10 +530,23 @@ describe('Dashboard Main Route', () => {
             
             const mockPositions = [{ id: 'pos-1', title: 'Test Position', attachments: [] }];
             
+            const mockCompanyName = 'Test Company';
+            const mockEventDate = new Date('2025-11-25');
+            
             vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(mockHostInfo);
+            // First call - basic host info
+            vi.mocked(prisma.host.findFirst).mockResolvedValueOnce(mockHostInfo);
+            // Second call - host with company
+            vi.mocked(prisma.host.findFirst).mockResolvedValueOnce({
+                ...mockHostInfo,
+                company: {
+                    companyName: mockCompanyName
+                }
+            });
             vi.mocked(prisma.event.findFirst).mockResolvedValue({
                 ...mockActiveEvent,
+                name: 'Test Event',
+                date: mockEventDate,
                 studentAccountsEnabled: false,
                 companyAccountsEnabled: true
             });
@@ -531,8 +561,10 @@ describe('Dashboard Main Route', () => {
                 userData: mockUser,
                 isCompany: true,
                 companySignupsEnabled: false,
-                eventName: "JobCamp",
-                hasUnpublishedPositions: true
+                eventName: "Test Event",
+                eventDate: mockEventDate,
+                hasUnpublishedPositions: true,
+                companyName: mockCompanyName
             });
         });
 

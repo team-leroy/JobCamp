@@ -47,6 +47,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     const { userInfo, hostInfo } = await grabUserData(locals);
 
+    // Get host with company information for company dashboard
+    let companyName: string | null = null;
+    if (hostInfo) {
+        const hostWithCompany = await prisma.host.findFirst({
+            where: { id: hostInfo.id },
+            include: { company: true }
+        });
+        companyName = hostWithCompany?.company?.companyName || null;
+    }
+
     // Check event controls for access permissions
     const activeEvent = await prisma.event.findFirst({
         where: {
@@ -122,7 +132,8 @@ export const load: PageServerLoad = async ({ locals }) => {
         companySignupsEnabled,
         eventName: activeEvent?.name || "JobCamp",
         eventDate: activeEvent?.date,
-        hasUnpublishedPositions
+        hasUnpublishedPositions,
+        companyName
     };
 };
 
