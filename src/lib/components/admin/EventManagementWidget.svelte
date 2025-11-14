@@ -29,16 +29,6 @@
   }: { schoolEvents?: EventWithFilteredStats[]; form?: FormResult | null } =
     $props();
 
-  // Debug: Log schoolEvents on component load/update
-  console.log("🏫 EventManagementWidget rendered with schoolEvents:", {
-    count: schoolEvents.length,
-    events: schoolEvents.map((e) => ({
-      id: e.id,
-      name: e.name,
-      isActive: e.isActive,
-    })),
-  });
-
   let isActivating = $state(false);
   let isDeleting = $state(false);
   let expandedEventId = $state<string | null>(null);
@@ -62,8 +52,6 @@
 
       form.appendChild(eventIdInput);
       document.body.appendChild(form);
-
-      console.log("🔄 Submitting activation form for event:", eventId);
       form.submit();
     }
   }
@@ -122,8 +110,6 @@ Continue with deletion?`;
 
       form.appendChild(eventIdInput);
       document.body.appendChild(form);
-
-      console.log("🔄 Submitting deletion form for event:", eventId);
       form.submit();
     }
   }
