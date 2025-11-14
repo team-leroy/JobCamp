@@ -192,7 +192,7 @@
 
 <Navbar loggedIn={true} isHost={false} isAdmin={false} />
 
-<section class="w-full border-b bg-slate-50/60 mb-6 mt-16 sm:mt-20">
+<section class="w-full border-b bg-slate-50/60 mb-6 mt-20 sm:mt-20">
   <div
     class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8"
   >
@@ -291,7 +291,7 @@
   </div>
 </section>
 
-<div class="flex flex-col md:flex-row w-full min-h-screen pt-20">
+<div class="flex flex-col md:flex-row w-full min-h-screen pt-4 sm:pt-20">
   <div
     class={"flex flex-col gap-2 justify-start items-center md:m-4" + leftWidth}
   >
@@ -446,6 +446,52 @@
   </div>
   <div class="flex flex-col w-full md:border-l-2 md:border-l-slate-950">
     {#if !data.permissionSlipCompleted}
+      <!-- Mobile version -->
+      <div
+        class="flex sm:hidden flex-col px-4 py-4 border rounded-lg m-3 bg-yellow-100"
+      >
+        <span class="text-base sm:text-2xl mb-3"
+          >To add Favorite Jobs, your parent permission slip must be completed.
+          To resend the permission slip, enter your parent's email address:</span
+        >
+        <form
+          class="flex flex-col gap-3"
+          method="post"
+          action="?/sendPermissionSlip"
+          use:enhance
+        >
+          <Label
+            >Parent Email<Input
+              type="email"
+              name="parent-email"
+              bind:value={data.parentEmail}
+              class="w-full"
+            /></Label
+          >
+          <button
+            type="submit"
+            class="w-full px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-md text-white"
+            >Send</button
+          >
+          {#if form && form.sent}
+            <span class="text-green-500 text-lg font-bold">Sent</span>
+          {:else if form?.err}
+            {#if form?.reason === "school-domain"}
+              <span class="text-red-500 text-sm font-semibold">
+                Parent email cannot use school email domain (
+                {form.schoolDomain ?? "@lgsstudent.org"}). Please provide a
+                different email.
+              </span>
+            {:else}
+              <span class="text-red-500 text-sm font-semibold">
+                Internal error. Please try again.
+              </span>
+            {/if}
+          {/if}
+        </form>
+      </div>
+
+      <!-- Desktop version -->
       <div
         class="hidden sm:flex flex-col px-10 py-4 border rounded-lg m-3 bg-yellow-100"
       >
