@@ -77,10 +77,11 @@ model Position {
 }
 
 model Attachment {
-  id         String   @id @default(cuid())
-  positionId String
-  fileName   String
-  position   Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  positionId  String
+  fileName    String   // Original filename
+  storagePath String   // GCS storage path (e.g., "Position-Title-filename.pdf")
+  position    Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
 
   @@index([positionId], map: "Attachment_positionId_fkey")
 }

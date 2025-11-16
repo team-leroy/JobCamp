@@ -1,16 +1,27 @@
 <script lang="ts">
   import { buttonVariants } from "$lib/components/ui/button";
+  import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea";
   import { careers } from "$lib/appconfig";
   import { superForm } from "sveltekit-superforms";
+  import { Trash2 } from "lucide-svelte";
+  import { enhance } from "$app/forms";
 
   let { data, formTitle, buttonName } = $props();
 
-  const { form, errors, enhance } = superForm(data.form, {
+  const {
+    form,
+    errors,
+    enhance: formEnhance,
+  } = superForm(data.form, {
     resetForm: false,
   });
+
+  function getPositionId(): string | null {
+    return $form.positionId || null;
+  }
 </script>
 
 <div class="mt-32 mb-5 w-full flex justify-center items-center">
@@ -21,7 +32,7 @@
       ? "?/publishPosition&posId=" + $form.positionId
       : "?/publishPosition"}
     class="z-0 relative md:border-2 px-10 py-8 md:rounded-lg w-[700px] mx-5 flex flex-col gap-4 items-center justify-center"
-    use:enhance
+    use:formEnhance
   >
     <h1 class="text-xl">{formTitle}</h1>
 
@@ -201,22 +212,84 @@
         >{/if}
     </div>
 
-    <!-- <div class="flex w-full max-w-sm flex-col gap-1.5 mb-5">
-            <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
-                <Label class="text-lg" for="attachment1">Attachment 1</Label>
-                <Input bind:value={$form.attachment1} class="w-64" name="attachment1" id="attachment1" type="file" />
-            </div>
-            {#if $errors.attachment1}<span class="text-sm text-red-500 text-right">{$errors.attachment1}</span>{/if}
-        </div>
+    <div class="flex w-full max-w-sm flex-col gap-1.5 mb-5">
+      <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
+        <Label class="text-lg" for="attachment1">Attachment 1</Label>
+        <Input
+          bind:value={$form.attachment1}
+          class="w-64"
+          name="attachment1"
+          id="attachment1"
+          type="file"
+        />
+      </div>
+      {#if $errors.attachment1}<span class="text-sm text-red-500 text-right"
+          >{$errors.attachment1}</span
+        >{/if}
+    </div>
 
-        <div class="flex w-full max-w-sm flex-col gap-1.5 mb-5">
-            <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
-                <Label class="text-lg" for="attachments">Attachment 2</Label>
-                <Input bind:value={$form.attachment2} class="w-64" name="attachment2" id="attachment2" type="file" />
+    <div class="flex w-full max-w-sm flex-col gap-1.5 mb-5">
+      <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
+        <Label class="text-lg" for="attachment2">Attachment 2</Label>
+        <Input
+          bind:value={$form.attachment2}
+          class="w-64"
+          name="attachment2"
+          id="attachment2"
+          type="file"
+        />
+      </div>
+      {#if $errors.attachment2}<span class="text-sm text-red-500 text-right"
+          >{$errors.attachment2}</span
+        >{/if}
+    </div>
+
+    {#if data.position && data.position.attachments && data.position.attachments.length > 0}
+      <div class="flex w-full max-w-sm flex-col gap-2 mb-5">
+        <Label class="text-lg">Existing Attachments</Label>
+        <div class="space-y-2">
+          {#each data.position.attachments as attachment}
+            <div
+              class="flex items-center justify-between p-2 border border-slate-200 rounded-md bg-slate-50"
+            >
+              <span class="text-sm text-slate-700 truncate flex-1 mr-2">
+                {attachment.fileName}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 h-auto"
+                onclick={async () => {
+                  const form = document.createElement("form");
+                  form.method = "POST";
+                  form.action = getPositionId()
+                    ? `?/deleteAttachment&posId=${getPositionId()}`
+                    : "#";
+
+                  const attachmentIdInput = document.createElement("input");
+                  attachmentIdInput.type = "hidden";
+                  attachmentIdInput.name = "attachmentId";
+                  attachmentIdInput.value = attachment.id;
+                  form.appendChild(attachmentIdInput);
+
+                  const posIdInput = document.createElement("input");
+                  posIdInput.type = "hidden";
+                  posIdInput.name = "posId";
+                  posIdInput.value = getPositionId() || "";
+                  form.appendChild(posIdInput);
+
+                  document.body.appendChild(form);
+                  form.submit();
+                }}
+              >
+                <Trash2 class="h-4 w-4" />
+              </Button>
             </div>
-            {#if $errors.attachattachment2ments}<span class="text-sm text-red-500 text-right">{$errors.attachment2}</span>{/if}
+          {/each}
         </div>
-         -->
+      </div>
+    {/if}
 
     <div class="w-full flex justify-center gap-4">
       <a
