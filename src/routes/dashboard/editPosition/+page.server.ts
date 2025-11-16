@@ -114,9 +114,9 @@ export const actions: Actions = {
             attachmentsForm.push(form.data.attachment2);
         }
 
-        const attachments: any = [];
+        const attachments: Array<{ fileName: string; storagePath: string }> = [];
 
-        for (var i = 0; i < attachmentsForm.length; i++) {
+        for (let i = 0; i < attachmentsForm.length; i++) {
             const fileToSave = attachmentsForm[i];
             try {
                 const bytes = await fileToSave.bytes();

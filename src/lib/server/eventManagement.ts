@@ -518,6 +518,91 @@ export async function deleteEvent(eventId: string, schoolId: string): Promise<{ 
 }
 
 /**
+ * FORCE delete an event and all related data.
+ * WARNING: This irreversibly removes student signups, manual assignments, lottery history,
+ * attachments and positions associated with the event.
+ *
+ * This should only be used for test data cleanup or in exceptional cases where preserving
+ * history is not required.
+ */
+export async function forceDeleteEvent(eventId: string, schoolId: string): Promise<{ success: boolean; message: string }> {
+  // Verify event exists and belongs to the school
+  const event = await prisma.event.findFirst({
+    where: {
+      id: eventId,
+      schoolId
+    }
+  });
+
+  if (!event) {
+    return { success: false, message: "Event not found or not authorized" };
+  }
+
+  // Execute cleanup in a transaction to ensure consistency
+  await prisma.$transaction(
+    async (tx) => {
+      // 1) Student signups (positions preferences) tied to positions of this event
+      await tx.positionsOnStudents.deleteMany({
+        where: {
+          position: { eventId }
+        }
+      });
+
+      // 2) Manual assignments for positions of this event
+      await tx.manualAssignment.deleteMany({
+        where: {
+          position: { eventId }
+        }
+      });
+
+      // 3) Prefill settings attached to positions of this event
+      await tx.prefillSetting.deleteMany({
+        where: {
+          position: { eventId }
+        }
+      });
+
+      // 4) Lottery jobs and results for this event (results cascade on job)
+      await tx.lotteryJob.deleteMany({
+        where: { eventId }
+      });
+
+      // 5) Permission slips for this event
+      await tx.permissionSlipSubmission.deleteMany({
+        where: { eventId }
+      });
+
+      // 6) Student participation for this event
+      await tx.studentEventParticipation.deleteMany({
+        where: { eventId }
+      });
+
+      // 7) Important dates for this event
+      await tx.importantDate.deleteMany({
+        where: { eventId }
+      });
+
+      // 8) Positions (attachments cascade on position delete)
+      await tx.position.deleteMany({
+        where: { eventId }
+      });
+
+      // 9) Finally, delete the event itself
+      await tx.event.delete({
+        where: { id: eventId }
+      });
+    },
+    {
+      // Give MySQL more time to complete bulk deletes
+      timeout: 30000, // 30s
+      maxWait: 10000  // up to 10s to obtain a connection
+    }
+  );
+
+  return { success: true, message: `Event "${event.name || 'Unnamed Event'}" and all related data were force-deleted.` };
+}
+
+/**
  * Get archived event statistics for dashboard viewing
  */
 /**

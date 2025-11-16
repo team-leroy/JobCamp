@@ -7,7 +7,6 @@
   import { careers } from "$lib/appconfig";
   import { superForm } from "sveltekit-superforms";
   import { Trash2 } from "lucide-svelte";
-  import { enhance } from "$app/forms";
 
   let { data, formTitle, buttonName } = $props();
 
@@ -307,4 +306,3 @@
 </div>
 
 <div class="h-2"></div>
-=

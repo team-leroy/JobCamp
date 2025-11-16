@@ -45,6 +45,7 @@
   interface FormResult {
     success?: boolean;
     message?: string;
+    requireConfirmation?: boolean;
   }
 
   let { data, form }: { data: PageData; form: FormResult | null } = $props();

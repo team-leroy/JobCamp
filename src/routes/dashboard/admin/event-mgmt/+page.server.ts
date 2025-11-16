@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { createEvent, activateEvent, getSchoolEvents, deleteEvent, archiveEvent } from '$lib/server/eventManagement';
+import { createEvent, activateEvent, getSchoolEvents, deleteEvent, archiveEvent, forceDeleteEvent } from '$lib/server/eventManagement';
 import { isFullAdmin, canAccessFullAdminFeatures } from '$lib/server/roleUtils';
 import { hashPassword } from '$lib/server/auth';
 
@@ -232,6 +232,52 @@ export const actions: Actions = {
             return { 
                 success: false, 
                 message: error instanceof Error ? error.message : 'Unknown error occurred'
+            };
+        }
+    },
+    forceDeleteEvent: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        try {
+            // Get user's school
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            const schoolId = userInfo.adminOfSchools[0].id;
+
+            // Parse form data
+            const formData = await request.formData();
+            const eventId = formData.get('eventId')?.toString();
+            const confirmation = formData.get('confirm')?.toString(); // expect 'DELETE'
+
+            if (!eventId) {
+                return { success: false, message: "Event ID is required" };
+            }
+
+            // Warn-first flow: require explicit confirmation keyword on second submission
+            if (confirmation !== 'DELETE') {
+                return {
+                    success: false,
+                    requireConfirmation: true,
+                    message: "This will permanently remove the event and ALL related data (student signups, manual assignments, lottery history, positions, attachments, permission slips, participation, important dates). If you are sure, resubmit with confirm=DELETE."
+                };
+            }
+
+            const result = await forceDeleteEvent(eventId, schoolId);
+            return result;
+        } catch (error) {
+            console.error('Error force-deleting event:', error);
+            return {
+                success: false,
+                message: "Failed to force delete event"
             };
         }
     },

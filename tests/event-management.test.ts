@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // Mock Prisma client using factory function
 vi.mock('../src/lib/server/prisma', () => ({
   prisma: {
+    $transaction: vi.fn(),
     event: {
       findFirst: vi.fn(),
       findMany: vi.fn(),
@@ -13,6 +14,7 @@ vi.mock('../src/lib/server/prisma', () => ({
       delete: vi.fn()
     },
     position: {
+      findMany: vi.fn(),
       createMany: vi.fn(),
       deleteMany: vi.fn()
     },
@@ -1341,4 +1343,46 @@ describe('Event Management Functions', () => {
       throw new Error('Event cannot be both active and archived');
     }
   }
+
+  describe('forceDeleteEvent', () => {
+    it('should force delete an event and related data', async () => {
+      const testEventId = 'evt-force-1';
+      const testSchoolId = 'test-school-1';
+      // Minimal mocks for the force delete flow
+      vi.mocked(prisma).event.findFirst.mockResolvedValue({
+        id: testEventId,
+        schoolId: testSchoolId,
+        name: 'Force Delete Event'
+      } as any);
+
+      // Positions linked to event
+      vi.mocked(prisma).position.findMany.mockResolvedValue([
+        { id: 'pos-a' },
+        { id: 'pos-b' }
+      ] as any);
+
+      // Chain transactional deletes
+      // We don't assert call args for every step here; presence of no thrown error is sufficient
+      vi.mocked(prisma).$transaction.mockImplementation(async (cb: any) => {
+        // Provide a proxy that contains same methods used in implementation
+        const tx = {
+          positionsOnStudents: { deleteMany: vi.fn().mockResolvedValue({}) },
+          manualAssignment: { deleteMany: vi.fn().mockResolvedValue({}) },
+          prefillSetting: { deleteMany: vi.fn().mockResolvedValue({}) },
+          lotteryJob: { deleteMany: vi.fn().mockResolvedValue({}) },
+          permissionSlipSubmission: { deleteMany: vi.fn().mockResolvedValue({}) },
+          studentEventParticipation: { deleteMany: vi.fn().mockResolvedValue({}) },
+          importantDate: { deleteMany: vi.fn().mockResolvedValue({}) },
+          position: { deleteMany: vi.fn().mockResolvedValue({}) },
+          event: { delete: vi.fn().mockResolvedValue({}) }
+        } as unknown as typeof prisma;
+        return await cb(tx);
+      });
+
+      const { forceDeleteEvent } = await import('../src/lib/server/eventManagement');
+      const result = await forceDeleteEvent(testEventId, testSchoolId);
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('force-deleted');
+    });
+  });
 });

@@ -31,6 +31,8 @@
 
   let isActivating = $state(false);
   let isDeleting = $state(false);
+  let forceDeleteEventId = $state<string | null>(null);
+  let confirmText = $state<string>("");
   let expandedEventId = $state<string | null>(null);
 
   // Handle event activation using proper form submission
@@ -78,40 +80,26 @@
     });
   }
 
-  // Handle event deletion using proper form submission
-  function handleDeleteEvent(eventId: string, eventName: string) {
-    const confirmMessage = `⚠️ DELETE EVENT: "${eventName}"
+  // Toggle per-event force delete UI
+  function toggleForceDelete(eventId: string) {
+    forceDeleteEventId = forceDeleteEventId === eventId ? null : eventId;
+    confirmText = "";
+  }
 
-This will permanently delete the event and cannot be undone.
+  // Submit normal delete for events that are eligible
+  function submitNormalDelete(eventId: string) {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "?/deleteEvent";
 
-✅ Safe to delete if:
-• Event was created by mistake
-• No students have signed up
-• No lottery has been run
-• You want to completely remove it
+    const eventIdInput = document.createElement("input");
+    eventIdInput.type = "hidden";
+    eventIdInput.name = "eventId";
+    eventIdInput.value = eventId;
 
-❌ Consider ARCHIVING instead if:
-• Students have participated
-• Event was completed
-• You want to preserve historical data
-
-Continue with deletion?`;
-
-    if (confirm(confirmMessage)) {
-      // Create and submit a form programmatically
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = "?/deleteEvent";
-
-      const eventIdInput = document.createElement("input");
-      eventIdInput.type = "hidden";
-      eventIdInput.name = "eventId";
-      eventIdInput.value = eventId;
-
-      form.appendChild(eventIdInput);
-      document.body.appendChild(form);
-      form.submit();
-    }
+    form.appendChild(eventIdInput);
+    document.body.appendChild(form);
+    form.submit();
   }
 
   // Toggle event details
@@ -196,18 +184,20 @@ Continue with deletion?`;
                   >
                     {isActivating ? "Activating..." : "Activate"}
                   </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onclick={() =>
-                      handleDeleteEvent(
-                        event.id,
-                        event.name || `Event ${formatDate(event.date)}`
-                      )}
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? "Deleting..." : "Delete"}
-                  </Button>
+                  <div class="relative">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onclick={() => toggleForceDelete(event.id)}
+                      disabled={isDeleting}
+                    >
+                      {forceDeleteEventId === event.id
+                        ? "Cancel"
+                        : isDeleting
+                          ? "Deleting..."
+                          : "Delete"}
+                    </Button>
+                  </div>
                 {/if}
                 <Button
                   variant="ghost"
@@ -251,6 +241,57 @@ Continue with deletion?`;
                 {event.filteredStats?.studentsWithChoices ?? 0}
               </div>
             </div>
+
+            {#if forceDeleteEventId === event.id}
+              <div class="mt-3 p-3 border rounded-md bg-red-50">
+                <div class="text-sm text-red-800 mb-2">
+                  This event may have student signups or lottery history.
+                  Deleting is blocked by default to preserve data.
+                </div>
+                <div class="text-sm text-gray-700 mb-3">
+                  Type <strong>DELETE</strong> to permanently remove
+                  <strong
+                    >{event.name || `Event ${formatDate(event.date)}`}</strong
+                  >
+                  and ALL related data (signups, assignments, lottery history, positions,
+                  attachments, permission slips, participation, important dates).
+                  This cannot be undone.
+                </div>
+                <form
+                  method="POST"
+                  action="?/forceDeleteEvent"
+                  class="flex flex-col gap-2 max-w-sm"
+                >
+                  <input type="hidden" name="eventId" value={event.id} />
+                  <input
+                    name="confirm"
+                    bind:value={confirmText}
+                    placeholder="Type DELETE"
+                    class="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    autocomplete="off"
+                  />
+                  <div class="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onclick={() => submitNormalDelete(event.id)}
+                    >
+                      Try Normal Delete
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="destructive"
+                      size="sm"
+                      class="bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                      disabled={confirmText !== "DELETE"}
+                    >
+                      Confirm Force Delete
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            {/if}
 
             {#if event.displayLotteryResults}
               <div class="mt-3">
