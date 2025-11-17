@@ -97,6 +97,13 @@ describe('Dashboard Main Route', () => {
         it('should redirect to verify-email when email is not verified', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
+            // Mock user lookup - user is not an admin
+            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
+            // Mock host lookup - user is not a host
+            vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
+            // Mock event lookup to avoid further processing
+            vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);
+            
             try {
                 await load({ 
                     locals: { 

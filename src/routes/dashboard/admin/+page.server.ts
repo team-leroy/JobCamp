@@ -8,11 +8,8 @@ export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
         redirect(302, "/admin/login");
     }
-    if (!locals.user.emailVerified) {
-        redirect(302, "/verify-email");
-    }
 
-    // Check if user is admin
+    // Check if user is admin first
     const userInfo = await prisma.user.findFirst({
         where: { id: locals.user.id },
         include: { adminOfSchools: true }
@@ -21,6 +18,9 @@ export const load: PageServerLoad = async ({ locals }) => {
     if (!userInfo?.adminOfSchools?.length) {
         redirect(302, "/dashboard");
     }
+
+    // Admins can access dashboard without email verification
+    // Only check email verification for non-admin users (handled by other routes)
 
     const schoolIds = userInfo.adminOfSchools.map(s => s.id);
 

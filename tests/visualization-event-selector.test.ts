@@ -233,6 +233,12 @@ describe('Visualization Event Selector', () => {
                 } 
             };
 
+            // Mock user lookup - user is not an admin (empty adminOfSchools array)
+            vi.mocked(prisma.user.findFirst).mockResolvedValue({
+                id: 'user-1',
+                adminOfSchools: []
+            });
+
             await load({ locals: mockLocals, url: mockUrl });
 
             expect(redirect).toHaveBeenCalledWith(302, '/verify-email');

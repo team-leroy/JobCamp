@@ -41,11 +41,18 @@ export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
         redirect(302, "/login");
     }
+
+    // Check if user is admin first - admins can access without email verification
+    const { userInfo, hostInfo } = await grabUserData(locals);
+
+    if (userInfo.adminOfSchools && userInfo.adminOfSchools.length > 0) {
+        redirect(302, "/dashboard/admin");
+    }
+
+    // For non-admin users, check email verification
     if (!locals.user.emailVerified) {
         redirect(302, "/verify-email");
     }
-
-    const { userInfo, hostInfo } = await grabUserData(locals);
 
     // Get host with company information for company dashboard
     let companyName: string | null = null;
@@ -67,10 +74,6 @@ export const load: PageServerLoad = async ({ locals }) => {
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
     const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
     const companySignupsEnabled = (activeEvent as { companySignupsEnabled?: boolean })?.companySignupsEnabled ?? false;
-
-    if (userInfo.adminOfSchools && userInfo.adminOfSchools.length > 0) {
-        redirect(302, "/dashboard/admin");
-    }
 
     if (!hostInfo) {
         // This is a student - check if student accounts are enabled

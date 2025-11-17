@@ -27,11 +27,6 @@ export const load: PageServerLoad = async () => {
 
 export const actions: Actions = {
     default: async ({ request, cookies, locals }) => {
-        // If already logged in, redirect to dashboard
-        if (locals.user) {
-            redirect(302, '/dashboard');
-        }
-
         const formData = await request.formData();
         const email = formData.get('email')?.toString();
         const password = formData.get('password')?.toString();
@@ -75,7 +70,18 @@ export const actions: Actions = {
                 };
             }
 
-            // Create session
+            // IMPORTANT: Invalidate any existing session (e.g., from student account)
+            // This ensures we clean up the old session before creating a new one
+            if (locals.session) {
+                try {
+                    await lucia.invalidateSession(locals.session.id);
+                } catch (error) {
+                    // If session invalidation fails (e.g., session already invalid), continue anyway
+                    console.warn('Failed to invalidate existing session:', error);
+                }
+            }
+
+            // Create new session for admin
             const session = await lucia.createSession(user.id, {});
             const sessionCookie = lucia.createSessionCookie(session.id);
             
