@@ -1,4 +1,3 @@
-import { PageType, userAccountSetupFlow } from '$lib/server/authFlow';
 import { fail, redirect, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from "./$types";
 import { createStudentSchema } from "./schema";
@@ -7,42 +6,99 @@ import { zod } from "sveltekit-superforms/adapters";
 import { generateEmailVerificationCode, generatePermissionSlipCode, schoolEmailCheck, signup } from '$lib/server/auth';
 import { prisma } from '$lib/server/prisma';
 import { AuthError } from '$lib/server/authConstants';
-import { sendEmailVerificationEmail, sendPermissionSlipEmail } from '$lib/server/email';
+import { sendEmailVerificationEmail, sendPermissionSlipEmail, formatEmailDate, type EventEmailData } from '$lib/server/email';
+import { getNavbarData } from '$lib/server/navbarData';
+import { getGraduatingClassYear } from '$lib/server/gradeUtils';
+import { formatPhoneNumber } from '$lib/server/twilio';
 
 
 export const load: PageServerLoad = async (event) => {
-    userAccountSetupFlow(event.locals, PageType.AccountCreation);
+    if (event.locals.user) {
+        redirect(302, "/dashboard");
+    }
 
-    const schoolId = event.cookies.get("school");
+    // Check if season is active for signups
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            isActive: true
+        }
+    });
+
+    const seasonActive = Boolean(activeEvent?.isActive);
+
+    // Redirect to homepage if season is not active
+    if (!seasonActive) {
+        redirect(302, "/");
+    }
+
     const schools = await prisma.school.findMany();
     const schoolMapping = Object.fromEntries(schools.map((val) => [val.id, val.name]));
+    const primarySchoolDomain = schools[0]?.emailDomain ?? undefined;
 
-    const form = await superValidate(zod(createStudentSchema(schoolId)));
-    return { form, schoolMapping };
+    const form = await superValidate(zod(createStudentSchema(primarySchoolDomain)));
+
+    // Get navbar data
+    const navbarData = await getNavbarData();
+
+    const gradeOptions = ['9', '10', '11', '12'];
+
+    return { 
+        form, 
+        schoolMapping, 
+        gradeOptions,
+        ...navbarData 
+    };
 };
+
+const enforceSchoolEmailDomain = false; // TEMP: allow non-school emails for verification testing
 
 export const actions: Actions = {
     default: async (event) => {
         const { request } = event;
-        const schoolIdCookie = event.cookies.get("school");
-        const form = await superValidate(request, zod(createStudentSchema(schoolIdCookie)));
+        const school = await prisma.school.findFirst(); // TODO: SCHOOL FIELD for multiple schools
+        const form = await superValidate(request, zod(createStudentSchema(school?.emailDomain)));
 
         if (!form.valid) {
             return fail(400, { form });
         }
 
-        const school = (await prisma.school.findFirst()); // TODO: SCHOOL FIELD for multiple schools
         if (!school) {
             return message(form, "Database Error");
         }
 
-        if (!schoolEmailCheck(school.emailDomain).test(form.data.email)) {
-            return setError(form, "email", "Please enter your school email.")
+        if (enforceSchoolEmailDomain && !schoolEmailCheck(school.emailDomain).test(form.data.email)) {
+            return setError(form, "email", "Please enter a valid school email.")
         }
 
-        if (form.data.parentEmail == form.data.email) {
-            return setError(form, "parentEmail", "Please enter a different email.")
+        const studentEmailNormalized = form.data.email.trim().toLowerCase();
+        const parentEmailNormalized = form.data.parentEmail.trim().toLowerCase();
+        const schoolDomainNormalized = school.emailDomain.trim().toLowerCase();
+        const schoolDomainWithAt = schoolDomainNormalized.startsWith('@')
+            ? schoolDomainNormalized
+            : `@${schoolDomainNormalized}`;
+
+        if (parentEmailNormalized === studentEmailNormalized) {
+            return setError(form, "parentEmail", "Please enter a different email.");
         }
+
+        if (parentEmailNormalized.endsWith(schoolDomainWithAt)) {
+            return setError(
+                form,
+                "parentEmail",
+                `Parent email cannot use school email domain (${schoolDomainWithAt}). Please provide a different email.`
+            );
+        }
+
+        const activeEvent = await prisma.event.findFirst({
+            where: { isActive: true }
+        });
+
+        const gradeNumber = Number(form.data.grade);
+        const graduatingClassYear = getGraduatingClassYear(
+            gradeNumber,
+            activeEvent?.date ?? new Date()
+        );
+        const normalizedPhone = formatPhoneNumber(form.data.phone);
 
         const userId = await signup(form.data.email, form.data.password, event);
         if (userId == AuthError.AccountExists) {
@@ -60,8 +116,8 @@ export const actions: Actions = {
                         create: {
                             firstName: form.data.firstName, // TODO: lastName
                             lastName: form.data.lastName,
-                            grade: form.data.grade,
-                            phone: form.data.phone,
+                            graduatingClassYear,
+                            phone: normalizedPhone,
                             parentEmail: form.data.parentEmail,
                             school: {
                                 connect: {
@@ -78,9 +134,18 @@ export const actions: Actions = {
         const code = await generateEmailVerificationCode(userId, user.email)
         await sendEmailVerificationEmail(userId, user.email, code);
 
-        generatePermissionSlipCode(userId, form.data.parentEmail).then(
-            (code) => sendPermissionSlipEmail(form.data.parentEmail, code, form.data.firstName)
-        );
+        if (activeEvent) {
+            const eventData: EventEmailData = {
+                eventName: activeEvent.name || 'JobCamp',
+                eventDate: formatEmailDate(activeEvent.date),
+                schoolName: school.name,
+                schoolId: school.id
+            };
+
+            generatePermissionSlipCode(userId).then(
+                (code) => sendPermissionSlipEmail(form.data.parentEmail, code, form.data.firstName, eventData)
+            );
+        }
 
         redirect(302, "/verify-email");
     }

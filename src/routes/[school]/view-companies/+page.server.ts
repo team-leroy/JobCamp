@@ -1,13 +1,16 @@
 import { prisma } from '$lib/server/prisma';
 import { redirect } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
+import type { PageServerLoad } from './$types';
+import { getNavbarData } from '$lib/server/navbarData';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
     const loggedIn = locals.user != null;
     
     let isHost = false;
+    let isAdmin = false;
     if (locals.user) {
         isHost = locals.user.host != null;
+        isAdmin = locals.user.adminOfSchools != null && locals.user.adminOfSchools.length > 0;
     }
 
     const schoolWebAddr = params.school;
@@ -18,24 +21,85 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         redirect(302, "/");
     }
 
-    const positionData = await prisma.position.findMany({
+    // Check if there's an active event and if company directory is enabled
+    const activeEvent = await prisma.event.findFirst({
         where: {
-            host: {
-                company: {
-                    school: {
-                        id: school.id
-                    }
-                }
-            }
-        },
-        include: {
-            host: {
-                select: {
-                    company: true
-                }
-            }
+            schoolId: school.id,
+            isActive: true
         }
     });
 
-    return { positionData, isHost, loggedIn };
+    const companyDirectoryEnabled = activeEvent?.companyDirectoryEnabled ?? false;
+    const directoryAccessible = Boolean(activeEvent?.isActive) && companyDirectoryEnabled;
+
+    let positionData = [];
+    let archivedEventCompanies: string[] = [];
+    
+    if (directoryAccessible) {
+        positionData = await prisma.position.findMany({
+            where: {
+                event: {
+                    schoolId: school.id,
+                    isActive: true
+                },
+                isPublished: true // Only show published positions in company directory
+            },
+            include: {
+                host: {
+                    select: {
+                        company: true
+                    }
+                }
+            }
+        });
+    } else {
+        // Get the last archived event for this school
+        const lastArchivedEvent = await prisma.event.findFirst({
+            where: {
+                schoolId: school.id,
+                isArchived: true
+            },
+            orderBy: {
+                date: 'desc'
+            },
+            include: {
+                positions: {
+                    include: {
+                        host: {
+                            include: {
+                                company: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Extract unique company names from the archived event
+        if (lastArchivedEvent) {
+            const companyNamesSet = new Set<string>();
+            lastArchivedEvent.positions.forEach(position => {
+                if (position.host?.company?.companyName) {
+                    companyNamesSet.add(position.host.company.companyName);
+                }
+            });
+            archivedEventCompanies = Array.from(companyNamesSet).sort();
+        }
+    }
+
+    // Get navbar data
+    const navbarData = await getNavbarData();
+
+    return { 
+        positionData, 
+        isHost, 
+        loggedIn, 
+        isAdmin,
+        hasActiveEvent: !!activeEvent,
+        companyDirectoryEnabled,
+        directoryAccessible,
+        eventName: activeEvent?.name || null,
+        archivedEventCompanies,
+        ...navbarData
+    };
 }

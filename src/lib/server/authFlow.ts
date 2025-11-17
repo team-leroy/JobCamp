@@ -1,16 +1,18 @@
-import { page } from "$app/stores";
 import { redirect } from "@sveltejs/kit";
+import { getPermissionSlipStatus } from "./permissionSlips";
+import { needsContactInfoVerification } from "./contactInfoVerification";
 
 export enum PageType {
     NonAuth,
     Login,
     AccountCreation,
     EmailVerify,
+    ContactInfoVerify,
     PermissionSlip,
     RequiresAuth,
 }
 
-export function userAccountSetupFlow(locals: App.Locals, pageType: PageType) {
+export async function userAccountSetupFlow(locals: App.Locals, pageType: PageType) {
     if (pageType == PageType.NonAuth) {
         return;
     }
@@ -31,11 +33,32 @@ export function userAccountSetupFlow(locals: App.Locals, pageType: PageType) {
         redirect(302, "/verify-email");
     }
 
-    var permissionSlipNeeded = locals.user.student && locals.user.student.permissionSlipCompleted == false;
-    if (permissionSlipNeeded && pageType != PageType.PermissionSlip) {
-        redirect(302, "/permission-slip");
-    } else if (!permissionSlipNeeded && pageType == PageType.PermissionSlip) {
-        redirect(302, "/dashboard");
+    if (locals.user.student) {
+        // Check if contact info verification is needed for the active event
+        const contactInfoVerificationNeeded = await needsContactInfoVerification(
+            locals.user.student.id,
+            locals.user.student.schoolId
+        );
+
+        if (contactInfoVerificationNeeded && pageType != PageType.ContactInfoVerify) {
+            redirect(302, "/verify-contact-info");
+        } else if (!contactInfoVerificationNeeded && pageType == PageType.ContactInfoVerify) {
+            redirect(302, "/dashboard");
+        }
+
+        // Check permission slip status for the active event
+        const permissionSlipStatus = await getPermissionSlipStatus(
+            locals.user.student.id, 
+            locals.user.student.schoolId!
+        );
+        
+        const permissionSlipNeeded = permissionSlipStatus.hasActiveEvent && !permissionSlipStatus.hasPermissionSlip;
+        
+        if (permissionSlipNeeded && pageType != PageType.PermissionSlip) {
+            redirect(302, "/permission-slip");
+        } else if (!permissionSlipNeeded && pageType == PageType.PermissionSlip) {
+            redirect(302, "/dashboard");
+        }
     }
 
     return;

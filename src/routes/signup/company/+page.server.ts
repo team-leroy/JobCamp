@@ -1,19 +1,38 @@
 import { PageType, userAccountSetupFlow } from '$lib/server/authFlow';
 import type { PageServerLoad, Actions } from "./$types";
 import { createCompanySchema } from "./schema";
-import { message, setError, superValidate } from "sveltekit-superforms";
+import { message, superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
-import { generateEmailVerificationCode, generatePermissionSlipCode, schoolEmailCheck, signup } from '$lib/server/auth';
+import { generateEmailVerificationCode, signup } from '$lib/server/auth';
 import { prisma } from '$lib/server/prisma';
 import { AuthError } from '$lib/server/authConstants';
-import { sendEmailVerificationEmail, sendPermissionSlipEmail } from '$lib/server/email';
+import { sendEmailVerificationEmail } from '$lib/server/email';
 import { fail, redirect } from '@sveltejs/kit';
+import { getNavbarData } from '$lib/server/navbarData';
 
 export const load: PageServerLoad = async (event) => {
-    userAccountSetupFlow(event.locals, PageType.AccountCreation);
+    await userAccountSetupFlow(event.locals, PageType.AccountCreation);
+
+    // Check if season is active for signups
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            isActive: true
+        }
+    });
+
+    const seasonActive = Boolean(activeEvent?.isActive);
+
+    // Redirect to homepage if season is not active
+    if (!seasonActive) {
+        redirect(302, "/");
+    }
 
     const form = await superValidate(zod(createCompanySchema()));
-    return { form };
+    
+    // Get navbar data
+    const navbarData = await getNavbarData();
+    
+    return { form, isAdmin: false, ...navbarData };
 };
 
 export const actions: Actions = {

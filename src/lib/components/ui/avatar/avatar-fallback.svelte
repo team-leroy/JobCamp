@@ -1,22 +1,24 @@
 <script lang="ts">
-	import { Avatar as AvatarPrimitive } from "bits-ui";
-	import { cn } from "$lib/utils.js";
+  import { Avatar as AvatarPrimitive } from "bits-ui";
+  import { cn } from "$lib/utils.js";
 
-	type $$Props = AvatarPrimitive.FallbackProps;
+  type $$Props = AvatarPrimitive.FallbackProps;
 
-	interface Props {
-		class?: $$Props["class"];
-		children?: import('svelte').Snippet;
-		[key: string]: any
-	}
+  interface Props {
+    class?: $$Props["class"];
+    children?: import("svelte").Snippet;
+    [key: string]: unknown;
+  }
 
-	let { class: className = undefined, children, ...rest }: Props = $props();
-	
+  let { class: className = undefined, children, ...rest }: Props = $props();
 </script>
 
 <AvatarPrimitive.Fallback
-	class={cn("bg-muted flex h-full w-full items-center justify-center rounded-full", className)}
-	{...rest}
+  class={cn(
+    "bg-muted flex h-full w-full items-center justify-center rounded-full",
+    className
+  )}
+  {...rest}
 >
-	{@render children?.()}
+  {@render children?.()}
 </AvatarPrimitive.Fallback>

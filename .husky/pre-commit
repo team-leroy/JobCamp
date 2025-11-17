@@ -1,0 +1,7 @@
+echo "🔍 Running linting..."
+pnpm lint
+
+echo "🧪 Running quick tests..."
+pnpm test:run --reporter=verbose --run
+
+echo "✅ Pre-commit checks passed!"

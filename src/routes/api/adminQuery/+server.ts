@@ -1,11 +1,21 @@
 import { prisma } from '$lib/server/prisma';
 import { json } from '@sveltejs/kit';
 
+interface WhereClause {
+	user?: {
+		emailVerified?: boolean;
+	};
+	positions?: {
+		none?: Record<string, never>;
+		some?: Record<string, never>;
+	};
+}
+
 export async function POST({ request }) {
 	const requestData = await request.json();
 
 	if (requestData.hosts.active == true) {
-		let where: any = {};
+		const where: WhereClause = {};
 		if (requestData.hosts.emailVerified.active) {
 			where.user = {};
 			where.user.emailVerified = requestData.hosts.emailVerified.value;
@@ -21,7 +31,7 @@ export async function POST({ request }) {
 			where.positions.some = {};
 		}
 
-		let data = await prisma.host.findMany({
+		const data = await prisma.host.findMany({
 			where: where,
 			include: {
 				positions: true,

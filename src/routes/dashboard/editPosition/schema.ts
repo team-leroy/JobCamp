@@ -1,20 +1,22 @@
 import { z } from "zod"
 
-function twodigit(num: number) {
-    if (num < 10) {
-        return "0" + num;
-    } else {
-        return num
-    }
+interface PositionProperties {
+    id: string;
+    title: string;
+    career: string;
+    slots: number;
+    summary: string;
+    contact_name: string;
+    contact_email: string;
+    address: string;
+    instructions: string;
+    attire: string;
+    arrival: string;
+    start: string;
+    end: string;
 }
 
-function timeFormat(a: Date) {
-    const h = a.getHours();
-    const m = a.getMinutes();
-    return twodigit(h)+":"+twodigit(m)
-}
-
-export const editPositionSchema = (positionProperties: any, attachment1: File | undefined, attachment2: File | undefined) => {
+export const editPositionSchema = (positionProperties: PositionProperties) => {
     return z.object({
         positionId: z.string().default(positionProperties.id),
         title: z.string().default(positionProperties.title),
@@ -29,7 +31,7 @@ export const editPositionSchema = (positionProperties: any, attachment1: File | 
         arrival: z.string().default(positionProperties.arrival),
         start: z.string().default(positionProperties.start),
         release: z.string().default(positionProperties.end),
-        // attachment1: z.any().default(attachment1),
-        // attachment2: z.any().default(attachment2),
+        attachment1: z.any().optional(),
+        attachment2: z.any().optional(),
     });
 }

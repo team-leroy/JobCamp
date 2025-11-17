@@ -5,7 +5,7 @@ import { generatePermissionSlipCode } from '$lib/server/auth';
 import { sendPermissionSlipEmail } from '$lib/server/email';
 
 export const load: PageServerLoad = async (event) => {
-    userAccountSetupFlow(event.locals, PageType.PermissionSlip);
+    await userAccountSetupFlow(event.locals, PageType.PermissionSlip);
 };
 
 export const actions: Actions = {
@@ -16,9 +16,10 @@ export const actions: Actions = {
 
         const userId = event.locals.user.id;
         const parentEmail = event.locals.user.student.parentEmail;
+        const studentName = `${event.locals.user.student.firstName} ${event.locals.user.student.lastName}`;
 
-        await generatePermissionSlipCode(userId, parentEmail).then(
-            (code) => sendPermissionSlipEmail(parentEmail, code)
+        await generatePermissionSlipCode(userId).then(
+            (code) => sendPermissionSlipEmail(parentEmail, code, studentName)
         );
     }
 }

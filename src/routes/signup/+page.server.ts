@@ -1,9 +1,29 @@
-import { PageType, userAccountSetupFlow } from '$lib/server/authFlow';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from "./$types";
+import { prisma } from '$lib/server/prisma';
+import { getNavbarData } from '$lib/server/navbarData';
 
 export const load: PageServerLoad = async (event) => {
     if (event.locals.user) {
         redirect(302, "/dashboard");
     }
+    
+    // Check if season is active for signups
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            isActive: true
+        }
+    });
+
+    const seasonActive = Boolean(activeEvent?.isActive);
+
+    // Redirect to homepage if season is not active
+    if (!seasonActive) {
+        redirect(302, "/");
+    }
+    
+    // Get navbar data
+    const navbarData = await getNavbarData();
+    
+    return { isAdmin: false, ...navbarData };
 };

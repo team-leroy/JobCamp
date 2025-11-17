@@ -1,23 +1,27 @@
 <script lang="ts">
-	import { Avatar as AvatarPrimitive } from "bits-ui";
-	import { cn } from "$lib/utils.js";
+  import { Avatar as AvatarPrimitive } from "bits-ui";
+  import { cn } from "$lib/utils.js";
 
-	type $$Props = AvatarPrimitive.ImageProps;
+  type $$Props = AvatarPrimitive.ImageProps;
 
-	interface Props {
-		class?: $$Props["class"];
-		src?: $$Props["src"];
-		alt?: $$Props["alt"];
-		[key: string]: any
-	}
+  interface Props {
+    class?: $$Props["class"];
+    src?: $$Props["src"];
+    alt?: $$Props["alt"];
+    [key: string]: unknown;
+  }
 
-	let { class: className = undefined, src = undefined, alt = undefined, ...rest }: Props = $props();
-	
+  let {
+    class: className = undefined,
+    src = undefined,
+    alt = undefined,
+    ...rest
+  }: Props = $props();
 </script>
 
 <AvatarPrimitive.Image
-	{src}
-	{alt}
-	class={cn("aspect-square h-full w-full", className)}
-	{...rest}
+  {src}
+  {alt}
+  class={cn("aspect-square h-full w-full", className)}
+  {...rest}
 />

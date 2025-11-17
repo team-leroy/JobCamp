@@ -5,8 +5,22 @@ import { generateEmailVerificationCode, setNewLuciaSession, updateLastLoginToNow
 import { sendEmailVerificationEmail } from '$lib/server/email';
 
 export const load: PageServerLoad = async (event) => {
-    if (event.locals.user && event.locals.user.emailVerified) {
-        redirect(302, "/dashboard")
+    if (event.locals.user) {
+        // Check if user is admin - admins don't need email verification
+        const userInfo = await prisma.user.findFirst({
+            where: { id: event.locals.user.id },
+            include: { adminOfSchools: true }
+        });
+        
+        if (userInfo?.adminOfSchools && userInfo.adminOfSchools.length > 0) {
+            // Admins can access admin dashboard without email verification
+            redirect(302, "/dashboard/admin");
+        }
+        
+        // For non-admin users, if email is verified, redirect to dashboard
+        if (event.locals.user.emailVerified) {
+            redirect(302, "/dashboard");
+        }
     }
 
     const props = event.url.searchParams;
@@ -43,6 +57,15 @@ export const load: PageServerLoad = async (event) => {
             await setNewLuciaSession(userId, event);
         }
 
+        // Check if user is admin and redirect accordingly
+        const userInfo = await prisma.user.findFirst({
+            where: { id: userId },
+            include: { adminOfSchools: true }
+        });
+        
+        if (userInfo?.adminOfSchools && userInfo.adminOfSchools.length > 0) {
+            redirect(302, "/dashboard/admin");
+        }
         redirect(302, "/dashboard")
     }
 

@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { createPasswordResetToken, generateEmailVerificationCode, login } from '$lib/server/auth';
-import { sendEmailVerificationEmail, sendPasswordResetEmail } from '$lib/server/email';
+import { createPasswordResetToken, login } from '$lib/server/auth';
+import { sendPasswordResetEmail } from '$lib/server/email';
 import { generateRandomString } from 'oslo/crypto';
 import { passwordSaltCharacters } from '$lib/server/authConstants';
 import { scrypt } from '$lib/server/hash';

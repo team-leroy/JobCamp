@@ -1,4 +1,4 @@
-import { Lucia, TimeSpan, generateIdFromEntropySize } from 'lucia';
+import { Lucia, generateIdFromEntropySize } from 'lucia';
 import { dev } from '$app/environment';
 import { luciaAuthDb, prisma } from './prisma.js';
 import type { RequestEvent } from '@sveltejs/kit';
@@ -6,11 +6,10 @@ import { encodeHex } from 'oslo/encoding';
 import { generateRandomString, sha256 } from 'oslo/crypto';
 import { TimeSpan as osloTimeSpan, createDate } from 'oslo';
 import { 
-	passwordResetTokenEntropySize, 
+	passwordResetTokenEntropySize,
 	emailVerificationCodeLength, 
 	emailVerificationCodeCharacters, 
 	AuthError, 
-	userIdEntropySize, 
 	sessionLifetime, 
 	type DatabaseUserAttributes, 
 	passwordSaltCharacters,
@@ -29,7 +28,7 @@ export async function createPasswordResetToken(userId: string): Promise<string> 
 		data: {
 			token_hash: tokenHash,
 			user_id: userId,
-			expires_at: createDate(new TimeSpan(2, "h"))
+			expires_at: createDate(new osloTimeSpan(2, "h"))
 		}
 	});
 
@@ -53,7 +52,7 @@ export async function generateEmailVerificationCode(userId: string, email: strin
 	return code;
 }
 
-export async function generatePermissionSlipCode(userId: string, parentEmail: string): Promise<string> {
+export async function generatePermissionSlipCode(userId: string): Promise<string> {
 	await prisma.permissionSlipCode.deleteMany({ where: { user_id: userId } });
 
 	const code = generateRandomString(permissionSlipCodeLength, permissionSlipCodeCharacters);
@@ -134,18 +133,18 @@ export const lucia = new Lucia(luciaAuthDb, {
     sessionCookie: {
         attributes: {
 			// set to `true` when using HTTPS
-            secure: !dev
+            secure: !dev && process.env.NODE_ENV === 'production'
         }
     },
-    getUserAttributes: (attributes) => {
+    getUserAttributes: (attributes: DatabaseUserAttributes) => {
 		return {
 			// attributes has the type of DatabaseUserAttributes
 			email: attributes.email,
 			emailVerified: attributes.emailVerified,
             student: attributes.student,
             host: attributes.host,
+			adminOfSchools: attributes.adminOfSchools,
             school: attributes.school,
-			accountSetupFinished: attributes.accountSetupFinished,
             lastLogin: attributes.lastLogin,
 		};
 	}
@@ -158,8 +157,24 @@ declare module "lucia" {
 	}
 }
 
-export const isMobilePhone = new RegExp(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/);
+export const isMobilePhone = new RegExp(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/);
 
 export const schoolEmailCheck = (schoolEmailDomain: string) => {
     return new RegExp('[A-Za-z0-9._%+-]+'+schoolEmailDomain);
+}
+
+/**
+ * Hash a password for storage
+ */
+export async function hashPassword(password: string): Promise<{ hash: string; salt: string }> {
+	const passwordSalt = generateRandomString(16, passwordSaltCharacters);
+	const passwordHash = await scrypt.hash(password, passwordSalt);
+	return { hash: passwordHash, salt: passwordSalt };
+}
+
+/**
+ * Verify a password against stored hash and salt
+ */
+export async function verifyPassword(password: string, salt: string, hash: string): Promise<boolean> {
+	return await scrypt.verify(password, salt, hash);
 }

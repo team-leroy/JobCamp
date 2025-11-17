@@ -6,7 +6,7 @@ import { prisma } from "$lib/server/prisma";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { createNewPositionSchema } from "./schema";
-import { sendPositionUpdateEmail } from "$lib/server/email";
+import { sendPositionUpdateEmail, formatEmailDate, type EventEmailData } from "$lib/server/email";
 import { addNewFile } from "../storage";
 
 const grabUserData = async (locals : App.Locals) => {
@@ -31,30 +31,39 @@ const grabUserData = async (locals : App.Locals) => {
     return { userInfo, hostInfo }
 }
 
-export const load: PageServerLoad = async (event) => {
-    if (!event.locals.user) {
+export const load: PageServerLoad = async ({ locals }) => {
+    if (!locals.user) {
         redirect(302, "/login");
     }
-    if (!event.locals.user.emailVerified) {
+    if (!locals.user.emailVerified) {
         redirect(302, "/verify-email");
     }
 
-    const { userInfo, hostInfo } = await grabUserData(event.locals);
+    const { userInfo, hostInfo } = await grabUserData(locals);
     const form = await superValidate(zod(createNewPositionSchema(hostInfo.name, userInfo.email)));
 
     return { form };
 };
 
 export const actions: Actions = {
-    createPosition: async ({ request, locals, cookies }) => {
+    publishPosition: async ({ request, locals }) => {
         const { userInfo, hostInfo } = await grabUserData(locals);
         const form = await superValidate(request, zod(createNewPositionSchema(hostInfo.name, userInfo.email)));
 
         if (!form.valid) {
-            // form.data.attachment1 = undefined;
-            // form.data.attachment2 = undefined;
             console.log(form.errors);
-            return fail(400, { form });
+            // Remove File objects from form data before returning (they can't be serialized)
+            const formDataWithoutFiles = {
+                ...form.data,
+                attachment1: undefined,
+                attachment2: undefined
+            };
+            return fail(400, { 
+                form: {
+                    ...form,
+                    data: formDataWithoutFiles
+                }
+            });
         }
 
         if (!locals.user) {
@@ -71,26 +80,77 @@ export const actions: Actions = {
             redirect(302, "/login");
         }
 
-        const event = (await prisma.school.findFirst({where: {id: schoolId}, include: {events: true}}))?.events[0];   
-        if (!event) {
-            redirect(302, "/login")
+        // Get the active event for this school
+        const activeEvent = await prisma.event.findFirst({
+            where: { 
+                schoolId,
+                isActive: true 
+            }
+        });
+        
+        if (!activeEvent) {
+            throw new Error('No active event found for this school');
         }
 
-        // var attachments = [];
+        // Enforce 2-attachment limit
+        const attachmentCount = (form.data.attachment1 ? 1 : 0) + (form.data.attachment2 ? 1 : 0);
+        if (attachmentCount > 2) {
+            // Remove File objects from form data before returning (they can't be serialized)
+            const formDataWithoutFiles = {
+                ...form.data,
+                attachment1: undefined,
+                attachment2: undefined
+            };
+            return fail(400, { 
+                form: {
+                    ...form,
+                    data: formDataWithoutFiles
+                },
+                error: "Maximum 2 attachments allowed per position"
+            });
+        }
 
-        // if (form.data.attachment1) {
-        //     const bytes = await form.data.attachment1.bytes();
-        //     await addNewFile(form.data.title.replace(" ", "-") +  "-" + form.data.attachment1.name, bytes);
-        //     attachments.push({ fileName: form.data.attachment1.name })
-        // }
+        const attachments = [];
 
-        // if (form.data.attachment2) {
-        //     const bytes = await form.data.attachment2.bytes();
-        //     await addNewFile(form.data.title.replace(" ", "-") +  "-" + form.data.attachment2.name, bytes);
-        //     attachments.push({ fileName: form.data.attachment2.name })
-        // }
+        if (form.data.attachment1) {
+            try {
+                const bytes = await form.data.attachment1.bytes();
+                const originalFileName = form.data.attachment1.name;
+                // Create storage path: sanitize title and combine with original filename
+                const sanitizedTitle = form.data.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
+                const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
+                
+                await addNewFile(storagePath, bytes);
+                attachments.push({ 
+                    fileName: originalFileName,
+                    storagePath: storagePath
+                });
+            } catch (error) {
+                console.error('Error uploading attachment1:', error);
+                // Continue without attachment if storage fails
+            }
+        }
 
-        const position = await prisma.host.update({
+        if (form.data.attachment2) {
+            try {
+                const bytes = await form.data.attachment2.bytes();
+                const originalFileName = form.data.attachment2.name;
+                // Create storage path: sanitize title and combine with original filename
+                const sanitizedTitle = form.data.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
+                const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
+                
+                await addNewFile(storagePath, bytes);
+                attachments.push({ 
+                    fileName: originalFileName,
+                    storagePath: storagePath
+                });
+            } catch (error) {
+                console.error('Error uploading attachment2:', error);
+                // Continue without attachment if storage fails
+            }
+        }
+
+        await prisma.host.update({
             where: { userId: locals.user.id },
             data: {
                 positions: {
@@ -108,8 +168,9 @@ export const actions: Actions = {
                             arrival: form.data.arrival,
                             start: form.data.start,
                             end:form.data.release,
-                            event: { connect: { id: event.id } },
-                            // attachments: { create: attachments }
+                            event: { connect: { id: activeEvent.id } },
+                            isPublished: true, // Mark as published when form is submitted via Publish button
+                            attachments: { create: attachments }
                         }
                     ]
                 }
@@ -117,20 +178,34 @@ export const actions: Actions = {
             include: { positions: true }
         });
         
+        // Get school information for email
+        const school = host.company?.school;
+        if (!school) {
+            throw new Error('School not found');
+        }
+
+        const eventData: EventEmailData = {
+            eventName: activeEvent.name || 'JobCamp',
+            eventDate: formatEmailDate(activeEvent.date),
+            schoolName: school.name,
+            schoolId: school.id
+        };
+
         sendPositionUpdateEmail(userInfo.email, {
             title: form.data.title,
             career: form.data.career,
-            slots: form.data.slots,
+            slots: form.data.slots.toString(),
             summary: form.data.summary,
             contact_name: form.data.fullName,
             contact_email: form.data.email,
-            address: form.data.address,
-            instructions: form.data.instructions,
-            attire: form.data.attire,
-            arrival: form.data.arrival,
-            start: form.data.start,
-            end: form.data.release,
-        });
+            address: form.data.address || 'Not provided',
+            instructions: form.data.instructions || 'Not provided',
+            attire: form.data.attire || 'Not provided',
+            arrival: form.data.arrival || 'Not provided',
+            start: form.data.start || 'Not provided',
+            end: form.data.release || 'Not provided',
+            attachmentCount: attachments.length.toString(),
+        }, eventData);
 
         redirect(302, "/dashboard");
     }

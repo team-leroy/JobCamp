@@ -1,3 +1,15 @@
 {
-    "liveServer.settings.port": 5501
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "testing.automaticallyOpenPeekView": "never",
+  "vitest.enable": true,
+  "vitest.commandLine": "pnpm test",
+  "vitest.include": ["src/**/*.{test,spec}.{js,ts}"],
+  "files.associations": {
+    "*.test.ts": "typescript",
+    "*.spec.ts": "typescript"
+  }
 }

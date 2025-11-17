@@ -1,0 +1,442 @@
+<script lang="ts">
+  import { Button } from "$lib/components/ui/button";
+  import { Badge } from "$lib/components/ui/badge";
+  import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+  } from "$lib/components/ui/card";
+  import { goto } from "$app/navigation";
+  import type { EventWithStats } from "$lib/server/eventManagement";
+
+  interface FormResult {
+    success?: boolean;
+    message?: string;
+  }
+
+  interface EventWithFilteredStats extends EventWithStats {
+    filteredStats?: {
+      totalPositions: number;
+      totalSlots: number;
+      studentsWithChoices: number;
+    };
+  }
+
+  let {
+    schoolEvents = [],
+    form = null,
+  }: { schoolEvents?: EventWithFilteredStats[]; form?: FormResult | null } =
+    $props();
+
+  let isActivating = $state(false);
+  let isDeleting = $state(false);
+  let forceDeleteEventId = $state<string | null>(null);
+  let confirmText = $state<string>("");
+  let expandedEventId = $state<string | null>(null);
+
+  // Handle event activation using proper form submission
+  function handleActivateEvent(eventId: string) {
+    if (
+      confirm(
+        "Are you sure you want to activate this event? This will deactivate any currently active event."
+      )
+    ) {
+      // Create and submit a form programmatically
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "?/activateEvent";
+
+      const eventIdInput = document.createElement("input");
+      eventIdInput.type = "hidden";
+      eventIdInput.name = "eventId";
+      eventIdInput.value = eventId;
+
+      form.appendChild(eventIdInput);
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+
+  // Format date for display (fix timezone issue)
+  function formatDate(date: Date | string) {
+    // Ensure we're working with a proper Date object
+    const d = date instanceof Date ? date : new Date(date);
+
+    // Extract the UTC components to avoid timezone conversion issues
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth();
+    const day = d.getUTCDate();
+
+    // Create a new date with the UTC components
+    const utcDate = new Date(Date.UTC(year, month, day));
+
+    return utcDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "UTC",
+    });
+  }
+
+  // Toggle per-event force delete UI
+  function toggleForceDelete(eventId: string) {
+    forceDeleteEventId = forceDeleteEventId === eventId ? null : eventId;
+    confirmText = "";
+  }
+
+  // Submit normal delete for events that are eligible
+  function submitNormalDelete(eventId: string) {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "?/deleteEvent";
+
+    const eventIdInput = document.createElement("input");
+    eventIdInput.type = "hidden";
+    eventIdInput.name = "eventId";
+    eventIdInput.value = eventId;
+
+    form.appendChild(eventIdInput);
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  // Toggle event details
+  function showEventDetails(eventId: string) {
+    expandedEventId = expandedEventId === eventId ? null : eventId;
+  }
+
+  // Get dynamic title based on event states
+  function getWidgetTitle() {
+    const activeEvents = schoolEvents.filter((e) => e.isActive);
+    const draftEvents = schoolEvents.filter(
+      (e) => !e.isActive && !e.isArchived
+    );
+
+    if (activeEvents.length > 0) {
+      return "Active Event";
+    } else if (draftEvents.length > 0) {
+      return draftEvents.length === 1 ? "Draft Event" : "Draft Events";
+    } else {
+      return "Event Management";
+    }
+  }
+
+  // Get enhanced event status
+  function getEnhancedEventStatus(event: EventWithFilteredStats) {
+    if (event.isActive) {
+      return {
+        text: "Activated",
+        variant: "default" as const,
+      };
+    }
+    if (event.isArchived) {
+      return { text: "Archived", variant: "secondary" as const };
+    }
+    return { text: "Draft", variant: "outline" as const };
+  }
+</script>
+
+<Card>
+  <CardHeader>
+    <CardTitle>{getWidgetTitle()}</CardTitle>
+  </CardHeader>
+  <CardContent>
+    {#if form?.message}
+      <div
+        class="mb-4 p-3 rounded-md {form.success
+          ? 'bg-green-100 text-green-800'
+          : 'bg-red-100 text-red-800'}"
+      >
+        {form.message}
+      </div>
+    {/if}
+
+    {#if schoolEvents.length === 0}
+      <p class="text-gray-500 italic">
+        No events found. Create your first event below.
+      </p>
+    {:else}
+      <div class="space-y-4">
+        {#each schoolEvents as event}
+          <div
+            class="border rounded-lg p-4 {event.isActive
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200'}"
+          >
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-3">
+                <h3 class="font-semibold">
+                  {event.name || `Event ${formatDate(event.date)}`}
+                </h3>
+                <Badge variant={getEnhancedEventStatus(event).variant}>
+                  {getEnhancedEventStatus(event).text}
+                </Badge>
+              </div>
+              <div class="flex items-center gap-2">
+                {#if !event.isActive && !event.isArchived}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onclick={() => handleActivateEvent(event.id)}
+                    disabled={isActivating}
+                  >
+                    {isActivating ? "Activating..." : "Activate"}
+                  </Button>
+                  <div class="relative">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onclick={() => toggleForceDelete(event.id)}
+                      disabled={isDeleting}
+                    >
+                      {forceDeleteEventId === event.id
+                        ? "Cancel"
+                        : isDeleting
+                          ? "Deleting..."
+                          : "Delete"}
+                    </Button>
+                  </div>
+                {/if}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onclick={() => {
+                    if (event.isActive) {
+                      // For active events, show detailed statistics in place
+                      showEventDetails(event.id);
+                    } else {
+                      // For archived events, go to the archived page
+                      goto(`/dashboard/admin/archived?eventId=${event.id}`);
+                    }
+                  }}
+                >
+                  {event.isActive ? "Show Details" : "View Details"}
+                </Button>
+              </div>
+            </div>
+
+            <div
+              class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600"
+            >
+              <div>
+                <span class="font-medium">Date:</span>
+                <br />
+                {formatDate(event.date)}
+              </div>
+              <div>
+                <span class="font-medium">Positions:</span>
+                <br />
+                {event.filteredStats?.totalPositions ?? 0}
+              </div>
+              <div>
+                <span class="font-medium">Total Slots:</span>
+                <br />
+                {event.filteredStats?.totalSlots ?? 0}
+              </div>
+              <div>
+                <span class="font-medium">Students with Choices:</span>
+                <br />
+                {event.filteredStats?.studentsWithChoices ?? 0}
+              </div>
+            </div>
+
+            {#if forceDeleteEventId === event.id}
+              <div class="mt-3 p-3 border rounded-md bg-red-50">
+                <div class="text-sm text-red-800 mb-2">
+                  This event may have student signups or lottery history.
+                  Deleting is blocked by default to preserve data.
+                </div>
+                <div class="text-sm text-gray-700 mb-3">
+                  Type <strong>DELETE</strong> to permanently remove
+                  <strong
+                    >{event.name || `Event ${formatDate(event.date)}`}</strong
+                  >
+                  and ALL related data (signups, assignments, lottery history, positions,
+                  attachments, permission slips, participation, important dates).
+                  This cannot be undone.
+                </div>
+                <form
+                  method="POST"
+                  action="?/forceDeleteEvent"
+                  class="flex flex-col gap-2 max-w-sm"
+                >
+                  <input type="hidden" name="eventId" value={event.id} />
+                  <input
+                    name="confirm"
+                    bind:value={confirmText}
+                    placeholder="Type DELETE"
+                    class="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    autocomplete="off"
+                  />
+                  <div class="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onclick={() => submitNormalDelete(event.id)}
+                    >
+                      Try Normal Delete
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="destructive"
+                      size="sm"
+                      class="bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                      disabled={confirmText !== "DELETE"}
+                    >
+                      Confirm Force Delete
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            {/if}
+
+            {#if event.displayLotteryResults}
+              <div class="mt-3">
+                <Badge
+                  variant="outline"
+                  class="text-green-600 border-green-600"
+                >
+                  ✓ Lottery results displayed
+                </Badge>
+              </div>
+            {/if}
+
+            <!-- Expanded Details for Active Events -->
+            {#if event.isActive && expandedEventId === event.id}
+              <div class="mt-4 pt-4 border-t border-gray-200">
+                <h4 class="font-semibold text-gray-800 mb-3">Event Details</h4>
+                <div class="space-y-3 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Event Status:</span>
+                    <span class="font-medium text-green-600"> Activated </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Event Date:</span>
+                    <span>{formatDate(event.date)}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Created:</span>
+                    <span>{formatDate(event.createdAt)}</span>
+                  </div>
+                  {#if event.activatedAt}
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Activated:</span>
+                      <span>{formatDate(event.activatedAt)}</span>
+                    </div>
+                  {/if}
+                </div>
+
+                <!-- Quick Actions for Active Event -->
+                <div class="mt-4 pt-3 border-t border-gray-100">
+                  <div class="flex gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onclick={() => goto("/dashboard/admin")}
+                    >
+                      View Dashboard
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onclick={() => goto("/visualizations")}
+                    >
+                      View Analytics
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+    {/if}
+
+    <!-- Event Management Guidelines -->
+    {#if schoolEvents.length > 0}
+      <div class="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+        <h4 class="text-sm font-semibold text-gray-800 mb-2">
+          💡 Event Management Guidelines
+        </h4>
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600"
+        >
+          <div>
+            <p class="font-medium text-green-700 mb-1">
+              ✅ Delete events when:
+            </p>
+            <ul class="space-y-1 ml-3">
+              <li>• Created by mistake or as test</li>
+              <li>• No student signups yet</li>
+              <li>• Planning was abandoned</li>
+              <li>• Want to completely remove</li>
+            </ul>
+          </div>
+          <div>
+            <p class="font-medium text-orange-700 mb-1">
+              📚 Archive events when:
+            </p>
+            <ul class="space-y-1 ml-3">
+              <li>• Students have participated</li>
+              <li>• Event was completed</li>
+              <li>• Lottery was run</li>
+              <li>• Want to preserve history</li>
+            </ul>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-3 italic">
+          💡 Tip: The system will automatically prevent deletion if the event is
+          active (deactivate it first by activating another event). Deletion is
+          also prevented if students have signed up or if lottery has been run.
+        </p>
+      </div>
+    {/if}
+
+    <!-- Archive Event Section -->
+    {#if schoolEvents.some((e) => e.isActive)}
+      <div class="mt-6 pt-6 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-medium text-gray-900">
+              Archive Current Event
+            </h3>
+            <p class="text-xs text-gray-500">
+              Move the current active event to archived status
+            </p>
+          </div>
+          <button
+            onclick={() => {
+              const activeEvent = schoolEvents.find((e) => e.isActive);
+              if (
+                activeEvent &&
+                confirm(
+                  `Are you sure you want to archive "${activeEvent.name || "this event"}"? This will make it inactive and move it to archived status.`
+                )
+              ) {
+                // Create and submit archive form
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = "?/archiveEvent";
+
+                const eventIdInput = document.createElement("input");
+                eventIdInput.type = "hidden";
+                eventIdInput.name = "eventId";
+                eventIdInput.value = activeEvent.id;
+
+                form.appendChild(eventIdInput);
+                document.body.appendChild(form);
+                form.submit();
+              }
+            }}
+            class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition-colors text-sm font-medium"
+          >
+            Archive Event
+          </button>
+        </div>
+      </div>
+    {/if}
+  </CardContent>
+</Card>

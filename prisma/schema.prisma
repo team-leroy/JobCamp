@@ -3,187 +3,365 @@ generator client {
 }
 
 datasource db {
-  provider  = "mysql"
-  url       = env("DATABASE_URL")
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model Event {
-  id                       String      @id @default(cuid())
+  id                      String                      @id @default(cuid())
+  schoolId                String
+  date                    DateTime
+  displayLotteryResults   Boolean
+  isActive                Boolean                     @default(false)
+  isArchived              Boolean                     @default(false)
+  name                    String?
+  companyAccountsEnabled  Boolean                     @default(false)
+  companySignupsEnabled   Boolean                     @default(false)
+  lotteryPublished        Boolean                     @default(false)
+  studentAccountsEnabled  Boolean                     @default(false)
+  studentSignupsEnabled   Boolean                     @default(false)
+  companyDirectoryEnabled Boolean                     @default(false)
+  createdAt               DateTime                    @default(now())
+  activatedAt             DateTime?
+  school                  School                      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  lotteryJobs             LotteryJob[]
+  positions               Position[]
+  permissionSlips         PermissionSlipSubmission[] // Track permission slips for this event
+  studentParticipation    StudentEventParticipation[] // Track student participation in this event
+  importantDates          ImportantDate[] // Important dates for this event
 
-  schoolId                 String
-  school                   School      @relation(references: [id], fields: [schoolId], onDelete: Cascade)
-
-  date                     DateTime
-
-  displayLotteryResults    Boolean
-
-  positions                Position[]
+  @@index([schoolId, isArchived, date])
 }
 
 model School {
-  id                       String      @id @default(cuid())
-  
-  name                     String
-  emailDomain              String
-  webAddr                  String
-
-  adminId                  String      @unique
-  admin                    User        @relation(references: [id], fields: [adminId], onDelete: Cascade)
-
-  events                   Event[]
-
-  students                 Student[]
-  companies                Company[]
+  id                   String                @id @default(cuid())
+  name                 String
+  emailDomain          String
+  webAddr              String
+  companies            Company[]
+  events               Event[]
+  lotteryConfiguration LotteryConfiguration?
+  students             Student[]
+  admins               User[]                @relation("SchoolAdmins")
+  messages             Message[]
 }
 
 model Position {
-  id                String                @id @default(cuid())
-  title             String
-  career            String
-  slots             Int
-  summary           String                @db.VarChar(1024)
-  contact_name      String
-  contact_email     String
-  address           String                @db.VarChar(1024)
-  instructions      String                @db.VarChar(1024)
-  attire            String                @db.VarChar(1024)
-  arrival           String              
-  start             String
-  end               String
-  eventId           String
-  hostId            String
-  event             Event                 @relation(fields: [eventId], references: [id])
-  host              Host                  @relation(fields: [hostId], references: [id])
-  students          PositionsOnStudents[]
-  studentsAttending Student[]
-  attachments       Attachment[]
+  id                 String                @id @default(cuid())
+  title              String
+  career             String
+  slots              Int
+  summary            String                @db.VarChar(1024)
+  contact_name       String
+  contact_email      String
+  address            String                @db.VarChar(1024)
+  instructions       String                @db.VarChar(1024)
+  attire             String                @db.VarChar(1024)
+  createdAt          DateTime              @default(now())
+  arrival            String
+  start              String
+  end                String
+  eventId            String
+  hostId             String
+  isPublished        Boolean               @default(false)
+  attachments        Attachment[]
+  manualAssignments  ManualAssignment[]
+  event              Event                 @relation(fields: [eventId], references: [id])
+  host               Host                  @relation(fields: [hostId], references: [id])
+  students           PositionsOnStudents[]
+  prefillSettings    PrefillSetting[]
+  lotteryAssignments LotteryResults[]
 
   @@index([eventId], map: "Position_eventId_fkey")
   @@index([hostId], map: "Position_hostId_fkey")
 }
 
 model Attachment {
-  id                       String      @id @default(cuid())
-  position                 Position    @relation(fields: [positionId], references: [id], onDelete: Cascade)
-  positionId               String
-  
-  fileName                 String
+  id          String   @id @default(cuid())
+  positionId  String
+  fileName    String   // Original filename
+  storagePath String   // GCS storage path (e.g., "Position-Title-filename.pdf")
+  position    Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@index([positionId], map: "Attachment_positionId_fkey")
 }
 
 model Student {
-  id                       String      @id @default(cuid())
+  id                   String                      @id @default(cuid())
+  phone                String
+  graduatingClassYear  Int
+  parentEmail          String
+  schoolId             String?
+  userId               String?                     @unique
+  firstName            String
+  lastName             String
+  isActive             Boolean                     @default(true)
+  graduatedAt          DateTime?
+  manualAssignments    ManualAssignment[]
+  positionsSignedUpFor PositionsOnStudents[]
+  permissionSlips      PermissionSlipSubmission[]
+  eventParticipation   StudentEventParticipation[]
+  lotteryAssignments   LotteryResults[]
+  school               School?                     @relation(fields: [schoolId], references: [id])
+  user                 User?                       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  firstName                String
-  lastName                 String
-  phone                    String
-  grade                    Int
-
-  parentEmail              String
-  permissionSlipCompleted  Boolean     @default(false)
-
-  school                   School?     @relation(fields: [schoolId], references: [id])
-  schoolId                 String?
-
-  userId                   String?     @unique
-  user                     User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  positionsSignedUpFor     PositionsOnStudents[]
-
-  lotteryPositionId        String?
-  lotteryResult            Position?   @relation(fields: [lotteryPositionId], references: [id])
+  @@index([schoolId], map: "Student_schoolId_fkey")
+  @@index([schoolId, isActive])
 }
 
 model PositionsOnStudents {
-  position                 Position    @relation(fields: [positionId], references: [id])
-  positionId               String
-  student                  Student     @relation(fields: [studentId], references: [id])
-  studentId                String
-  rank                     Int
+  positionId String
+  studentId  String
+  rank       Int
+  createdAt  DateTime @default(now())
+  position   Position @relation(fields: [positionId], references: [id])
+  student    Student  @relation(fields: [studentId], references: [id])
 
   @@id([positionId, studentId])
+  @@index([studentId], map: "PositionsOnStudents_studentId_fkey")
 }
 
 model Company {
-  id                       String      @id @default(cuid())
+  id                 String           @id @default(cuid())
+  companyName        String           @unique
+  companyDescription String           @db.VarChar(1024)
+  companyUrl         String?
+  schoolId           String?
+  school             School?          @relation(fields: [schoolId], references: [id])
+  hosts              Host[]
+  prefillSettings    PrefillSetting[]
 
-  companyName              String      @unique
-  companyDescription       String      @db.VarChar(1024)
-  companyUrl               String?
-
-  school                   School?     @relation(fields: [schoolId], references: [id])
-  schoolId                 String?
-
-  hosts                    Host[]
+  @@index([schoolId], map: "Company_schoolId_fkey")
 }
 
 model Host {
-  id                       String      @id @default(cuid())
+  id        String     @id @default(cuid())
+  name      String
+  companyId String?
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  company   Company?   @relation(fields: [companyId], references: [id])
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  positions Position[]
 
-  name                     String
+  @@index([companyId], map: "Host_companyId_fkey")
+}
 
-  companyId                String?
-  company                  Company?    @relation(references: [id], fields: [companyId])
-  
-  userId                   String      @unique
-  user                     User        @relation(references: [id], fields: [userId], onDelete: Cascade)
-
-  positions                Position[]
+enum UserRole {
+  FULL_ADMIN
+  READ_ONLY_ADMIN
 }
 
 model User {
-  id                       String      @id @default(cuid())
-  email                    String      @unique
-  passwordHash             String
-  passwordSalt             String
-  emailVerified            Boolean     @default(false)
-  
-  student                  Student?
-  host                     Host?
-  school                   School?
-  
-  lastLogin                DateTime
-  
-  sessions                 Session[]
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  passwordSalt   String
+  emailVerified  Boolean   @default(false)
+  lastLogin      DateTime
+  createdAt      DateTime  @default(now())
+  role           UserRole? // Only used for admin users, null for students/hosts
+  host           Host?
+  sessions       Session[]
+  student        Student?
+  adminOfSchools School[]  @relation("SchoolAdmins")
+  sentMessages   Message[]
 }
 
 model Session {
-  id                       String      @id
-  expiresAt                DateTime
+  id        String   @id
+  expiresAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  userId                   String
-  user                     User        @relation(references: [id], fields: [userId], onDelete: Cascade)
+  @@index([userId], map: "Session_userId_fkey")
 }
 
 model EmailVerificationCodes {
-  id                       String      @id @default(cuid())
-  user_id                  String      @unique
-  email                    String
-  code                     String
-  expires_at               DateTime
+  id         String   @id @default(cuid())
+  user_id    String   @unique
+  email      String
+  code       String
+  expires_at DateTime
 }
 
 model PasswordResetTokens {
-  id                       String      @id @default(cuid())
-  user_id                  String      @unique
-  token_hash               String      @unique
-  expires_at               DateTime
+  id         String   @id @default(cuid())
+  user_id    String   @unique
+  token_hash String   @unique
+  expires_at DateTime
 }
 
 model PermissionSlipCode {
-  id                       String      @id @default(cuid())
-  user_id                  String      @unique
-  code                     String
+  id      String @id @default(cuid())
+  user_id String @unique
+  code    String
 }
 
 model PermissionSlipSubmission {
-  id                       String      @id @default(cuid())
-  user_id                  String      @unique
-  parentName               String
-  phoenNumber              String      // Wrong spelling
-  studentFirstName         String
-  studentLastName          String
-  physicalRestrictions     String?
-  dietaryRestrictions      String?
-  liability                String
-  liabilityDate            String
+  id                   String   @id @default(cuid())
+  studentId            String
+  eventId              String
+  parentName           String
+  phoenNumber          String
+  studentFirstName     String
+  studentLastName      String
+  physicalRestrictions String?
+  dietaryRestrictions  String?
+  liability            String
+  liabilityDate        String
+  submittedAt          DateTime @default(now())
+  student              Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  event                Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, eventId])
+  @@index([studentId])
+  @@index([eventId])
+}
+
+model LotteryJob {
+  id          String           @id @default(cuid())
+  status      String
+  progress    Float            @default(0)
+  currentSeed Int              @default(0)
+  adminId     String
+  startedAt   DateTime         @default(now())
+  completedAt DateTime?
+  error       String?
+  eventId     String
+  event       Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  results     LotteryResults[]
+
+  @@index([eventId])
+}
+
+model LotteryResults {
+  id           String     @id @default(cuid())
+  lotteryJobId String
+  studentId    String
+  positionId   String
+  createdAt    DateTime   @default(now())
+  lotteryJob   LotteryJob @relation(fields: [lotteryJobId], references: [id], onDelete: Cascade)
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  position     Position   @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, lotteryJobId])
+  @@index([lotteryJobId], map: "LotteryResults_lotteryJobId_fkey")
+}
+
+model StudentEventParticipation {
+  id                   String    @id @default(cuid())
+  studentId            String
+  eventId              String
+  participatedAt       DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+  contactInfoVerifiedAt DateTime?
+  student              Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  event                Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, eventId])
+  @@index([studentId], map: "StudentEventParticipation_studentId_fkey")
+  @@index([eventId], map: "StudentEventParticipation_eventId_fkey")
+}
+
+model LotteryConfiguration {
+  id                String             @id @default(cuid())
+  schoolId          String             @unique
+  gradeOrder        String             @default("NONE")
+  school            School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  manualAssignments ManualAssignment[]
+  prefillSettings   PrefillSetting[]
+
+  @@index([schoolId])
+}
+
+model ManualAssignment {
+  id                     String                @id @default(cuid())
+  studentId              String
+  positionId             String
+  createdAt              DateTime              @default(now())
+  lotteryConfigurationId String?
+  lotteryConfiguration   LotteryConfiguration? @relation(fields: [lotteryConfigurationId], references: [id], onDelete: Cascade)
+  position               Position              @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  student                Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, positionId])
+  @@index([studentId])
+  @@index([positionId])
+  @@index([lotteryConfigurationId])
+}
+
+model PrefillSetting {
+  id                     String                @id @default(cuid())
+  companyId              String
+  positionId             String
+  slots                  Int
+  createdAt              DateTime              @default(now())
+  lotteryConfigurationId String?
+  company                Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lotteryConfiguration   LotteryConfiguration? @relation(fields: [lotteryConfigurationId], references: [id], onDelete: Cascade)
+  position               Position              @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, positionId])
+  @@index([companyId])
+  @@index([positionId])
+  @@index([lotteryConfigurationId])
+}
+
+model ImportantDate {
+  id           String   @id @default(cuid())
+  eventId      String
+  date         DateTime
+  time         String?
+  title        String
+  description  String   @db.VarChar(1024)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, displayOrder])
+  @@index([eventId, date])
+}
+
+enum MessageType {
+  EMAIL
+  SMS
+}
+
+enum RecipientType {
+  STUDENTS
+  STUDENTS_INCOMPLETE_PERMISSION_SLIP
+  STUDENTS_NO_PICKS
+  STUDENTS_FEW_PICKS
+  STUDENTS_FEW_SLOTS
+  COMPANIES_ALL
+  COMPANIES_ACCOUNT_HOLDERS
+  POST_LOTTERY_ASSIGNED
+  POST_LOTTERY_UNASSIGNED
+  INDIVIDUAL_STUDENT
+  INDIVIDUAL_COMPANY
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  senderId       String
+  senderEmail    String
+  schoolId       String
+  eventId        String?
+  messageType    MessageType
+  recipientType  RecipientType
+  recipientCount Int
+  subject        String? // For emails only
+  includeParents Boolean       @default(false) // For student emails
+  sentAt         DateTime      @default(now())
+  status         String        @default("sent") // sent, failed, partial
+  errorMessage   String?       @db.VarChar(1024)
+
+  sender User   @relation(fields: [senderId], references: [id])
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@index([schoolId, sentAt])
+  @@index([eventId, sentAt])
+  @@index([senderId])
 }
