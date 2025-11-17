@@ -1352,19 +1352,22 @@ describe('Event Management Functions', () => {
       vi.mocked(prisma).event.findFirst.mockResolvedValue({
         id: testEventId,
         schoolId: testSchoolId,
-        name: 'Force Delete Event'
-      } as any);
+        name: 'Force Delete Event',
+        isActive: false,
+        isArchived: false,
+        displayLotteryResults: false,
+        companyAccountsEnabled: false,
+        companySignupsEnabled: false,
+        studentAccountsEnabled: false,
+        studentSignupsEnabled: false,
+        lotteryPublished: false,
+        companyDirectoryEnabled: false,
+        createdAt: new Date(),
+        activatedAt: null
+      } as unknown as (typeof prisma)['event']);
 
-      // Positions linked to event
-      vi.mocked(prisma).position.findMany.mockResolvedValue([
-        { id: 'pos-a' },
-        { id: 'pos-b' }
-      ] as any);
-
-      // Chain transactional deletes
-      // We don't assert call args for every step here; presence of no thrown error is sufficient
-      vi.mocked(prisma).$transaction.mockImplementation(async (cb: any) => {
-        // Provide a proxy that contains same methods used in implementation
+      // Chain transactional deletes: just ensure the callback is invoked without error
+      vi.mocked(prisma).$transaction.mockImplementation(async (cb) => {
         const tx = {
           positionsOnStudents: { deleteMany: vi.fn().mockResolvedValue({}) },
           manualAssignment: { deleteMany: vi.fn().mockResolvedValue({}) },
