@@ -198,12 +198,13 @@ export const actions: Actions = {
             summary: form.data.summary,
             contact_name: form.data.fullName,
             contact_email: form.data.email,
-            address: form.data.address,
-            instructions: form.data.instructions,
-            attire: form.data.attire,
-            arrival: form.data.arrival,
-            start: form.data.start,
-            end: form.data.release,
+            address: form.data.address || 'Not provided',
+            instructions: form.data.instructions || 'Not provided',
+            attire: form.data.attire || 'Not provided',
+            arrival: form.data.arrival || 'Not provided',
+            start: form.data.start || 'Not provided',
+            end: form.data.release || 'Not provided',
+            attachmentCount: attachments.length.toString(),
         }, eventData);
 
         redirect(302, "/dashboard");
