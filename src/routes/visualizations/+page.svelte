@@ -722,14 +722,33 @@
     const ctx = companyTimelineChartCanvas.getContext("2d");
     if (!ctx) return;
 
+    // Merge dates from both companyStats and positionStats to ensure we have labels
+    const allDates = new Set([
+      ...data.timelineStats.companyStats.map((c) => c.date),
+      ...data.timelineStats.positionStats.map((p) => p.date),
+    ]);
+    const sortedDates = Array.from(allDates).sort();
+
+    // Create maps for quick lookup
+    const companyMap = new Map(
+      data.timelineStats.companyStats.map((c) => [c.date, c.count])
+    );
+    const positionMap = new Map(
+      data.timelineStats.positionStats.map((p) => [p.date, p.count])
+    );
+
+    // Build aligned data arrays (use 0 for missing dates)
+    const companyData = sortedDates.map((date) => companyMap.get(date) || 0);
+    const positionData = sortedDates.map((date) => positionMap.get(date) || 0);
+
     companyTimelineChart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: data.timelineStats.companyStats.map((c) => c.date),
+        labels: sortedDates,
         datasets: [
           {
             label: "Company Registrations",
-            data: data.timelineStats.companyStats.map((c) => c.count),
+            data: companyData,
             borderColor: "#8b5cf6",
             backgroundColor: "rgba(139, 92, 246, 0.1)",
             borderWidth: 3,
@@ -738,7 +757,7 @@
           },
           {
             label: "Position Creations",
-            data: data.timelineStats.positionStats.map((p) => p.count),
+            data: positionData,
             borderColor: "#f97316",
             backgroundColor: "rgba(249, 115, 22, 0.1)",
             borderWidth: 3,

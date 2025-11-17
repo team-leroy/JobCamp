@@ -1111,9 +1111,9 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         // Create timeline data - use different windows for active vs archived events
         let timelineStart: Date;
         if (eventData?.isActive) {
-            // For active events, use 3 months leading up to the event
-            timelineStart = new Date(eventDate);
-            timelineStart.setMonth(timelineStart.getMonth() - 3);
+            // For active events, timeline starts from when the event was activated/created
+            // This shows all engagement activity since the event became active
+            timelineStart = eventStartDate ? new Date(eventStartDate) : new Date(event.createdAt);
         } else {
             // For archived events, use 6 months leading up to the event to capture more activity
             timelineStart = new Date(eventDate);
@@ -1295,7 +1295,8 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
         // For archived events, if no positions in timeline window, try to find any positions
-        if (positionDates.length === 0 && !eventData?.isActive) {
+        // Also handle active events if positions exist but are outside the initial window
+        if (positionDates.length === 0 && positions.length > 0) {
             // For archived events, try to find any positions and use a broader window
             const allPositionDates = positions
                 .map(p => p.createdAt)
