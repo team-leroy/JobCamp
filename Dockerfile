@@ -29,14 +29,16 @@ RUN pnpm install
 COPY . .
 
 # Generate Prisma Client (ensure this runs after npm install)
-RUN npx prisma generate
+# Set environment variable to handle Prisma binary server issues
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+RUN pnpm prisma generate
 
 # Build the SvelteKit app
 RUN pnpm run build
 
 # Expose the port for Cloud Run
-ENV PORT 8080
+ENV PORT=8080
 EXPOSE 8080
 
 # Set the command to run the app
-CMD /cloud_sql_proxy deep-voyage-436902-b3:us-central1:jobcamp26 --port 3306 --private-ip & pnpm run start
+CMD ["/bin/sh", "-c", "/cloud_sql_proxy deep-voyage-436902-b3:us-central1:jobcamp26 --port 3306 --private-ip & pnpm run start"]
