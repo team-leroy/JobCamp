@@ -40,5 +40,7 @@ RUN pnpm run build
 ENV PORT=8080
 EXPOSE 8080
 
-# Set the command to run the app
-CMD ["/bin/sh", "-c", "/cloud_sql_proxy deep-voyage-436902-b3:us-central1:jobcamp26 --port 3306 --private-ip & pnpm run start"]
+# Set the command to run the app with debug logging
+# --structured-logs for Cloud SQL Proxy logs in JSON format for Cloud Run
+# --verbose for detailed Cloud SQL Proxy debug output
+CMD ["/bin/sh", "-c", "/cloud_sql_proxy deep-voyage-436902-b3:us-central1:jobcamp26 --port 3306 --private-ip --structured-logs --verbose & echo 'Starting SvelteKit application...' && pnpm run start"]

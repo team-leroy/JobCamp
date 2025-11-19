@@ -78,5 +78,5 @@ jobs:
           service: "${{ env.SERVICE }}"
           region: "${{ env.REGION }}"
           image: "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/jobcamp-image:${{ github.sha }}"
-          env_vars: "DATABASE_URL=${{ secrets.PROD_DATABASE_URL }},SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }},SENDGRID_FROM_EMAIL=${{ secrets.SENDGRID_FROM_EMAIL }},SENDGRID_FROM_NAME=${{ secrets.SENDGRID_FROM_NAME }},SENDGRID_SANDBOX_MODE=false,TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }},TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }},TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }},TWILIO_SANDBOX_MODE=false"
+          env_vars: "DATABASE_URL=${{ secrets.PROD_DATABASE_URL }},SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }},SENDGRID_FROM_EMAIL=${{ secrets.SENDGRID_FROM_EMAIL }},SENDGRID_FROM_NAME=${{ secrets.SENDGRID_FROM_NAME }},SENDGRID_SANDBOX_MODE=false,TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }},TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }},TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }},TWILIO_SANDBOX_MODE=false,DEBUG=prisma:*,NODE_ENV=production"
           flags: "--add-cloudsql-instances=deep-voyage-436902-b3:us-central1:jobcamp26 --allow-unauthenticated --vpc-connector=${{env.CONNECTOR}}"
