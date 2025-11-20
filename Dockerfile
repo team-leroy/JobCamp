@@ -9,7 +9,7 @@ RUN apt-get update -y
 RUN apt-get install -y openssl
 
 # Install the Cloud SQL Auth Proxy
-ADD https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0/cloud-sql-proxy.linux.amd64 /cloud_sql_proxy
+ADD https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.0/cloud-sql-proxy.linux.amd64 /cloud_sql_proxy
 RUN chmod +x /cloud_sql_proxy
 
 # Set the working directory in the container
@@ -29,18 +29,14 @@ RUN pnpm install
 COPY . .
 
 # Generate Prisma Client (ensure this runs after npm install)
-# Set environment variable to handle Prisma binary server issues
-ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-RUN pnpm prisma generate
+RUN npx prisma generate
 
 # Build the SvelteKit app
 RUN pnpm run build
 
 # Expose the port for Cloud Run
-ENV PORT=8080
+ENV PORT 8080
 EXPOSE 8080
 
-# Set the command to run the app with debug logging
-# --structured-logs for Cloud SQL Proxy logs in JSON format for Cloud Run
-# --verbose for detailed Cloud SQL Proxy debug output
-CMD ["/bin/sh", "-c", "/cloud_sql_proxy deep-voyage-436902-b3:us-central1:jobcamp26 --port 3306 --private-ip --structured-logs --verbose & echo 'Starting SvelteKit application...' && pnpm run start"]
+# Set the command to run the app
+CMD /cloud_sql_proxy deep-voyage-436902-b3:us-central1:jobcamp26 --port 3306 --private-ip & pnpm run start
