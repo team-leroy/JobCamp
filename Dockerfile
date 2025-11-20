@@ -9,7 +9,7 @@ RUN apt-get update -y
 RUN apt-get install -y openssl
 
 # Install the Cloud SQL Auth Proxy
-ADD https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.0/cloud-sql-proxy.linux.amd64 /cloud_sql_proxy
+ADD https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0/cloud-sql-proxy.linux.amd64 /cloud_sql_proxy
 RUN chmod +x /cloud_sql_proxy
 
 # Set the working directory in the container
