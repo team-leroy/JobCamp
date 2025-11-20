@@ -38,7 +38,7 @@ env:
   PROJECT_ID: "deep-voyage-436902-b3"
   REGION: "us-east5"
   SERVICE: "github-actions-jobcamp"
-  ARTIFACT_REPO: "jobcamp"
+  ARTIFACT_REPO: "jobcamp26"
   CONNECTOR: "my-sql-connector"
 
 jobs:
