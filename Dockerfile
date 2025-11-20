@@ -29,6 +29,8 @@ RUN pnpm install
 COPY . .
 
 # Generate Prisma Client (ensure this runs after npm install)
+# Provide a placeholder DATABASE_URL for build time (real one comes from runtime env vars)
+ENV DATABASE_URL="mysql://placeholder:placeholder@localhost:3306/placeholder"
 RUN npx prisma generate
 
 # Build the SvelteKit app
