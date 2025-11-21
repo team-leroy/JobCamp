@@ -59,9 +59,6 @@
             ? ` on ${new Date(eventDate).toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC" })}`
             : ""}
         </h2>
-        <p class="text-gray-700 mb-4">
-          {eventName || "JobCamp"} is currently in preparation.
-        </p>
         <p class="text-lg font-semibold text-blue-600">
           Check back soon for registration! 🚀
         </p>
