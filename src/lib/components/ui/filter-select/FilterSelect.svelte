@@ -20,12 +20,16 @@
     class?: string;
     value?: string;
   } = $props();
+
+  // Generate unique ID for accessibility
+  const selectId = `filter-select-${Math.random().toString(36).substring(2, 9)}`;
 </script>
 
 <div class={"flex flex-col gap-2 " + className}>
-  <label class="text-sm font-medium text-foreground">{label}</label>
+  <label for={selectId} class="text-sm font-medium text-foreground">{label}</label>
   <BitsSelect.Root type="single" bind:value>
     <BitsSelect.Trigger
+      id={selectId}
       class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       aria-label={label}
     >
