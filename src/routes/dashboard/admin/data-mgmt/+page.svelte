@@ -32,6 +32,7 @@
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
   import FilteredStudentMessenger from "$lib/components/admin/FilteredStudentMessenger.svelte";
   import { MessageSquare } from "lucide-svelte";
+  import * as Dialog from "$lib/components/ui/dialog";
 
   interface Student {
     id: string;
@@ -146,6 +147,7 @@
   let expandedCompanies = $state(new Set<string>());
   let expandedPositions = $state(new Set<string>());
   let selectedTab = $state("Student");
+  let showMessengerDialog = $state(false);
 
   // Computed filtered students
   let filteredStudents = $derived(
@@ -448,27 +450,18 @@
                 >
                   Export CSV
                 </Button>
+                {#if filteredStudents.length > 0 && canEdit}
+                  <Button
+                    onclick={() => (showMessengerDialog = true)}
+                    class="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <MessageSquare class="h-4 w-4 mr-2" />
+                    Message Students ({filteredStudents.length})
+                  </Button>
+                {/if}
               </div>
             </CardContent>
           </Card>
-
-          <!-- Message Filtered Students Widget -->
-          {#if filteredStudents.length > 0 && canEdit}
-            <Card class="mb-4">
-              <CardHeader>
-                <CardTitle class="flex items-center gap-2">
-                  <MessageSquare class="h-5 w-5" />
-                  Message Filtered Students
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FilteredStudentMessenger
-                  studentIds={filteredStudents.map((s) => s.id)}
-                  studentCount={filteredStudents.length}
-                />
-              </CardContent>
-            </Card>
-          {/if}
 
           <!-- Student List -->
           <Card>
@@ -1108,5 +1101,26 @@
         </div>
       {/if}
     {/if}
+
+    <!-- Message Students Dialog -->
+    <Dialog.Root bind:open={showMessengerDialog}>
+      <Dialog.Content class="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <Dialog.Header>
+          <Dialog.Title class="flex items-center gap-2">
+            <MessageSquare class="h-5 w-5" />
+            Message Filtered Students
+          </Dialog.Title>
+          <Dialog.Description>
+            Send emails or SMS messages to the {filteredStudents.length} student{filteredStudents.length !== 1 ? "s" : ""} in your current search results.
+          </Dialog.Description>
+        </Dialog.Header>
+        <div class="py-4">
+          <FilteredStudentMessenger
+            studentIds={filteredStudents.map((s) => s.id)}
+            studentCount={filteredStudents.length}
+          />
+        </div>
+      </Dialog.Content>
+    </Dialog.Root>
   </div>
 </div>
