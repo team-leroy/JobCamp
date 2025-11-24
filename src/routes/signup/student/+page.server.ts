@@ -50,7 +50,7 @@ export const load: PageServerLoad = async (event) => {
     };
 };
 
-const enforceSchoolEmailDomain = false; // TEMP: allow non-school emails for verification testing
+const enforceSchoolEmailDomain = true;
 
 export const actions: Actions = {
     default: async (event) => {
