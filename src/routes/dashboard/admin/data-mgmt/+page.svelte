@@ -668,6 +668,18 @@
                 </Button>
                 <Button
                   variant="outline"
+                  onclick={() => {
+                    const params = new URLSearchParams();
+                    params.set("type", "companies");
+                    if (companyNameFilter) params.set("companyName", companyNameFilter);
+
+                    window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
+                  }}
+                >
+                  Export CSV
+                </Button>
+                <Button
+                  variant="outline"
                   onclick={() => window.location.reload()}
                 >
                   Refresh
@@ -826,6 +838,18 @@
                 </Button>
                 <Button
                   variant="outline"
+                  onclick={() => {
+                    const params = new URLSearchParams();
+                    params.set("type", "hosts");
+                    if (hostNameFilter) params.set("hostName", hostNameFilter);
+
+                    window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
+                  }}
+                >
+                  Export CSV
+                </Button>
+                <Button
+                  variant="outline"
                   onclick={() => window.location.reload()}
                 >
                   Refresh
@@ -940,9 +964,25 @@
                   ]}
                 />
               </div>
-              <Button variant="outline" onclick={clearFilters}>
-                Clear All Filters
-              </Button>
+              
+              <div class="flex gap-2">
+                <Button variant="outline" onclick={clearFilters}>
+                  Clear All Filters
+                </Button>
+                <Button
+                  variant="outline"
+                  onclick={() => {
+                    const params = new URLSearchParams();
+                    params.set("type", "positions");
+                    if (positionTitleFilter) params.set("positionTitle", positionTitleFilter);
+                    if (positionCareerFilter !== "All") params.set("positionCareer", positionCareerFilter);
+
+                    window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
+                  }}
+                >
+                  Export CSV
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
