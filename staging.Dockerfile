@@ -3,6 +3,9 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
+# Set non-interactive frontend for apt-get
+ENV DEBIAN_FRONTEND=noninteractive
+
 ARG MAILTRAP_TOKEN
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
@@ -34,8 +37,8 @@ RUN npx prisma generate
 RUN pnpm run build
 
 # Expose the port for Cloud Run
-ENV PORT 34040
+ENV PORT=34040
 EXPOSE 34040
 
 # Set the command to run the app
-CMD pnpm run start
+CMD ["pnpm", "run", "start"]
