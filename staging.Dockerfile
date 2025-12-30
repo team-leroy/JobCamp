@@ -24,6 +24,9 @@ COPY tsconfig.json .
 COPY svelte.config.js .
 COPY vite.config.ts .
 
+# Skip automatic Prisma generation during install (we do it explicitly later)
+ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
+
 # Install dependencies
 RUN pnpm install
 
