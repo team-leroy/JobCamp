@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { superForm } from "sveltekit-superforms";
   import type { PageData } from "./$types";
   import { Input } from "$lib/components/ui/input";
@@ -9,18 +10,22 @@
 
   let { data }: Props = $props();
 
-  const { form, errors, enhance, message } = superForm(data.form, {
-    resetForm: false,
-    clearOnSubmit: "none",
-  });
+  const { form, errors, enhance, message } = superForm(
+    untrack(() => data.form),
+    {
+      resetForm: false,
+      clearOnSubmit: "none",
+    }
+  );
 
   let showPassword = $state(false);
   let passwordEntryType = $derived(showPassword ? "text" : "password");
 
   // Determine if signup/login should be shown
-  const showSignupLogin =
+  const showSignupLogin = $derived(
     data.seasonActive &&
-    (data.studentAccountsEnabled || data.companyAccountsEnabled);
+      (data.studentAccountsEnabled || data.companyAccountsEnabled)
+  );
 </script>
 
 <Navbar

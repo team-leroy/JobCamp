@@ -40,7 +40,7 @@
     return { text: "User", class: "bg-gray-500" };
   }
 
-  const roleBadge = getRoleBadge(data.user.role);
+  const roleBadge = $derived(getRoleBadge(data.user.role));
 </script>
 
 <Navbar

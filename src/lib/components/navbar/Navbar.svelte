@@ -28,7 +28,7 @@
   } = $props();
 
   // Check if user is full admin (can see Messaging, Lottery, Event Mgmt)
-  const isFullAdmin = isAdmin && userRole === "FULL_ADMIN";
+  const isFullAdmin = $derived(isAdmin && userRole === "FULL_ADMIN");
 
   let collapsed = $state(false);
   let form = $state<HTMLFormElement | undefined>(undefined);

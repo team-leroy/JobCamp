@@ -11,6 +11,8 @@
   } from "$lib/components/ui/dialog";
   import { Edit, Save, X } from "lucide-svelte";
 
+  import { untrack } from "svelte";
+
   interface Host {
     id: string;
     name: string;
@@ -23,11 +25,13 @@
 
   let isOpen = $state(false);
 
-  let formData = $state({
-    id: host.id,
-    name: host.name,
-    email: host.email,
-  });
+  let formData = $state(
+    untrack(() => ({
+      id: host.id,
+      name: host.name,
+      email: host.email,
+    }))
+  );
 
   let message: string | null = $state(null);
   let error: string | null = $state(null);

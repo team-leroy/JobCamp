@@ -10,6 +10,7 @@
     DialogTitle,
   } from "$lib/components/ui/dialog";
   import { Edit, Save, X } from "lucide-svelte";
+  import { untrack } from "svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
 
   interface Student {
@@ -42,15 +43,17 @@
 
   let isOpen = $state(false);
 
-  let formData = $state({
-    id: student.id,
-    firstName: student.firstName,
-    lastName: student.lastName,
-    grade: String(student.grade),
-    phone: student.phone,
-    email: student.email,
-    parentEmail: student.parentEmail,
-  });
+  let formData = $state(
+    untrack(() => ({
+      id: student.id,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      grade: String(student.grade),
+      phone: student.phone,
+      email: student.email,
+      parentEmail: student.parentEmail,
+    }))
+  );
 
   let message: string | null = $state(null);
   let error: string | null = $state(null);

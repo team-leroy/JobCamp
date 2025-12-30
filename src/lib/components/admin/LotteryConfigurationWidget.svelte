@@ -5,7 +5,7 @@
     id: string;
     firstName: string;
     lastName: string;
-    grade: number;
+    grade: number | null;
   }
 
   interface Position {
@@ -72,7 +72,7 @@
   }
 
   function getStudentName(student: Student) {
-    return `${student.lastName}, ${student.firstName} (Grade ${student.grade})`;
+    return `${student.lastName}, ${student.firstName} (Grade ${student.grade ?? "N/A"})`;
   }
 
   function getPositionName(position: Position) {

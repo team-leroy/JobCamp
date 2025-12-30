@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { Input } from "$lib/components/ui/input/index.js";
   import { superForm } from "sveltekit-superforms";
   import Button from "$lib/components/ui/button/button.svelte";
@@ -6,7 +7,7 @@
 
   let { data } = $props();
 
-  const { form, errors, enhance } = superForm(data.form, {
+  const { form, errors, enhance } = superForm(untrack(() => data.form), {
     resetForm: false,
     clearOnSubmit: "none",
   });

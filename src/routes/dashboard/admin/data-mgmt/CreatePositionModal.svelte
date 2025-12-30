@@ -77,10 +77,12 @@
     error = null;
   }
 
-  const careerOptions = careers.map((career) => ({
-    value: career,
-    label: career,
-  }));
+  const careerOptions = $derived(
+    careers.map((career) => ({
+      value: career,
+      label: career,
+    }))
+  );
 </script>
 
 <Button variant="default" size="sm" onclick={() => (isOpen = true)}>

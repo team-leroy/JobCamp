@@ -21,87 +21,95 @@
     });
   }
 
-  let positions = $state({ posList: data.positions });
-
-  const permissionSlipStatus = (() => {
-    if (data.permissionSlipCompleted) {
-      return {
-        label: "Completed",
-        tone: "text-emerald-600",
-        helper: "You're cleared to participate.",
-      };
+  let positions = $state({ posList: [] as typeof data.positions });
+  $effect.pre(() => {
+    if (positions.posList.length === 0) {
+      positions.posList = data.positions;
     }
+  });
 
-    return {
-      label: "Needs Action",
-      tone: "text-amber-600",
-      helper:
-        "Ask your parent to sign the permission slip so you can pick jobs.",
-    };
-  })();
+  const permissionSlipStatus = $derived(
+    data.permissionSlipCompleted
+      ? {
+          label: "Completed",
+          tone: "text-emerald-600",
+          helper: "You're cleared to participate.",
+        }
+      : {
+          label: "Needs Action",
+          tone: "text-amber-600",
+          helper:
+            "Ask your parent to sign the permission slip so you can pick jobs.",
+        }
+  );
 
-  const lotterySummary = (() => {
-    if (!data.lotteryPublished) {
+  const lotterySummary = $derived(
+    (() => {
+      if (!data.lotteryPublished) {
+        return {
+          label: "Not Published",
+          tone: "text-slate-500",
+          helper: "We’ll email you once lottery results are released.",
+        };
+      }
+
+      if (data.lotteryResult) {
+        return {
+          label: "Assigned",
+          tone: "text-emerald-600",
+          helper: "Review the details of your assigned position below.",
+        };
+      }
+
       return {
-        label: "Not Published",
-        tone: "text-slate-500",
-        helper: "We’ll email you once lottery results are released.",
+        label: "Pending",
+        tone: "text-amber-600",
+        helper: "Lottery is published — results will appear here soon.",
       };
-    }
+    })()
+  );
 
-    if (data.lotteryResult) {
+  const nextStepSummary = $derived(
+    (() => {
+      if (!data.hasActiveEvent) {
+        return {
+          label: "Waiting for Event",
+          helper:
+            "We'll let you know as soon as the next JobCamp event launches.",
+        };
+      }
+
+      if (!data.permissionSlipCompleted) {
+        return {
+          label: "Complete Permission Slip",
+          helper:
+            "Get the permission slip signed so you can add your favorite jobs.",
+        };
+      }
+
+      // If lottery is published and student has been assigned, show review dates message
+      if (data.lotteryPublished && data.lotteryResult) {
+        return {
+          label: "Review important dates",
+          helper:
+            "Check the important dates section for upcoming deadlines and events.",
+        };
+      }
+
+      if (!data.studentSignupsEnabled) {
+        return {
+          label: "Signups Closed",
+          helper:
+            "You can review your picks, but changes are currently locked.",
+        };
+      }
+
       return {
-        label: "Assigned",
-        tone: "text-emerald-600",
-        helper: "Review the details of your assigned position below.",
+        label: "Build Your Picks",
+        helper: "Add or reorder your favorite jobs below.",
       };
-    }
-
-    return {
-      label: "Pending",
-      tone: "text-amber-600",
-      helper: "Lottery is published — results will appear here soon.",
-    };
-  })();
-
-  const nextStepSummary = (() => {
-    if (!data.hasActiveEvent) {
-      return {
-        label: "Waiting for Event",
-        helper:
-          "We'll let you know as soon as the next JobCamp event launches.",
-      };
-    }
-
-    if (!data.permissionSlipCompleted) {
-      return {
-        label: "Complete Permission Slip",
-        helper:
-          "Get the permission slip signed so you can add your favorite jobs.",
-      };
-    }
-
-    // If lottery is published and student has been assigned, show review dates message
-    if (data.lotteryPublished && data.lotteryResult) {
-      return {
-        label: "Review important dates",
-        helper:
-          "Check the important dates section for upcoming deadlines and events.",
-      };
-    }
-
-    if (!data.studentSignupsEnabled) {
-      return {
-        label: "Signups Closed",
-        helper: "You can review your picks, but changes are currently locked.",
-      };
-    }
-
-    return {
-      label: "Build Your Picks",
-      helper: "Add or reorder your favorite jobs below.",
-    };
-  })();
+    })()
+  );
 
   const deletePosition = async (posID: string) => {
     // Optimistically update UI

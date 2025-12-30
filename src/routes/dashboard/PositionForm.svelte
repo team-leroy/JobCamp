@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { buttonVariants } from "$lib/components/ui/button";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
@@ -14,7 +15,7 @@
     form,
     errors,
     enhance: formEnhance,
-  } = superForm(data.form, {
+  } = superForm(untrack(() => data.form), {
     resetForm: false,
   });
 

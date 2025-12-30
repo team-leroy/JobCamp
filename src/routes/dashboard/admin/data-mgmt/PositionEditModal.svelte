@@ -10,6 +10,7 @@
     DialogTitle,
   } from "$lib/components/ui/dialog";
   import { Edit, Save, X } from "lucide-svelte";
+  import { untrack } from "svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
 
   interface Position {
@@ -41,21 +42,23 @@
 
   let isOpen = $state(false);
 
-  let formData = $state({
-    id: position.id,
-    title: position.title,
-    career: position.career,
-    slots: position.slots.toString(),
-    summary: position.summary,
-    contactName: position.contactName,
-    contactEmail: position.contactEmail,
-    address: position.address,
-    instructions: position.instructions,
-    attire: position.attire,
-    arrival: position.arrival,
-    start: position.start,
-    end: position.end,
-  });
+  let formData = $state(
+    untrack(() => ({
+      id: position.id,
+      title: position.title,
+      career: position.career,
+      slots: position.slots.toString(),
+      summary: position.summary,
+      contactName: position.contactName,
+      contactEmail: position.contactEmail,
+      address: position.address,
+      instructions: position.instructions,
+      attire: position.attire,
+      arrival: position.arrival,
+      start: position.start,
+      end: position.end,
+    }))
+  );
 
   let message: string | null = $state(null);
   let error: string | null = $state(null);
@@ -111,10 +114,12 @@
     });
   }
 
-  const careerOptions = careers.map((career) => ({
-    value: career,
-    label: career,
-  }));
+  const careerOptions = $derived(
+    careers.map((career) => ({
+      value: career,
+      label: career,
+    }))
+  );
 </script>
 
 <Button variant="outline" size="sm" onclick={() => (isOpen = true)}>

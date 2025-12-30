@@ -1,27 +1,52 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { Input } from "$lib/components/ui/input/index.js";
   import { superForm } from "sveltekit-superforms";
   import Navbar from "$lib/components/navbar/Navbar.svelte";
+  import type { PageData } from "./$types";
   import { EyeClosedIcon, EyeIcon } from "lucide-svelte";
 
-  let { data } = $props();
+  interface Props {
+    data: PageData;
+  }
 
-  const { form, errors, enhance, message } = superForm(data.form, {
-    resetForm: false,
-    clearOnSubmit: "none",
-  });
+  let { data }: Props = $props();
+
+  const { form, errors, enhance, message } = superForm(
+    untrack(() => data.form),
+    {
+      resetForm: false,
+      clearOnSubmit: "none",
+    }
+  );
+
+  const showSignupLogin = $derived(data.showSignupLogin);
+  const studentAccountsEnabled = $derived(data.studentAccountsEnabled);
+  const companyAccountsEnabled = $derived(data.companyAccountsEnabled);
+  const gradeOptions = $derived(data.gradeOptions);
 
   let showPassword = $state(false);
   let passwordEntryType = $derived(showPassword ? "text" : "password");
+
+  // Cast for checkbox binding to avoid TS unknown error
+  let allowPhoneMessaging = $state(false);
+  $effect.pre(() => {
+    if (form) {
+      allowPhoneMessaging = $form.allowPhoneMessaging as boolean;
+    }
+  });
+  $effect(() => {
+    $form.allowPhoneMessaging = allowPhoneMessaging;
+  });
 </script>
 
 <Navbar
   isHost={false}
   loggedIn={false}
   isAdmin={false}
-  showSignupLogin={data.showSignupLogin}
-  studentAccountsEnabled={data.studentAccountsEnabled}
-  companyAccountsEnabled={data.companyAccountsEnabled}
+  {showSignupLogin}
+  {studentAccountsEnabled}
+  {companyAccountsEnabled}
 />
 
 <div
@@ -69,7 +94,7 @@
         bind:value={$form.grade}
       >
         <option value="" disabled>Select grade</option>
-        {#each data.gradeOptions as grade}
+        {#each gradeOptions as grade}
           <option value={grade}>Grade {grade}</option>
         {/each}
       </select>
@@ -107,7 +132,7 @@
         type="checkbox"
         class="rounded"
         name="allowPhoneMessaging"
-        bind:checked={$form.allowPhoneMessaging}
+        bind:checked={allowPhoneMessaging}
       />
       <label for="allowPhoneMessaging">I Accept SMS Messages</label>
     </div>

@@ -4,18 +4,16 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
 
   const { data } = $props();
-  const {
-    isHost,
-    loggedIn,
-    isAdmin,
-    seasonActive,
-    hasActiveEvent,
-    eventName,
-    eventDate,
-    studentAccountsEnabled,
-    companyAccountsEnabled,
-    showSignupLogin,
-  } = data;
+  const isHost = $derived(data.isHost);
+  const loggedIn = $derived(data.loggedIn);
+  const isAdmin = $derived(data.isAdmin);
+  const seasonActive = $derived(data.seasonActive);
+  const hasActiveEvent = $derived(data.hasActiveEvent);
+  const eventName = $derived(data.eventName);
+  const eventDate = $derived(data.eventDate);
+  const studentAccountsEnabled = $derived(data.studentAccountsEnabled);
+  const companyAccountsEnabled = $derived(data.companyAccountsEnabled);
+  const showSignupLogin = $derived(data.showSignupLogin);
 </script>
 
 <Navbar

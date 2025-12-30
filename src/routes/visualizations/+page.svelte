@@ -19,12 +19,34 @@
     PointElement,
   } from "chart.js";
 
-  let { data } = $props();
+  import type { PageData } from "./$types";
+
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
+
+  const loggedIn = $derived(data.loggedIn);
+  const isHost = $derived(data.isHost);
+  const isAdmin = $derived(data.isAdmin);
+  const userRole = $derived(data.userRole);
+  const selectedEvent = $derived(data.selectedEvent);
+  const allEvents = $derived(data.allEvents);
+  const lotteryStats = $derived(data.lotteryStats);
+  const companyStats = $derived(data.companyStats);
+  const studentStats = $derived(data.studentStats);
+  const timelineStats = $derived(data.timelineStats);
   // Chart variables
   let chartCanvas = $state<HTMLCanvasElement | undefined>(undefined);
   let chart = $state<Chart | null>(null);
   let selectedVisualization = $state("lottery");
-  let selectedEventId = $state(data.selectedEvent?.id || "");
+  let selectedEventId = $state("");
+  $effect.pre(() => {
+    if (!selectedEventId && data.selectedEvent?.id) {
+      selectedEventId = data.selectedEvent.id;
+    }
+  });
 
   // Event selection handler
   function handleEventChange(event: Event) {
@@ -83,7 +105,7 @@
   );
 
   function createChart() {
-    if (!chartCanvas || !data.lotteryStats) return;
+    if (!chartCanvas || !lotteryStats) return;
 
     if (chart) {
       chart.destroy();
@@ -113,17 +135,17 @@
           {
             label: "Students",
             data: [
-              data.lotteryStats.firstChoice,
-              data.lotteryStats.secondChoice,
-              data.lotteryStats.thirdChoice,
-              data.lotteryStats.fourthChoice,
-              data.lotteryStats.fifthChoice,
-              data.lotteryStats.sixthChoice,
-              data.lotteryStats.seventhChoice,
-              data.lotteryStats.eighthChoice,
-              data.lotteryStats.ninthChoice,
-              data.lotteryStats.tenthChoice,
-              data.lotteryStats.notPlaced,
+              lotteryStats.firstChoice,
+              lotteryStats.secondChoice,
+              lotteryStats.thirdChoice,
+              lotteryStats.fourthChoice,
+              lotteryStats.fifthChoice,
+              lotteryStats.sixthChoice,
+              lotteryStats.seventhChoice,
+              lotteryStats.eighthChoice,
+              lotteryStats.ninthChoice,
+              lotteryStats.tenthChoice,
+              lotteryStats.notPlaced,
             ],
             backgroundColor: [
               "#10b981", // Green for 1st choice
@@ -222,7 +244,7 @@
   let companyChart = $state<Chart | null>(null);
 
   function createCareerChart() {
-    if (!careerChartCanvas || !data.companyStats) return;
+    if (!careerChartCanvas || !companyStats) return;
 
     if (careerChart) {
       careerChart.destroy();
@@ -232,7 +254,7 @@
     const ctx = careerChartCanvas.getContext("2d");
     if (!ctx) return;
 
-    const topCareers = data.companyStats.careerStats.slice(0, 10);
+    const topCareers = companyStats.careerStats.slice(0, 10);
 
     careerChart = new Chart(ctx, {
       type: "bar",
@@ -279,7 +301,7 @@
   }
 
   function createCompanyChart() {
-    if (!companyChartCanvas || !data.companyStats) return;
+    if (!companyChartCanvas || !companyStats) return;
 
     if (companyChart) {
       companyChart.destroy();
@@ -289,7 +311,7 @@
     const ctx = companyChartCanvas.getContext("2d");
     if (!ctx) return;
 
-    const topCompanies = data.companyStats.companyStats.slice(0, 10);
+    const topCompanies = companyStats.companyStats.slice(0, 10);
 
     companyChart = new Chart(ctx, {
       type: "doughnut",
@@ -367,7 +389,7 @@
   let companyTimelineChart = $state<Chart | null>(null);
 
   function createGradeChart() {
-    if (!gradeChartCanvas || !data.studentStats) return;
+    if (!gradeChartCanvas || !studentStats) return;
 
     if (gradeChart) {
       gradeChart.destroy();
@@ -380,20 +402,18 @@
     gradeChart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: data.studentStats.gradeStats.map((g) => `Grade ${g.grade}`),
+        labels: studentStats.gradeStats.map((g) => `Grade ${g.grade}`),
         datasets: [
           {
             label: "Total Students",
-            data: data.studentStats.gradeStats.map((g) => g.totalStudents),
+            data: studentStats.gradeStats.map((g) => g.totalStudents),
             backgroundColor: "#3b82f6",
             borderColor: "#2563eb",
             borderWidth: 1,
           },
           {
             label: "Students with Choices",
-            data: data.studentStats.gradeStats.map(
-              (g) => g.studentsWithChoices
-            ),
+            data: studentStats.gradeStats.map((g) => g.studentsWithChoices),
             backgroundColor: "#10b981",
             borderColor: "#059669",
             borderWidth: 1,
@@ -424,7 +444,7 @@
   }
 
   function createChoiceChart() {
-    if (!choiceChartCanvas || !data.studentStats) return;
+    if (!choiceChartCanvas || !studentStats) return;
 
     if (choiceChart) {
       choiceChart.destroy();
@@ -437,13 +457,11 @@
     choiceChart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: data.studentStats.choiceStats.map(
-          (c) => `${c.choices} choices`
-        ),
+        labels: studentStats.choiceStats.map((c) => `${c.choices} choices`),
         datasets: [
           {
             label: "Number of Students",
-            data: data.studentStats.choiceStats.map((c) => c.count),
+            data: studentStats.choiceStats.map((c) => c.count),
             backgroundColor: "#8b5cf6",
             borderColor: "#7c3aed",
             borderWidth: 1,
@@ -474,7 +492,7 @@
   }
 
   function createSlotChart() {
-    if (!slotChartCanvas || !data.studentStats) return;
+    if (!slotChartCanvas || !studentStats) return;
 
     if (slotChart) {
       slotChart.destroy();
@@ -485,9 +503,9 @@
     if (!ctx) return;
 
     // Use the new slot availability stats
-    const slotData = data.studentStats.slotAvailabilityStats;
+    const slotData = studentStats.slotAvailabilityStats;
 
-    if (slotData.length === 0) {
+    if (!slotData || slotData.length === 0) {
       return;
     }
 
@@ -529,7 +547,7 @@
   }
 
   function createChoiceVsSlotsChart() {
-    if (!choiceVsSlotsChartCanvas || !data.studentStats) return;
+    if (!choiceVsSlotsChartCanvas || !studentStats) return;
 
     if (choiceVsSlotsChart) {
       choiceVsSlotsChart.destroy();
@@ -540,9 +558,7 @@
     if (!ctx) return;
 
     // Filter out students with 0 choices since they have no slot data
-    const filteredData = data.studentStats.slotStats.filter(
-      (s) => s.choices > 0
-    );
+    const filteredData = studentStats.slotStats.filter((s) => s.choices > 0);
 
     if (filteredData.length === 0) {
       return;
@@ -606,7 +622,7 @@
   }
 
   function createRegistrationChart() {
-    if (!registrationChartCanvas || !data.timelineStats) return;
+    if (!registrationChartCanvas || !timelineStats) return;
 
     if (registrationChart) {
       registrationChart.destroy();
@@ -619,11 +635,11 @@
     registrationChart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: data.timelineStats.registrationStats.map((r) => r.date),
+        labels: timelineStats.registrationStats.map((r) => r.date),
         datasets: [
           {
             label: "Student Registrations",
-            data: data.timelineStats.registrationStats.map((r) => r.count),
+            data: timelineStats.registrationStats.map((r) => r.count),
             borderColor: "#3b82f6",
             backgroundColor: "rgba(59, 130, 246, 0.1)",
             borderWidth: 3,
@@ -659,7 +675,7 @@
   }
 
   function createChoiceTimelineChart() {
-    if (!choiceTimelineChartCanvas || !data.timelineStats) return;
+    if (!choiceTimelineChartCanvas || !timelineStats) return;
 
     if (choiceTimelineChart) {
       choiceTimelineChart.destroy();
@@ -672,11 +688,11 @@
     choiceTimelineChart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: data.timelineStats.choiceStats.map((c) => c.date),
+        labels: timelineStats.choiceStats.map((c) => c.date),
         datasets: [
           {
             label: "Choice Submissions",
-            data: data.timelineStats.choiceStats.map((c) => c.count),
+            data: timelineStats.choiceStats.map((c) => c.count),
             borderColor: "#10b981",
             backgroundColor: "rgba(16, 185, 129, 0.1)",
             borderWidth: 3,
@@ -712,7 +728,7 @@
   }
 
   function createCompanyTimelineChart() {
-    if (!companyTimelineChartCanvas || !data.timelineStats) return;
+    if (!companyTimelineChartCanvas || !timelineStats) return;
 
     if (companyTimelineChart) {
       companyTimelineChart.destroy();
@@ -724,17 +740,17 @@
 
     // Merge dates from both companyStats and positionStats to ensure we have labels
     const allDates = new Set([
-      ...data.timelineStats.companyStats.map((c) => c.date),
-      ...data.timelineStats.positionStats.map((p) => p.date),
+      ...timelineStats.companyStats.map((c) => c.date),
+      ...timelineStats.positionStats.map((p) => p.date),
     ]);
     const sortedDates = Array.from(allDates).sort();
 
     // Create maps for quick lookup
     const companyMap = new Map(
-      data.timelineStats.companyStats.map((c) => [c.date, c.count])
+      timelineStats.companyStats.map((c) => [c.date, c.count])
     );
     const positionMap = new Map(
-      data.timelineStats.positionStats.map((p) => [p.date, p.count])
+      timelineStats.positionStats.map((p) => [p.date, p.count])
     );
 
     // Build aligned data arrays (use 0 for missing dates)
@@ -817,10 +833,10 @@
 </script>
 
 <Navbar
-  loggedIn={data.loggedIn}
-  isHost={data.isHost}
-  isAdmin={data.isAdmin}
-  userRole={data.userRole}
+  {loggedIn}
+  {isHost}
+  {isAdmin}
+  {userRole}
 />
 
 <div class="h-24"></div>
@@ -834,7 +850,7 @@
   </div>
 
   <!-- Event Selector -->
-  {#if data.allEvents && data.allEvents.length > 0}
+  {#if allEvents && allEvents.length > 0}
     <div class="mb-6">
       <label
         for="event-selector"
@@ -848,7 +864,7 @@
         onchange={handleEventChange}
         class="block w-full max-w-md px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
       >
-        {#each data.allEvents as event}
+        {#each allEvents as event}
           <option value={event.id}>
             {event.name || `Event ${event.date.toLocaleDateString()}`}
             {event.isActive
@@ -859,15 +875,15 @@
           </option>
         {/each}
       </select>
-      {#if data.selectedEvent}
+      {#if selectedEvent}
         <p class="mt-2 text-sm text-gray-600">
           Viewing data for: <span class="font-medium"
-            >{data.selectedEvent.name ||
-              `Event ${data.selectedEvent.date.toLocaleDateString()}`}</span
+            >{selectedEvent.name ||
+              `Event ${selectedEvent.date.toLocaleDateString()}`}</span
           >
-          {data.selectedEvent.isActive
+          {selectedEvent.isActive
             ? " (Active Event)"
-            : data.selectedEvent.isArchived
+            : selectedEvent.isArchived
               ? " (Archived Event)"
               : " (Draft Event)"}
         </p>
@@ -876,7 +892,7 @@
   {/if}
 
   <!-- No Event Notice -->
-  {#if !data.selectedEvent}
+  {#if !selectedEvent}
     <div class="mb-8 p-6 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
       <h2 class="text-xl font-semibold text-yellow-800 mb-2">
         No Event Selected
@@ -894,7 +910,7 @@
   {/if}
 
   <!-- Visualization Selector -->
-  {#if data.selectedEvent}
+  {#if selectedEvent}
     <div class="mb-8 bg-white rounded-lg shadow p-6">
       <h2 class="text-xl font-semibold mb-4">Select Visualization</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -916,7 +932,7 @@
       </div>
     </div>
 
-    {#if selectedVisualization === "lottery" && data.lotteryStats}
+    {#if selectedVisualization === "lottery" && lotteryStats}
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Chart -->
         <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
@@ -932,13 +948,12 @@
           <div class="space-y-4">
             <div class="text-center p-4 bg-green-50 rounded-lg">
               <div class="text-2xl font-bold text-green-600">
-                {data.lotteryStats.firstChoice}
+                {lotteryStats.firstChoice}
               </div>
               <div class="text-sm text-green-600">Got 1st Choice</div>
               <div class="text-xs text-gray-500">
                 {(
-                  (data.lotteryStats.firstChoice /
-                    data.lotteryStats.totalStudents) *
+                  (lotteryStats.firstChoice / lotteryStats.totalStudents) *
                   100
                 ).toFixed(1)}% of students
               </div>
@@ -946,13 +961,12 @@
 
             <div class="text-center p-4 bg-yellow-50 rounded-lg">
               <div class="text-2xl font-bold text-yellow-600">
-                {data.lotteryStats.secondChoice}
+                {lotteryStats.secondChoice}
               </div>
               <div class="text-sm text-yellow-600">Got 2nd Choice</div>
               <div class="text-xs text-gray-500">
                 {(
-                  (data.lotteryStats.secondChoice /
-                    data.lotteryStats.totalStudents) *
+                  (lotteryStats.secondChoice / lotteryStats.totalStudents) *
                   100
                 ).toFixed(1)}% of students
               </div>
@@ -960,13 +974,12 @@
 
             <div class="text-center p-4 bg-orange-50 rounded-lg">
               <div class="text-2xl font-bold text-orange-600">
-                {data.lotteryStats.thirdChoice}
+                {lotteryStats.thirdChoice}
               </div>
               <div class="text-sm text-orange-600">Got 3rd Choice</div>
               <div class="text-xs text-gray-500">
                 {(
-                  (data.lotteryStats.thirdChoice /
-                    data.lotteryStats.totalStudents) *
+                  (lotteryStats.thirdChoice / lotteryStats.totalStudents) *
                   100
                 ).toFixed(1)}% of students
               </div>
@@ -974,13 +987,12 @@
 
             <div class="text-center p-4 bg-red-50 rounded-lg">
               <div class="text-2xl font-bold text-red-600">
-                {data.lotteryStats.notPlaced}
+                {lotteryStats.notPlaced}
               </div>
               <div class="text-sm text-red-600">Not Placed</div>
               <div class="text-xs text-gray-500">
                 {(
-                  (data.lotteryStats.notPlaced /
-                    data.lotteryStats.totalStudents) *
+                  (lotteryStats.notPlaced / lotteryStats.totalStudents) *
                   100
                 ).toFixed(1)}% of students
               </div>
@@ -995,29 +1007,28 @@
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <div class="text-center">
             <div class="text-lg font-semibold">
-              {data.lotteryStats.totalStudents}
+              {lotteryStats.totalStudents}
             </div>
             <div class="text-sm text-gray-600">Total Students</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-green-600">
-              {data.lotteryStats.firstChoice +
-                data.lotteryStats.secondChoice +
-                data.lotteryStats.thirdChoice}
+              {lotteryStats.firstChoice +
+                lotteryStats.secondChoice +
+                lotteryStats.thirdChoice}
             </div>
             <div class="text-sm text-gray-600">Top 3 Choices</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-blue-600">
-              {data.lotteryStats.totalStudents - data.lotteryStats.notPlaced}
+              {lotteryStats.totalStudents - lotteryStats.notPlaced}
             </div>
             <div class="text-sm text-gray-600">Successfully Placed</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-purple-600">
               {(
-                (data.lotteryStats.firstChoice /
-                  data.lotteryStats.totalStudents) *
+                (lotteryStats.firstChoice / lotteryStats.totalStudents) *
                 100
               ).toFixed(1)}%
             </div>
@@ -1026,9 +1037,8 @@
           <div class="text-center">
             <div class="text-lg font-semibold text-orange-600">
               {(
-                ((data.lotteryStats.totalStudents -
-                  data.lotteryStats.notPlaced) /
-                  data.lotteryStats.totalStudents) *
+                ((lotteryStats.totalStudents - lotteryStats.notPlaced) /
+                  lotteryStats.totalStudents) *
                 100
               ).toFixed(1)}%
             </div>
@@ -1037,8 +1047,7 @@
           <div class="text-center">
             <div class="text-lg font-semibold text-red-600">
               {(
-                (data.lotteryStats.notPlaced /
-                  data.lotteryStats.totalStudents) *
+                (lotteryStats.notPlaced / lotteryStats.totalStudents) *
                 100
               ).toFixed(1)}%
             </div>
@@ -1046,7 +1055,7 @@
           </div>
         </div>
       </div>
-    {:else if selectedVisualization === "lottery" && !data.lotteryStats}
+    {:else if selectedVisualization === "lottery" && !lotteryStats}
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">No Lottery Data Available</h2>
         <p class="text-gray-600 mb-4">
@@ -1055,7 +1064,7 @@
         </p>
         <Button href="/lottery" variant="default">Go to Lottery</Button>
       </div>
-    {:else if selectedVisualization === "company" && data.companyStats}
+    {:else if selectedVisualization === "company" && companyStats}
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Career Field Distribution -->
         <div class="bg-white rounded-lg shadow p-6">
@@ -1086,33 +1095,32 @@
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <div class="text-center">
             <div class="text-lg font-semibold">
-              {data.companyStats.totalCompanies}
+              {companyStats.totalCompanies}
             </div>
             <div class="text-sm text-gray-600">Total Companies</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-green-600">
-              {data.companyStats.totalChoices}
+              {companyStats.totalChoices}
             </div>
             <div class="text-sm text-gray-600">Top 3 Student Choices</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-blue-600">
-              {data.companyStats.totalSlots}
+              {companyStats.totalSlots}
             </div>
             <div class="text-sm text-gray-600">Total Available Slots</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-purple-600">
-              {data.companyStats.totalPositions}
+              {companyStats.totalPositions}
             </div>
             <div class="text-sm text-gray-600">Total Positions</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-orange-600">
               {(
-                (data.companyStats.totalChoices /
-                  data.companyStats.totalSlots) *
+                (companyStats.totalChoices / companyStats.totalSlots) *
                 100
               ).toFixed(1)}%
             </div>
@@ -1120,10 +1128,9 @@
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-red-600">
-              {(
-                data.companyStats.totalChoices /
-                data.companyStats.totalPositions
-              ).toFixed(1)}
+              {(companyStats.totalChoices / companyStats.totalPositions).toFixed(
+                1
+              )}
             </div>
             <div class="text-sm text-gray-600">
               Avg Top 3 Choices per Position
@@ -1138,40 +1145,39 @@
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
           <div class="text-center">
             <div class="text-lg font-semibold">
-              {data.companyStats.totalPositions}
+              {companyStats.totalPositions}
             </div>
             <div class="text-sm text-gray-600">Total Positions</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-green-600">
-              {data.companyStats.totalChoices}
+              {companyStats.totalChoices}
             </div>
             <div class="text-sm text-gray-600">Total Choices</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-blue-600">
-              {data.companyStats.totalSlots}
+              {companyStats.totalSlots}
             </div>
             <div class="text-sm text-gray-600">Total Slots</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-purple-600">
-              {(data.companyStats.overallSubscriptionRate * 100).toFixed(1)}%
+              {(companyStats.overallSubscriptionRate * 100).toFixed(1)}%
             </div>
             <div class="text-sm text-gray-600">Overall Subscription Rate</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-orange-600">
-              {data.companyStats.companySubscriptionStats.length}
+              {companyStats.companySubscriptionStats.length}
             </div>
             <div class="text-sm text-gray-600">Companies with Choices</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-red-600">
-              {(
-                data.companyStats.totalChoices /
-                data.companyStats.totalPositions
-              ).toFixed(1)}
+              {(companyStats.totalChoices / companyStats.totalPositions).toFixed(
+                1
+              )}
             </div>
             <div class="text-sm text-gray-600">Avg Choices per Position</div>
           </div>
@@ -1209,7 +1215,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each data.companyStats.companySubscriptionStats as company}
+              {#each companyStats.companySubscriptionStats as company}
                 <tr>
                   <td class="py-2 px-4 border-b text-sm text-gray-800"
                     >{company.company}</td
@@ -1285,7 +1291,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each data.companyStats.careerStats as career}
+              {#each companyStats.careerStats as career}
                 <tr>
                   <td class="py-2 px-4 border-b text-sm text-gray-800"
                     >{career.career}</td
@@ -1305,7 +1311,7 @@
           </table>
         </div>
       </div>
-    {:else if selectedVisualization === "company" && !data.companyStats}
+    {:else if selectedVisualization === "company" && !companyStats}
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">No Company Data Available</h2>
         <p class="text-gray-600 mb-4">
@@ -1313,7 +1319,7 @@
           have registered and selected companies.
         </p>
       </div>
-    {:else if selectedVisualization === "student" && data.studentStats}
+    {:else if selectedVisualization === "student" && studentStats}
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Grade Distribution -->
         <div class="bg-white rounded-lg shadow p-6">
@@ -1353,37 +1359,37 @@
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <div class="text-center">
             <div class="text-lg font-semibold">
-              {data.studentStats.totalStudents}
+              {studentStats.totalStudents}
             </div>
             <div class="text-sm text-gray-600">Total Students</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-green-600">
-              {data.studentStats.totalStudentsWithChoices}
+              {studentStats.totalStudentsWithChoices}
             </div>
             <div class="text-sm text-gray-600">Students with Choices</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-blue-600">
-              {data.studentStats.totalChoices}
+              {studentStats.totalChoices}
             </div>
             <div class="text-sm text-gray-600">Total Student Choices</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-purple-600">
-              {data.studentStats.averageChoicesPerStudent.toFixed(1)}
+              {studentStats.averageChoicesPerStudent.toFixed(1)}
             </div>
             <div class="text-sm text-gray-600">Avg Choices per Student</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-orange-600">
-              {data.studentStats.totalAvailableSlots}
+              {studentStats.totalAvailableSlots}
             </div>
             <div class="text-sm text-gray-600">Total Available Slots</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-red-600">
-              {data.studentStats.studentsWithNoChoices.length}
+              {studentStats.studentsWithNoChoices.length}
             </div>
             <div class="text-sm text-gray-600">Students with No Choices</div>
           </div>
@@ -1412,7 +1418,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each data.studentStats.gradeStats as grade}
+              {#each studentStats.gradeStats as grade}
                 <tr>
                   <td class="py-2 px-4 border-b text-sm text-gray-800"
                     >{grade.grade}</td
@@ -1448,7 +1454,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each data.studentStats.choiceStats as choice}
+              {#each studentStats.choiceStats as choice}
                 <tr>
                   <td class="py-2 px-4 border-b text-sm text-gray-800"
                     >{choice.choices} choices</td
@@ -1473,7 +1479,7 @@
           ></canvas>
         </div>
       </div>
-    {:else if selectedVisualization === "student" && !data.studentStats}
+    {:else if selectedVisualization === "student" && !studentStats}
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">No Student Data Available</h2>
         <p class="text-gray-600 mb-4">
@@ -1481,7 +1487,7 @@
           students have registered and selected companies.
         </p>
       </div>
-    {:else if selectedVisualization === "timeline" && data.timelineStats}
+    {:else if selectedVisualization === "timeline" && timelineStats}
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Registration Timeline -->
         <div class="bg-white rounded-lg shadow p-6">
@@ -1527,25 +1533,25 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div class="text-center">
             <div class="text-lg font-semibold text-blue-600">
-              {data.timelineStats.milestones.totalStudents}
+              {timelineStats.milestones.totalStudents}
             </div>
             <div class="text-sm text-gray-600">Total Students</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-green-600">
-              {data.timelineStats.milestones.studentsWithChoices}
+              {timelineStats.milestones.studentsWithChoices}
             </div>
             <div class="text-sm text-gray-600">Students with Choices</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-purple-600">
-              {data.timelineStats.milestones.totalCompanies}
+              {timelineStats.milestones.totalCompanies}
             </div>
             <div class="text-sm text-gray-600">Total Companies</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-orange-600">
-              {data.timelineStats.milestones.totalPositions}
+              {timelineStats.milestones.totalPositions}
             </div>
             <div class="text-sm text-gray-600">Total Positions</div>
           </div>
@@ -1559,9 +1565,9 @@
               <div class="flex justify-between">
                 <span class="text-gray-600">First Registration:</span>
                 <span class="font-medium"
-                  >{data.timelineStats.milestones.firstRegistration
+                  >{timelineStats.milestones.firstRegistration
                     ? new Date(
-                        data.timelineStats.milestones.firstRegistration
+                        timelineStats.milestones.firstRegistration
                       ).toLocaleDateString()
                     : "N/A"}</span
                 >
@@ -1569,9 +1575,9 @@
               <div class="flex justify-between">
                 <span class="text-gray-600">Last Registration:</span>
                 <span class="font-medium"
-                  >{data.timelineStats.milestones.lastRegistration
+                  >{timelineStats.milestones.lastRegistration
                     ? new Date(
-                        data.timelineStats.milestones.lastRegistration
+                        timelineStats.milestones.lastRegistration
                       ).toLocaleDateString()
                     : "N/A"}</span
                 >
@@ -1579,13 +1585,13 @@
               <div class="flex justify-between">
                 <span class="text-gray-600">Duration:</span>
                 <span class="font-medium"
-                  >{data.timelineStats.velocity.totalDays} days</span
+                  >{timelineStats.velocity.totalDays} days</span
                 >
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Avg per Day:</span>
                 <span class="font-medium"
-                  >{data.timelineStats.velocity.avgRegistrationsPerDay.toFixed(
+                  >{timelineStats.velocity.avgRegistrationsPerDay.toFixed(
                     1
                   )}</span
                 >
@@ -1599,9 +1605,9 @@
               <div class="flex justify-between">
                 <span class="text-gray-600">First Choice:</span>
                 <span class="font-medium"
-                  >{data.timelineStats.milestones.firstChoice
+                  >{timelineStats.milestones.firstChoice
                     ? new Date(
-                        data.timelineStats.milestones.firstChoice
+                        timelineStats.milestones.firstChoice
                       ).toLocaleDateString()
                     : "N/A"}</span
                 >
@@ -1609,9 +1615,9 @@
               <div class="flex justify-between">
                 <span class="text-gray-600">Last Choice:</span>
                 <span class="font-medium"
-                  >{data.timelineStats.milestones.lastChoice
+                  >{timelineStats.milestones.lastChoice
                     ? new Date(
-                        data.timelineStats.milestones.lastChoice
+                        timelineStats.milestones.lastChoice
                       ).toLocaleDateString()
                     : "N/A"}</span
                 >
@@ -1619,22 +1625,20 @@
               <div class="flex justify-between">
                 <span class="text-gray-600">Duration:</span>
                 <span class="font-medium"
-                  >{data.timelineStats.velocity.choiceDays} days</span
+                  >{timelineStats.velocity.choiceDays} days</span
                 >
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Avg per Day:</span>
                 <span class="font-medium"
-                  >{data.timelineStats.velocity.avgChoicesPerDay.toFixed(
-                    1
-                  )}</span
+                  >{timelineStats.velocity.avgChoicesPerDay.toFixed(1)}</span
                 >
               </div>
             </div>
           </div>
         </div>
       </div>
-    {:else if selectedVisualization === "timeline" && !data.timelineStats}
+    {:else if selectedVisualization === "timeline" && !timelineStats}
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">No Timeline Data Available</h2>
         <p class="text-gray-600 mb-4">

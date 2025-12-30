@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { superForm } from "sveltekit-superforms";
   import type { PageData } from "./$types";
   import { Label } from "$lib/components/ui/label";
@@ -10,10 +11,13 @@
 
   let { data }: Props = $props();
 
-  const { form, errors, enhance, message } = superForm(data.form, {
-    resetForm: false,
-    clearOnSubmit: "none",
-  });
+  const { form, errors, enhance, message } = superForm(
+    untrack(() => data.form),
+    {
+      resetForm: false,
+      clearOnSubmit: "none",
+    }
+  );
 
   // Format date for display
   function formatDate(date: Date | string): string {
@@ -33,15 +37,31 @@
   }
 
   // Get event info with defaults
-  const eventName = data.activeEvent?.name || "Job Shadow Day";
-  const eventDate = data.activeEvent?.date
-    ? formatDate(data.activeEvent.date)
-    : "the event date";
-  const schoolName = data.schoolName || "the school";
-  const importantDates = data.activeEvent?.importantDates || [];
-  const thankYouDeadline = data.activeEvent?.date
-    ? getOneWeekAfterEvent(data.activeEvent.date)
-    : "1 week after the event";
+  const eventName = $derived(data.activeEvent?.name || "Job Shadow Day");
+  const eventDate = $derived(
+    data.activeEvent?.date
+      ? formatDate(data.activeEvent.date)
+      : "the event date"
+  );
+  const schoolName = $derived(data.schoolName || "the school");
+  const importantDates = $derived(data.activeEvent?.importantDates || []);
+  const thankYouDeadline = $derived(
+    data.activeEvent?.date
+      ? getOneWeekAfterEvent(data.activeEvent.date)
+      : "1 week after the event"
+  );
+  const firstName = $derived(data.firstName);
+
+  // Cast for checkbox binding to avoid TS unknown error
+  let studentAgreement = $state(false);
+  $effect.pre(() => {
+    if (form) {
+      studentAgreement = $form.studentAgreement as boolean;
+    }
+  });
+  $effect(() => {
+    $form.studentAgreement = studentAgreement;
+  });
 </script>
 
 <div class="mt-32 mb-5 w-full flex justify-center items-center">
@@ -50,7 +70,7 @@
     class="z-0 relative md:border-2 px-10 py-8 md:rounded-lg w-[700px] mx-5 flex flex-col gap-4 items-center justify-center"
     use:enhance
   >
-    <h1 class="text-4xl">Permission Slip for {data.firstName}</h1>
+    <h1 class="text-4xl">Permission Slip for {firstName}</h1>
     <p>
       This form is required for every student participating in {eventName} on
       {eventDate}.<br />
@@ -202,7 +222,7 @@
           id="studentAgreement"
           name="studentAgreement"
           class="mr-3 w-5 h-5"
-          bind:checked={$form.studentAgreement}
+          bind:checked={studentAgreement}
         />My Student and I have read over the following expectations</Label
       >
       {#if $errors.studentAgreement}<span class="text-sm text-red-500"

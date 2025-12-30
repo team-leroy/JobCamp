@@ -1,27 +1,52 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { Input } from "$lib/components/ui/input/index.js";
   import { superForm } from "sveltekit-superforms";
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import { Textarea } from "$lib/components/ui/textarea/index.js";
 
-  let { data } = $props();
+  import type { PageData } from "./$types";
 
-  const { form, errors, enhance, message } = superForm(data.form, {
-    resetForm: false,
-    clearOnSubmit: "none",
-  });
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
+
+  const { form, errors, enhance, message } = superForm(
+    untrack(() => data.form),
+    {
+      resetForm: false,
+      clearOnSubmit: "none",
+    }
+  );
+
+  const showSignupLogin = $derived(data.showSignupLogin);
+  const studentAccountsEnabled = $derived(data.studentAccountsEnabled);
+  const companyAccountsEnabled = $derived(data.companyAccountsEnabled);
 
   let showPassword = $state(false);
   let passwordEntryType = $derived(showPassword ? "text" : "password");
+
+  // Cast for binding to avoid TS unknown error
+  let companyDescription = $state("");
+  $effect.pre(() => {
+    if (form) {
+      companyDescription = ($form.companyDescription as string) || "";
+    }
+  });
+  $effect(() => {
+    $form.companyDescription = companyDescription;
+  });
 </script>
 
 <Navbar
   isHost={false}
   loggedIn={false}
   isAdmin={false}
-  showSignupLogin={data.showSignupLogin}
-  studentAccountsEnabled={data.studentAccountsEnabled}
-  companyAccountsEnabled={data.companyAccountsEnabled}
+  {showSignupLogin}
+  {studentAccountsEnabled}
+  {companyAccountsEnabled}
 />
 
 <div class="w-full mt-28 flex flex-col sm:gap-8 justify-center items-center">
@@ -62,7 +87,7 @@
       <label for="companyDescription">Company Description</label>
       <Textarea
         class="px-2 py-0.5 rounded w-52"
-        bind:value={$form.companyDescription}
+        bind:value={companyDescription}
         name="companyDescription"
       />
     </div>

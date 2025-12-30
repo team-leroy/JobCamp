@@ -23,7 +23,7 @@
   const { upcomingEvent, importantDates = [] }: Props = $props();
 
   // Check if there's an active event
-  const hasActiveEvent = upcomingEvent && upcomingEvent.isActive;
+  const hasActiveEvent = $derived(!!upcomingEvent && upcomingEvent.isActive);
 
   // Form state
   let showForm = $state(false);
@@ -148,10 +148,12 @@
     <!-- Active Event Info -->
     <div class="mb-4 p-3 bg-blue-50 rounded-lg">
       <p class="text-sm text-blue-700">
+      {#if upcomingEvent}
         <strong>Active Event:</strong>
         {upcomingEvent.name} ({upcomingEvent.date.toLocaleDateString("en-US", {
           timeZone: "UTC",
         })})
+      {/if}
         <br />
         Managing important dates for students to see on their dashboard.
       </p>

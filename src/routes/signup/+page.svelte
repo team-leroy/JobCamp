@@ -9,7 +9,8 @@
   }
 
   let { data }: Props = $props();
-  const { studentAccountsEnabled, companyAccountsEnabled } = data;
+  const studentAccountsEnabled = $derived(data.studentAccountsEnabled);
+  const companyAccountsEnabled = $derived(data.companyAccountsEnabled);
 
   const studentSignup = () => {
     goto("/signup/student");

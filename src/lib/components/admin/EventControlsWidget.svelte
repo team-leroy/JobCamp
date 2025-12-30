@@ -8,25 +8,25 @@
   }
 
   const { upcomingEvent }: Props = $props();
-
+  
   // Check if there's an active event
-  const hasActiveEvent = upcomingEvent && upcomingEvent.isActive;
+  const hasActiveEvent = $derived(!!upcomingEvent && upcomingEvent.isActive);
 
-  // Event control states - initialize from props
-  let companyAccountsEnabled = $state(
+  // Event control states - derived from props
+  const companyAccountsEnabled = $derived(
     upcomingEvent?.companyAccountsEnabled ?? false
   );
-  let companySignupsEnabled = $state(
+  const companySignupsEnabled = $derived(
     upcomingEvent?.companySignupsEnabled ?? false
   );
-  let studentAccountsEnabled = $state(
+  const studentAccountsEnabled = $derived(
     upcomingEvent?.studentAccountsEnabled ?? false
   );
-  let studentSignupsEnabled = $state(
+  const studentSignupsEnabled = $derived(
     upcomingEvent?.studentSignupsEnabled ?? false
   );
-  let lotteryPublished = $state(upcomingEvent?.lotteryPublished ?? false);
-  let companyDirectoryEnabled = $state(
+  const lotteryPublished = $derived(upcomingEvent?.lotteryPublished ?? false);
+  const companyDirectoryEnabled = $derived(
     upcomingEvent?.companyDirectoryEnabled ?? false
   );
 
@@ -94,10 +94,12 @@
     <!-- Active Event Info -->
     <div class="mb-4 p-3 bg-blue-50 rounded-lg">
       <p class="text-sm text-blue-700">
+      {#if upcomingEvent}
         <strong>Active Event:</strong>
         {upcomingEvent.name} ({upcomingEvent.date.toLocaleDateString("en-US", {
           timeZone: "UTC",
         })})
+      {/if}
         <br />
         <strong>Event Controls:</strong> These access controls determine what users
         can do within the active event. You can keep controls disabled while preparing

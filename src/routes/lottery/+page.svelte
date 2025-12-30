@@ -2,19 +2,23 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import LotteryWidget from "$lib/components/admin/LotteryWidget.svelte";
   import LotteryConfigurationWidget from "$lib/components/admin/LotteryConfigurationWidget.svelte";
+  import type { PageData } from "./$types";
 
-  export let data;
-  const {
-    isAdmin,
-    loggedIn,
-    isHost,
-    userRole,
-    lotteryData,
-    lotteryConfig,
-    students,
-    positions,
-    companies,
-  } = data;
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
+
+  const isAdmin = $derived(data.isAdmin);
+  const loggedIn = $derived(data.loggedIn);
+  const isHost = $derived(data.isHost);
+  const userRole = $derived(data.userRole);
+  const lotteryData = $derived(data.lotteryData);
+  const lotteryConfig = $derived(data.lotteryConfig);
+  const students = $derived(data.students);
+  const positions = $derived(data.positions);
+  const companies = $derived(data.companies);
 </script>
 
 <Navbar {isAdmin} {loggedIn} {isHost} {userRole} />

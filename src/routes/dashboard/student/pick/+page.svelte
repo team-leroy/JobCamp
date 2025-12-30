@@ -71,7 +71,12 @@
     selectedTerm = term;
   };
 
-  let count = $state(data.countSelected);
+  let count = $state(0);
+  $effect.pre(() => {
+    if (count === 0) {
+      count = data.countSelected;
+    }
+  });
 
   const togglePosition = async (posID: string) => {
     const fdata = new FormData();

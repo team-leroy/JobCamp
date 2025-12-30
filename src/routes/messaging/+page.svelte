@@ -37,16 +37,14 @@
   let { data, form = null }: { data: PageData; form?: FormResult | null } =
     $props();
 
-  const {
-    isAdmin,
-    loggedIn,
-    isHost,
-    userRole,
-    activeEvent,
-    hasLotteryResults,
-    students,
-    companies,
-  } = data;
+  const isAdmin = $derived(data.isAdmin);
+  const loggedIn = $derived(data.loggedIn);
+  const isHost = $derived(data.isHost);
+  const userRole = $derived(data.userRole);
+  const activeEvent = $derived(data.activeEvent);
+  const hasLotteryResults = $derived(data.hasLotteryResults);
+  const students = $derived(data.students);
+  const companies = $derived(data.companies);
 
   let activeTab = $state("student");
   let messageType = $state("email"); // 'email' or 'sms'

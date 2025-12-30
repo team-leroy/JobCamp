@@ -3,7 +3,9 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
 
   const { data } = $props();
-  const { isHost, loggedIn, isAdmin } = data;
+  const isHost = $derived(data.isHost);
+  const loggedIn = $derived(data.loggedIn);
+  const isAdmin = $derived(data.isAdmin);
 </script>
 
 <Navbar

@@ -49,28 +49,17 @@
   }
 
   let { data, form }: { data: PageData; form: FormResult | null } = $props();
-  const {
-    isAdmin,
-    loggedIn,
-    isHost,
-    userRole,
-    schoolEvents,
-    upcomingEvent,
-    importantDates,
-    readOnlyAdmins,
-  }: {
-    isAdmin: boolean;
-    loggedIn: boolean;
-    isHost: boolean;
-    userRole: string | null;
-    schoolEvents: EventWithStats[];
-    upcomingEvent?: EventWithStats | null;
-    importantDates: ImportantDate[];
-    readOnlyAdmins: ReadOnlyAdmin[];
-  } = data;
+  const isAdmin = $derived(data.isAdmin);
+  const loggedIn = $derived(data.loggedIn);
+  const isHost = $derived(data.isHost);
+  const userRole = $derived(data.userRole);
+  const schoolEvents = $derived(data.schoolEvents);
+  const upcomingEvent = $derived(data.upcomingEvent);
+  const importantDates = $derived(data.importantDates);
+  const readOnlyAdmins = $derived(data.readOnlyAdmins);
 
   // Check if user is full admin (can see Admin Users tab)
-  const isFullAdmin = userRole === "FULL_ADMIN";
+  const isFullAdmin = $derived(userRole === "FULL_ADMIN");
 
   // Track active tab
   let activeTab = $state("controls");

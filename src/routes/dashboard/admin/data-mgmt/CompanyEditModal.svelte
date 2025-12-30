@@ -11,6 +11,8 @@
   } from "$lib/components/ui/dialog";
   import { Edit, Save, X } from "lucide-svelte";
 
+  import { untrack } from "svelte";
+
   interface Company {
     id: string;
     companyName: string;
@@ -23,12 +25,14 @@
 
   let isOpen = $state(false);
 
-  let formData = $state({
-    id: company.id,
-    companyName: company.companyName,
-    companyDescription: company.companyDescription,
-    companyUrl: company.companyUrl || "",
-  });
+  let formData = $state(
+    untrack(() => ({
+      id: company.id,
+      companyName: company.companyName,
+      companyDescription: company.companyDescription,
+      companyUrl: company.companyUrl || "",
+    }))
+  );
 
   let message: string | null = $state(null);
   let error: string | null = $state(null);

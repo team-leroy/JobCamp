@@ -124,7 +124,11 @@
   }
 
   let { data }: Props = $props();
-  const { isAdmin, loggedIn, isHost, userRole, canEdit } = data;
+  const isAdmin = $derived(data.isAdmin);
+  const loggedIn = $derived(data.loggedIn);
+  const isHost = $derived(data.isHost);
+  const userRole = $derived(data.userRole);
+  const canEdit = $derived(data.canEdit);
 
   // Filter states for Student
   let lastNameFilter = $state("");
