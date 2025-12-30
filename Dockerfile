@@ -5,6 +5,9 @@ RUN corepack disable
 RUN corepack enable
 RUN COREPACK_INTEGRITY_KEYS=0 corepack prepare pnpm@latest --activate
 
+# Set non-interactive frontend for apt-get
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update -y
 RUN apt-get install -y openssl ca-certificates
 
@@ -37,8 +40,8 @@ RUN npx prisma generate
 RUN pnpm run build
 
 # Expose the port for Cloud Run
-ENV PORT 8080
+ENV PORT=8080
 EXPOSE 8080
 
 # Set the command to run the app
-CMD /cloud_sql_proxy deep-voyage-436902-b3:us-central1:jobcamp26 --port 3306 --private-ip & pnpm run start
+CMD ["sh", "-c", "/cloud_sql_proxy deep-voyage-436902-b3:us-central1:jobcamp26 --port 3306 --private-ip & pnpm run start"]
