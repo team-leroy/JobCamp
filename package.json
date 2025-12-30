@@ -5,8 +5,8 @@
   "scripts": {
     "start": "node build/index.js",
     "dev": "vite dev --port 34040",
-    "build": "vite build",
-    "build:no-check": "SKIP_TYPE_CHECK=true vite build",
+    "build": "svelte-kit sync && vite build",
+    "build:no-check": "svelte-kit sync && SKIP_TYPE_CHECK=true vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --no-tsconfig --ignore '**/ui/**'",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
