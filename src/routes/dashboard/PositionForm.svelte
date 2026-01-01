@@ -7,13 +7,14 @@
   import { Textarea } from "$lib/components/ui/textarea";
   import { careers } from "$lib/appconfig";
   import { superForm } from "sveltekit-superforms";
-  import { Trash2 } from "lucide-svelte";
+  import { Trash2, Loader2 } from "lucide-svelte";
 
   let { data, form: actionForm, formTitle, buttonName } = $props();
 
   const {
     form,
     errors,
+    submitting,
     enhance: formEnhance,
   } = superForm(actionForm || untrack(() => data.form), {
     resetForm: false,
@@ -246,78 +247,87 @@
         >{/if}
     </div>
 
-    <div class="flex w-full max-w-sm flex-col gap-1.5 mb-5">
+    <div class="w-full max-w-sm flex flex-col gap-1.5">
       {#if remainingSlots > 0}
-        <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
-          <Label class="text-lg" for="attachment1"
-            >{existingAttachments.length > 0
-              ? "New Attachment 1"
-              : "Attachment 1"}</Label
-          >
-          <div class="flex items-center gap-2">
-            <Input
-              bind:this={file1Input}
-              onchange={(e) => handleFileChange(1, e)}
-              class="w-64"
-              name="attachment1"
-              id="attachment1"
-              type="file"
-            />
-            {#if hasFile1}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class="text-red-600 p-1 h-auto"
-                onclick={() => clearFile(1)}
-              >
-                <Trash2 class="h-4 w-4" />
-              </Button>
-            {/if}
+        <!-- Attachment 1 Input -->
+        <div class="flex flex-col gap-1.5 mb-5">
+          <div class="flex justify-between items-center w-full gap-1.5">
+            <Label class="text-lg" for="attachment1">
+              {existingAttachments.length === 0
+                ? "Attachment 1"
+                : "New Attachment 1"}
+            </Label>
+            <div class="flex items-center gap-2">
+              <input
+                bind:this={file1Input}
+                onchange={(e) => handleFileChange(1, e)}
+                class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-64 rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                name="attachment1"
+                id="attachment1"
+                type="file"
+              />
+              {#if hasFile1}
+                <button
+                  type="button"
+                  class="text-red-600 p-1 hover:bg-red-50 rounded-md"
+                  onclick={() => clearFile(1)}
+                  title="Clear selection"
+                >
+                  <Trash2 class="h-4 w-4" />
+                </button>
+              {/if}
+            </div>
           </div>
+          {#if $errors.attachment1}
+            <span class="text-sm text-red-500 text-right"
+              >{$errors.attachment1}</span
+            >
+          {/if}
         </div>
-        {#if $errors.attachment1}<span class="text-sm text-red-500 text-right"
-            >{$errors.attachment1}</span
-          >{/if}
-      {/if}
-    </div>
 
-    <div class="flex w-full max-w-sm flex-col gap-1.5 mb-5">
-      {#if remainingSlots > 1}
-        <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
-          <Label class="text-lg" for="attachment2"
-            >{existingAttachments.length > 0
-              ? "New Attachment 2"
-              : "Attachment 2"}</Label
-          >
-          <div class="flex items-center gap-2">
-            <Input
-              bind:this={file2Input}
-              onchange={(e) => handleFileChange(2, e)}
-              class="w-64"
-              name="attachment2"
-              id="attachment2"
-              type="file"
-            />
-            {#if hasFile2}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                class="text-red-600 p-1 h-auto"
-                onclick={() => clearFile(2)}
+        <!-- Attachment 2 Input (only if 2 slots remaining) -->
+        {#if remainingSlots > 1}
+          <div class="flex flex-col gap-1.5 mb-5">
+            <div class="flex justify-between items-center w-full gap-1.5">
+              <Label class="text-lg" for="attachment2">
+                {existingAttachments.length === 0
+                  ? "Attachment 2"
+                  : "New Attachment 2"}
+              </Label>
+              <div class="flex items-center gap-2">
+                <input
+                  bind:this={file2Input}
+                  onchange={(e) => handleFileChange(2, e)}
+                  class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-64 rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  name="attachment2"
+                  id="attachment2"
+                  type="file"
+                />
+                {#if hasFile2}
+                  <button
+                    type="button"
+                    class="text-red-600 p-1 hover:bg-red-50 rounded-md"
+                    onclick={() => clearFile(2)}
+                    title="Clear selection"
+                  >
+                    <Trash2 class="h-4 w-4" />
+                  </button>
+                {/if}
+              </div>
+            </div>
+            {#if $errors.attachment2}
+              <span class="text-sm text-red-500 text-right"
+                >{$errors.attachment2}</span
               >
-                <Trash2 class="h-4 w-4" />
-              </Button>
             {/if}
           </div>
-        </div>
-        {#if $errors.attachment2}<span class="text-sm text-red-500 text-right"
-            >{$errors.attachment2}</span
-          >{/if}
-      {:else if remainingSlots === 0}
-        <div class="p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-700 italic">
-          Maximum of 2 attachments reached. Delete an existing attachment to upload a new one.
+        {/if}
+      {:else}
+        <div
+          class="p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-700 italic mb-5"
+        >
+          Maximum of 2 attachments reached. Delete an existing attachment to
+          upload a new one.
         </div>
       {/if}
     </div>
@@ -377,9 +387,16 @@
       >
       <button
         type="submit"
-        class={buttonVariants({ variant: "default" }) + " w-28 py-4"}
-        >{buttonName}</button
+        disabled={$submitting}
+        class={buttonVariants({ variant: "default" }) + " w-28 py-4 flex items-center justify-center gap-2"}
       >
+        {#if $submitting}
+          <Loader2 class="h-4 w-4 animate-spin" />
+          Processing...
+        {:else}
+          {buttonName}
+        {/if}
+      </button>
     </div>
   </form>
 </div>
