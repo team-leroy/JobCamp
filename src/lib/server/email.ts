@@ -13,9 +13,13 @@ export const SENDER = { name: "JobCamp", email: "admin@jobcamp.org" };
  */
 async function sendEmailViaSendGrid(to: string, subject: string, html: string): Promise<void> {
     // Check if we're in sandbox mode - controlled by environment variable
-    // Set SENDGRID_SANDBOX_MODE=true in staging, SENDGRID_SANDBOX_MODE=false in production
     const isSandbox = env.SENDGRID_SANDBOX_MODE === 'true';
     
+    // Wrap content in proper HTML tags to satisfy spam filters
+    const fullHtml = `<!DOCTYPE html><html><body>${html}</body></html>`;
+    // Create a plain-text version by stripping HTML tags
+    const plainText = html.replace(/<[^>]*>?/gm, '').trim();
+
     const payload = {
         personalizations: [{
             to: [{ email: to }],
@@ -25,10 +29,16 @@ async function sendEmailViaSendGrid(to: string, subject: string, html: string): 
             email: env.SENDGRID_FROM_EMAIL || 'admin@jobcamp.org',
             name: env.SENDGRID_FROM_NAME || 'JobCamp'
         },
-        content: [{
-            type: 'text/html',
-            value: html
-        }],
+        content: [
+            {
+                type: 'text/plain',
+                value: plainText
+            },
+            {
+                type: 'text/html',
+                value: fullHtml
+            }
+        ],
         mail_settings: {
             sandbox_mode: {
                 enable: isSandbox
