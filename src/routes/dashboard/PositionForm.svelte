@@ -22,6 +22,32 @@
   function getPositionId(): string | null {
     return $form.positionId || null;
   }
+
+  // Local state to track selected files for UI display and clearing
+  let file1Input: HTMLInputElement | null = $state(null);
+  let file2Input: HTMLInputElement | null = $state(null);
+  let hasFile1 = $state(false);
+  let hasFile2 = $state(false);
+
+  const existingAttachments = $derived(data.position?.attachments || []);
+  const remainingSlots = $derived(Math.max(0, 2 - existingAttachments.length));
+
+  function handleFileChange(index: number, e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (index === 1) hasFile1 = !!input.files?.length;
+    if (index === 2) hasFile2 = !!input.files?.length;
+  }
+
+  function clearFile(index: number) {
+    if (index === 1 && file1Input) {
+      file1Input.value = "";
+      hasFile1 = false;
+    }
+    if (index === 2 && file2Input) {
+      file2Input.value = "";
+      hasFile2 = false;
+    }
+  }
 </script>
 
 <div class="mt-32 mb-5 w-full flex justify-center items-center">
@@ -35,6 +61,14 @@
     use:formEnhance
   >
     <h1 class="text-xl">{formTitle}</h1>
+
+    {#if data.error || actionForm?.error}
+      <div
+        class="w-full max-w-sm p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-md"
+      >
+        {data.error || actionForm?.error}
+      </div>
+    {/if}
 
     {#if $form.positionId}<input
         name="positionId"
@@ -213,33 +247,79 @@
     </div>
 
     <div class="flex w-full max-w-sm flex-col gap-1.5 mb-5">
-      <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
-        <Label class="text-lg" for="attachment1">Attachment 1</Label>
-        <Input
-          class="w-64"
-          name="attachment1"
-          id="attachment1"
-          type="file"
-        />
-      </div>
-      {#if $errors.attachment1}<span class="text-sm text-red-500 text-right"
-          >{$errors.attachment1}</span
-        >{/if}
+      {#if remainingSlots > 0}
+        <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
+          <Label class="text-lg" for="attachment1"
+            >{existingAttachments.length > 0
+              ? "New Attachment 1"
+              : "Attachment 1"}</Label
+          >
+          <div class="flex items-center gap-2">
+            <Input
+              bind:this={file1Input}
+              onchange={(e) => handleFileChange(1, e)}
+              class="w-64"
+              name="attachment1"
+              id="attachment1"
+              type="file"
+            />
+            {#if hasFile1}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="text-red-600 p-1 h-auto"
+                onclick={() => clearFile(1)}
+              >
+                <Trash2 class="h-4 w-4" />
+              </Button>
+            {/if}
+          </div>
+        </div>
+        {#if $errors.attachment1}<span class="text-sm text-red-500 text-right"
+            >{$errors.attachment1}</span
+          >{/if}
+      {/if}
     </div>
 
     <div class="flex w-full max-w-sm flex-col gap-1.5 mb-5">
-      <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
-        <Label class="text-lg" for="attachment2">Attachment 2</Label>
-        <Input
-          class="w-64"
-          name="attachment2"
-          id="attachment2"
-          type="file"
-        />
-      </div>
-      {#if $errors.attachment2}<span class="text-sm text-red-500 text-right"
-          >{$errors.attachment2}</span
-        >{/if}
+      {#if remainingSlots > 1}
+        <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
+          <Label class="text-lg" for="attachment2"
+            >{existingAttachments.length > 0
+              ? "New Attachment 2"
+              : "Attachment 2"}</Label
+          >
+          <div class="flex items-center gap-2">
+            <Input
+              bind:this={file2Input}
+              onchange={(e) => handleFileChange(2, e)}
+              class="w-64"
+              name="attachment2"
+              id="attachment2"
+              type="file"
+            />
+            {#if hasFile2}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="text-red-600 p-1 h-auto"
+                onclick={() => clearFile(2)}
+              >
+                <Trash2 class="h-4 w-4" />
+              </Button>
+            {/if}
+          </div>
+        </div>
+        {#if $errors.attachment2}<span class="text-sm text-red-500 text-right"
+            >{$errors.attachment2}</span
+          >{/if}
+      {:else if remainingSlots === 0}
+        <div class="p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-700 italic">
+          Maximum of 2 attachments reached. Delete an existing attachment to upload a new one.
+        </div>
+      {/if}
     </div>
 
     {#if data.position && data.position.attachments && data.position.attachments.length > 0}
