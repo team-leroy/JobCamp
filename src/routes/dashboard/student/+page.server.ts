@@ -87,7 +87,7 @@ export const load: PageServerLoad = async (event) => {
             });
 
             if (result) {
-                // Load the full position details including attachments
+                // Load the full position details
                 lotteryResult = await prisma.position.findUnique({
                     where: { id: result.positionId },
                     include: {
@@ -95,8 +95,7 @@ export const load: PageServerLoad = async (event) => {
                             include: {
                                 company: true
                             }
-                        },
-                        attachments: true
+                        }
                     }
                 });
             }

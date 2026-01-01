@@ -264,8 +264,7 @@ describe('Dashboard Main Route', () => {
                 where: { 
                     hostId: mockHostInfo.id,
                     eventId: mockActiveEvent.id
-                },
-                include: { attachments: true }
+                }
             });
         });
 
