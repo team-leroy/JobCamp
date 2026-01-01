@@ -3,7 +3,6 @@ import type { Actions } from "./$types";
 import { lucia } from "$lib/server/auth";
 import type { PageServerLoad } from "./$types";
 import { prisma } from "$lib/server/prisma";
-import { needsContactInfoVerification } from "$lib/server/contactInfoVerification";
 
 interface UserData {
     userInfo: {
@@ -16,76 +15,97 @@ interface UserData {
 
 const grabUserData = async (locals: App.Locals): Promise<UserData> => {
     if (!locals.user) {
+        console.log("[Dashboard] No user in locals, redirecting to /login");
         redirect(302, "/login");
     }
 
-    const userInfo = await prisma.user.findFirst({
-        where: { id: locals.user.id },
-        include: {
-            adminOfSchools: true,
-            host: {
-                include: {
-                    company: true
-                }
-            },
-            student: true
+    try {
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: {
+                adminOfSchools: true,
+                host: {
+                    include: {
+                        company: true
+                    }
+                },
+                student: true
+            }
+        });
+
+        if (!userInfo) {
+            console.log(`[Dashboard] User ${locals.user.id} not found in DB, redirecting to /login`);
+            redirect(302, "/login");
         }
-    });
-
-    if (!userInfo) {
-        // This shouldn't happen if locals.user exists, but handle it
-        redirect(302, "/login");
+        
+        return { userInfo };
+    } catch (e) {
+        // If it's a SvelteKit redirect, let it bubble up
+        if (e && typeof e === 'object' && 'status' in e && 'location' in e) {
+            throw e;
+        }
+        console.error(`[Dashboard] Database error in grabUserData:`, e);
+        throw e;
     }
-    
-    return { userInfo };
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
+    console.log("[Dashboard] Load started");
     if (!locals.user) {
         redirect(302, "/login");
     }
 
-    // Check if user is admin first - admins can access without email verification
+    // 1. Grab User Data
     const { userInfo } = await grabUserData(locals);
     const hostInfo = userInfo.host;
     const studentInfo = userInfo.student;
+    
+    console.log(`[Dashboard] User ${userInfo.id} loaded. isHost: ${!!hostInfo}, isStudent: ${!!studentInfo}`);
 
+    // 2. Admin Check
     if (userInfo.adminOfSchools && userInfo.adminOfSchools.length > 0) {
+        console.log("[Dashboard] User is admin, redirecting to /dashboard/admin");
         redirect(302, "/dashboard/admin");
     }
 
-    // For non-admin users, check email verification
+    // 3. Email Verification
     if (!locals.user.emailVerified) {
+        console.log("[Dashboard] Email not verified, redirecting to /verify-email");
         redirect(302, "/verify-email");
     }
 
-    // Determine the school ID to find the correct active event
+    // 4. Identify School and Active Event
     const schoolId = hostInfo?.company?.schoolId || studentInfo?.schoolId;
+    console.log(`[Dashboard] schoolId: ${schoolId}`);
 
-    // Check event controls for access permissions
-    // If we have a schoolId, we can be more specific. Otherwise, find the first active event.
-    const activeEvent = schoolId 
-        ? await prisma.event.findFirst({
+    let activeEvent = null;
+    if (schoolId) {
+        activeEvent = await prisma.event.findFirst({
             where: {
                 schoolId,
                 isActive: true
             }
-        })
-        : await prisma.event.findFirst({
-            where: {
-                isActive: true
-            }
         });
+    }
+    
+    if (!activeEvent) {
+        // Fallback to any active event if school check failed
+        activeEvent = await prisma.event.findFirst({
+            where: { isActive: true }
+        });
+    }
+    
+    console.log(`[Dashboard] activeEvent: ${activeEvent?.id || 'none'}`);
 
     const companyName = hostInfo?.company?.companyName || null;
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
     const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
     const companySignupsEnabled = activeEvent?.companySignupsEnabled ?? false;
 
+    // 5. Host vs Student Logic
     if (!hostInfo) {
-        // This is a student (or someone without a host record)
         if (!studentInfo) {
-            // No student record either - this is an edge case
+            console.log("[Dashboard] Neither host nor student record found");
             return {
                 accessDenied: true,
                 studentAccountsEnabled,
@@ -94,8 +114,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             };
         }
 
-        // Check if student accounts are enabled
         if (!studentAccountsEnabled) {
+            console.log("[Dashboard] Student accounts disabled");
             return {
                 accessDenied: true,
                 studentAccountsEnabled,
@@ -104,21 +124,13 @@ export const load: PageServerLoad = async ({ locals }) => {
             };
         }
 
-        // Check if contact info verification is needed for the active event
-        const contactInfoVerificationNeeded = await needsContactInfoVerification(
-            studentInfo.id,
-            studentInfo.schoolId
-        );
-
-        if (contactInfoVerificationNeeded) {
-            redirect(302, "/verify-contact-info");
-        }
-
+        console.log("[Dashboard] Redirecting to /dashboard/student");
         redirect(302, "/dashboard/student");
     }
 
-    // This is a company/host - check if company accounts are enabled
+    // 6. Company Access Check
     if (!companyAccountsEnabled) {
+        console.log("[Dashboard] Company accounts disabled");
         return {
             accessDenied: true,
             studentAccountsEnabled,
@@ -127,7 +139,8 @@ export const load: PageServerLoad = async ({ locals }) => {
         };
     }
 
-    const positions = activeEvent 
+    // 7. Load Positions
+    const positions = (activeEvent && hostInfo)
         ? await prisma.position.findMany({
             where: {
                 hostId: hostInfo.id,
@@ -137,16 +150,22 @@ export const load: PageServerLoad = async ({ locals }) => {
         })
         : [];
 
-    // Check if positions were brought forward (unpublished positions exist)
+    console.log(`[Dashboard] Loaded ${positions.length} positions`);
+
     const hasUnpublishedPositions = positions.some(position => !position.isPublished);
 
+    // 8. Return Data
     return { 
         positions, 
-        userData: locals.user, 
+        userData: {
+            id: locals.user.id,
+            email: locals.user.email,
+            emailVerified: locals.user.emailVerified
+        }, 
         isCompany: true,
         companySignupsEnabled,
         eventName: activeEvent?.name || "JobCamp",
-        eventDate: activeEvent?.date,
+        eventDate: activeEvent?.date?.toISOString() || null,
         hasUnpublishedPositions,
         companyName
     };

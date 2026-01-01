@@ -45,6 +45,7 @@ vi.mock('@sveltejs/kit', () => ({
 describe('Dashboard Main Route', () => {
     const mockUser = {
         id: 'user-123',
+        email: 'user@example.com',
         emailVerified: true
     };
 
@@ -254,7 +255,7 @@ describe('Dashboard Main Route', () => {
                 isCompany: true,
                 companySignupsEnabled: false,
                 eventName: "Test Event",
-                eventDate: mockEventDate,
+                eventDate: mockEventDate.toISOString(),
                 hasUnpublishedPositions: true,
                 companyName: mockCompanyName
             });
@@ -575,7 +576,7 @@ describe('Dashboard Main Route', () => {
                 isCompany: true,
                 companySignupsEnabled: false,
                 eventName: "Test Event",
-                eventDate: mockEventDate,
+                eventDate: mockEventDate.toISOString(),
                 hasUnpublishedPositions: true,
                 companyName: mockCompanyName
             });
