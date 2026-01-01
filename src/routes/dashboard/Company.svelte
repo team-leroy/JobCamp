@@ -74,7 +74,8 @@
   <p class="mx-10">
     Create one or more positions for job shadow day. A position represents a
     career you'll be exposing students to.<br />E.g., Teacher, Software
-    developer, Architect, or Real estate agent.
+    developer, Architect, or Real estate agent.<br />Choose "Multiple Careers"
+    if you will be covering a variety of career positions during job shadow day.
   </p>
 
   <Button href="/dashboard/createPosition" class="ml-10 mt-5 text-lg"
