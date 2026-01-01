@@ -50,7 +50,7 @@ export const load: PageServerLoad = async (event) => {
     };
 };
 
-const enforceSchoolEmailDomain = true;
+const enforceSchoolEmailDomain = false;
 
 export const actions: Actions = {
     default: async (event) => {
