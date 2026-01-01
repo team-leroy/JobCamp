@@ -9,11 +9,9 @@ interface UserData {
     userInfo: {
         id: string;
         adminOfSchools: Array<{ id: string }>;
+        host: { id: string; userId: string; company?: { schoolId: string | null } | null } | null;
+        student: { id: string; userId: string; schoolId: string | null } | null;
     };
-    hostInfo: {
-        id: string;
-        userId: string;
-    } | null;
 }
 
 const grabUserData = async (locals: App.Locals): Promise<UserData> => {
@@ -25,16 +23,21 @@ const grabUserData = async (locals: App.Locals): Promise<UserData> => {
         where: { id: locals.user.id },
         include: {
             adminOfSchools: true,
+            host: {
+                include: {
+                    company: true
+                }
+            },
+            student: true
         }
     });
+
     if (!userInfo) {
-        redirect(302, "/lghs")
+        // This shouldn't happen if locals.user exists, but handle it
+        redirect(302, "/login");
     }
     
-    const hostInfo = await prisma.host.findFirst({
-        where: { userId: userInfo.id }
-    });
-    return { userInfo, hostInfo }
+    return { userInfo };
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -43,7 +46,9 @@ export const load: PageServerLoad = async ({ locals }) => {
     }
 
     // Check if user is admin first - admins can access without email verification
-    const { userInfo, hostInfo } = await grabUserData(locals);
+    const { userInfo } = await grabUserData(locals);
+    const hostInfo = userInfo.host;
+    const studentInfo = userInfo.student;
 
     if (userInfo.adminOfSchools && userInfo.adminOfSchools.length > 0) {
         redirect(302, "/dashboard/admin");
@@ -54,31 +59,43 @@ export const load: PageServerLoad = async ({ locals }) => {
         redirect(302, "/verify-email");
     }
 
-    // Get host with company information for company dashboard
-    let companyName: string | null = null;
-    if (hostInfo) {
-        const hostWithCompany = await prisma.host.findFirst({
-            where: { id: hostInfo.id },
-            include: { company: true }
-        });
-        companyName = hostWithCompany?.company?.companyName || null;
-    }
+    // Determine the school ID to find the correct active event
+    const schoolId = hostInfo?.company?.schoolId || studentInfo?.schoolId;
 
     // Check event controls for access permissions
-    const activeEvent = await prisma.event.findFirst({
-        where: {
-            isActive: true
-        }
-    });
+    // If we have a schoolId, we can be more specific. Otherwise, find the first active event.
+    const activeEvent = schoolId 
+        ? await prisma.event.findFirst({
+            where: {
+                schoolId,
+                isActive: true
+            }
+        })
+        : await prisma.event.findFirst({
+            where: {
+                isActive: true
+            }
+        });
 
+    const companyName = hostInfo?.company?.companyName || null;
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
     const companyAccountsEnabled = activeEvent?.companyAccountsEnabled ?? false;
-    const companySignupsEnabled = (activeEvent as { companySignupsEnabled?: boolean })?.companySignupsEnabled ?? false;
+    const companySignupsEnabled = activeEvent?.companySignupsEnabled ?? false;
 
     if (!hostInfo) {
-        // This is a student - check if student accounts are enabled
+        // This is a student (or someone without a host record)
+        if (!studentInfo) {
+            // No student record either - this is an edge case
+            return {
+                accessDenied: true,
+                studentAccountsEnabled,
+                companyAccountsEnabled,
+                message: "We couldn't find a student or company record for your account. Please contact your administrator."
+            };
+        }
+
+        // Check if student accounts are enabled
         if (!studentAccountsEnabled) {
-            // Redirect to a "access denied" page or show appropriate message
             return {
                 accessDenied: true,
                 studentAccountsEnabled,
@@ -88,19 +105,13 @@ export const load: PageServerLoad = async ({ locals }) => {
         }
 
         // Check if contact info verification is needed for the active event
-        const student = await prisma.student.findFirst({
-            where: { userId: locals.user.id }
-        });
+        const contactInfoVerificationNeeded = await needsContactInfoVerification(
+            studentInfo.id,
+            studentInfo.schoolId
+        );
 
-        if (student) {
-            const contactInfoVerificationNeeded = await needsContactInfoVerification(
-                student.id,
-                student.schoolId
-            );
-
-            if (contactInfoVerificationNeeded) {
-                redirect(302, "/verify-contact-info");
-            }
+        if (contactInfoVerificationNeeded) {
+            redirect(302, "/verify-contact-info");
         }
 
         redirect(302, "/dashboard/student");
@@ -116,14 +127,15 @@ export const load: PageServerLoad = async ({ locals }) => {
         };
     }
 
-
-    const positions = await prisma.position.findMany({
-        where: {
-            hostId: hostInfo.id,
-            eventId: activeEvent?.id
-        }, 
-        include: { attachments: true }
-    });
+    const positions = activeEvent 
+        ? await prisma.position.findMany({
+            where: {
+                hostId: hostInfo.id,
+                eventId: activeEvent.id
+            }, 
+            include: { attachments: true }
+        })
+        : [];
 
     // Check if positions were brought forward (unpublished positions exist)
     const hasUnpublishedPositions = positions.some(position => !position.isPublished);

@@ -104,7 +104,7 @@ export const load: PageServerLoad = async (event) => {
     }
 
     // Get permission slip status for the active event
-    const permissionSlipStatus = await getPermissionSlipStatus(student.id, student.schoolId!);
+    const permissionSlipStatus = await getPermissionSlipStatus(student.id, student.schoolId || "");
 
     // Load student's position selections
     const positionsOnStudents = await prisma.positionsOnStudents.findMany({

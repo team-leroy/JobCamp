@@ -7,6 +7,18 @@
   import { enhance } from "$app/forms";
 
   let { data } = $props();
+
+  // Format date for display
+  function formatDate(date: string | Date | null): string {
+    if (!date) return "TBD";
+    return new Date(date).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "UTC",
+    });
+  }
 </script>
 
 <Navbar loggedIn={true} isHost={true} isAdmin={false} />
@@ -22,15 +34,7 @@
 {/if}
 
 <h1 class="mx-10 my-2 text-2xl">
-  Positions for {data.eventName}: {data.eventDate
-    ? data.eventDate.toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        timeZone: "UTC",
-      })
-    : "TBD"}
+  Positions for {data.eventName}: {formatDate(data.eventDate)}
 </h1>
 
 {#if !data.companySignupsEnabled}

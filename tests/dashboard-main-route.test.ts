@@ -48,16 +48,6 @@ describe('Dashboard Main Route', () => {
         emailVerified: true
     };
 
-    const mockUserInfo = {
-        id: 'user-123',
-        adminOfSchools: []
-    };
-
-    const mockAdminUserInfo = {
-        id: 'admin-123',
-        adminOfSchools: [{ id: 'school-1' }]
-    };
-
     const mockHostInfo = {
         id: 'host-123',
         userId: 'user-123'
@@ -75,6 +65,38 @@ describe('Dashboard Main Route', () => {
         isActive: true,
         studentAccountsEnabled: false,
         companyAccountsEnabled: false
+    };
+
+    const mockUserInfoWithHost = {
+        id: 'user-123',
+        adminOfSchools: [],
+        host: mockHostInfo,
+        student: null
+    };
+
+    const mockUserInfoWithStudent = {
+        id: 'user-123',
+        adminOfSchools: [],
+        host: null,
+        student: {
+            id: 'student-123',
+            userId: 'user-123',
+            schoolId: 'school-123'
+        }
+    };
+
+    const mockUserInfoOnly = {
+        id: 'user-123',
+        adminOfSchools: [],
+        host: null,
+        student: null
+    };
+
+    const mockAdminUserInfoFull = {
+        id: 'admin-123',
+        adminOfSchools: [{ id: 'school-1' }],
+        host: null,
+        student: null
     };
 
     beforeEach(() => {
@@ -98,9 +120,7 @@ describe('Dashboard Main Route', () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
             // Mock user lookup - user is not an admin
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            // Mock host lookup - user is not a host
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
+            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfoOnly);
             // Mock event lookup to avoid further processing
             vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);
             
@@ -120,8 +140,7 @@ describe('Dashboard Main Route', () => {
         it('should redirect to admin dashboard when user is admin', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockAdminUserInfo);
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
+            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockAdminUserInfoFull);
             vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);
             
             try {
@@ -138,16 +157,8 @@ describe('Dashboard Main Route', () => {
         it('should redirect to student dashboard when user is student and student accounts are enabled', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
-            const mockStudent = {
-                id: 'student-123',
-                userId: 'user-123',
-                schoolId: 'school-123'
-            };
-            
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
+            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfoWithStudent);
             vi.mocked(prisma.event.findFirst).mockResolvedValue(mockActiveEvent);
-            vi.mocked(prisma.student.findFirst).mockResolvedValue(mockStudent);
             
             try {
                 await load({ 
@@ -163,8 +174,7 @@ describe('Dashboard Main Route', () => {
         it('should return access denied when user is student and student accounts are disabled', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
+            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfoWithStudent);
             vi.mocked(prisma.event.findFirst).mockResolvedValue(mockInactiveEvent);
             
             const result = await load({ 
@@ -182,8 +192,13 @@ describe('Dashboard Main Route', () => {
         it('should return access denied when user is company and company accounts are disabled', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(mockHostInfo);
+            vi.mocked(prisma.user.findFirst).mockResolvedValue({
+                ...mockUserInfoWithHost,
+                host: {
+                    ...mockHostInfo,
+                    company: { schoolId: 'school-1' }
+                }
+            });
             vi.mocked(prisma.event.findFirst).mockResolvedValue({
                 ...mockActiveEvent,
                 companyAccountsEnabled: false
@@ -212,14 +227,14 @@ describe('Dashboard Main Route', () => {
             const mockCompanyName = 'Test Company';
             const mockEventDate = new Date('2025-11-25');
             
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            // First call - basic host info
-            vi.mocked(prisma.host.findFirst).mockResolvedValueOnce(mockHostInfo);
-            // Second call - host with company
-            vi.mocked(prisma.host.findFirst).mockResolvedValueOnce({
-                ...mockHostInfo,
-                company: {
-                    companyName: mockCompanyName
+            vi.mocked(prisma.user.findFirst).mockResolvedValue({
+                ...mockUserInfoWithHost,
+                host: {
+                    ...mockHostInfo,
+                    company: {
+                        companyName: mockCompanyName,
+                        schoolId: 'school-1'
+                    }
                 }
             });
             vi.mocked(prisma.event.findFirst).mockResolvedValue({
@@ -256,8 +271,7 @@ describe('Dashboard Main Route', () => {
         it('should handle case when no active event exists', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
+            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfoWithStudent);
             vi.mocked(prisma.event.findFirst).mockResolvedValue(null);
             
             const result = await load({ 
@@ -272,7 +286,7 @@ describe('Dashboard Main Route', () => {
             });
         });
 
-        it('should redirect to school homepage when user info is not found', async () => {
+        it('should redirect to login page when user info is not found', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
             vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
@@ -285,7 +299,7 @@ describe('Dashboard Main Route', () => {
                 // Expected to throw redirect
             }
             
-            expect(redirect).toHaveBeenCalledWith(302, '/lghs');
+            expect(redirect).toHaveBeenCalledWith(302, '/login');
         });
     });
 
@@ -294,7 +308,7 @@ describe('Dashboard Main Route', () => {
             it('should redirect to admin login when user is admin', async () => {
                 const { actions } = await import('../src/routes/dashboard/+page.server');
                 
-                vi.mocked(prisma.user.findFirst).mockResolvedValue(mockAdminUserInfo);
+                vi.mocked(prisma.user.findFirst).mockResolvedValue(mockAdminUserInfoFull);
                 vi.mocked(lucia.validateSession).mockResolvedValue({
                     session: { id: 'session-123' },
                     user: mockUser
@@ -321,7 +335,7 @@ describe('Dashboard Main Route', () => {
             it('should redirect to login when user is not admin', async () => {
                 const { actions } = await import('../src/routes/dashboard/+page.server');
                 
-                vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
+                vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfoOnly);
                 vi.mocked(lucia.validateSession).mockResolvedValue({
                     session: { id: 'session-123' },
                     user: mockUser
@@ -349,7 +363,7 @@ describe('Dashboard Main Route', () => {
                 const { actions } = await import('../src/routes/dashboard/+page.server');
                 
                 vi.mocked(prisma.user.findFirst).mockResolvedValue({
-                    ...mockUserInfo,
+                    ...mockUserInfoOnly,
                     adminOfSchools: []
                 });
                 vi.mocked(lucia.validateSession).mockResolvedValue({
@@ -376,7 +390,7 @@ describe('Dashboard Main Route', () => {
             it('should handle case when no session exists', async () => {
                 const { actions } = await import('../src/routes/dashboard/+page.server');
                 
-                vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
+                vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfoOnly);
                 
                 const mockCookies = {
                     delete: vi.fn()
@@ -399,7 +413,7 @@ describe('Dashboard Main Route', () => {
             it('should handle case when session validation fails', async () => {
                 const { actions } = await import('../src/routes/dashboard/+page.server');
                 
-                vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
+                vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfoOnly);
                 vi.mocked(lucia.validateSession).mockResolvedValue(null);
                 
                 const mockCookies = {
@@ -510,15 +524,7 @@ describe('Dashboard Main Route', () => {
         it('should correctly handle student access when student accounts are enabled but company accounts are disabled', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
-            const mockStudent = {
-                id: 'student-123',
-                userId: 'user-123',
-                schoolId: 'school-123'
-            };
-            
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            vi.mocked(prisma.student.findFirst).mockResolvedValue(mockStudent);
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
+            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfoWithStudent);
             vi.mocked(prisma.event.findFirst).mockResolvedValue({
                 ...mockActiveEvent,
                 studentAccountsEnabled: true,
@@ -540,14 +546,14 @@ describe('Dashboard Main Route', () => {
             const mockCompanyName = 'Test Company';
             const mockEventDate = new Date('2025-11-25');
             
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            // First call - basic host info
-            vi.mocked(prisma.host.findFirst).mockResolvedValueOnce(mockHostInfo);
-            // Second call - host with company
-            vi.mocked(prisma.host.findFirst).mockResolvedValueOnce({
-                ...mockHostInfo,
-                company: {
-                    companyName: mockCompanyName
+            vi.mocked(prisma.user.findFirst).mockResolvedValue({
+                ...mockUserInfoWithHost,
+                host: {
+                    ...mockHostInfo,
+                    company: {
+                        companyName: mockCompanyName,
+                        schoolId: 'school-1'
+                    }
                 }
             });
             vi.mocked(prisma.event.findFirst).mockResolvedValue({
@@ -578,8 +584,7 @@ describe('Dashboard Main Route', () => {
         it('should handle case when both student and company accounts are disabled', async () => {
             const { load } = await import('../src/routes/dashboard/+page.server');
             
-            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfo);
-            vi.mocked(prisma.host.findFirst).mockResolvedValue(null);
+            vi.mocked(prisma.user.findFirst).mockResolvedValue(mockUserInfoWithStudent);
             vi.mocked(prisma.event.findFirst).mockResolvedValue({
                 ...mockActiveEvent,
                 studentAccountsEnabled: false,
