@@ -180,9 +180,20 @@
 
         <hr class="my-2" />
 
-        <!--href={position.attachment1.url} href={position.attachment2.url}-->
-        <!-- {#if position.attachment1}<a>Attachment 1: { position.attachment1.name }</a>{/if}
-        {#if position.attachment2}<a>Attachment 2: { position.attachment2.name }</a>{/if} -->
+        {#if position.attachments && position.attachments.length > 0}
+          <div class="mt-4">
+            <p class="font-medium text-slate-700 mb-2">Attachments:</p>
+            <ul class="list-disc list-inside space-y-1">
+              {#each position.attachments as attachment}
+                <li class="text-slate-600 italic">
+                  {attachment.fileName}
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {:else}
+          <p class="text-slate-500 italic mt-4 text-sm">No attachments provided for this position.</p>
+        {/if}
       </Accordion.Content>
     </Accordion.Item>
   {/each}
