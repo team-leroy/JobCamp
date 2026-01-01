@@ -47,11 +47,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
     publishPosition: async ({ request, locals }) => {
+        console.log("[CreatePosition] publishPosition started");
         const { userInfo, hostInfo } = await grabUserData(locals);
         const form = await superValidate(request, zod(createNewPositionSchema(hostInfo.name, userInfo.email)));
 
         if (!form.valid) {
-            console.log(form.errors);
+            console.log("[CreatePosition] Form validation failed:", JSON.stringify(form.errors, null, 2));
             // Remove File objects from form data before returning (they can't be serialized)
             const formDataWithoutFiles = {
                 ...form.data,
@@ -65,6 +66,8 @@ export const actions: Actions = {
                 }
             });
         }
+
+        console.log("[CreatePosition] Form is valid, proceeding with creation");
 
         if (!locals.user) {
             redirect(302, "/login");

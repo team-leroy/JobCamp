@@ -9,13 +9,13 @@
   import { superForm } from "sveltekit-superforms";
   import { Trash2 } from "lucide-svelte";
 
-  let { data, formTitle, buttonName } = $props();
+  let { data, form: actionForm, formTitle, buttonName } = $props();
 
   const {
     form,
     errors,
     enhance: formEnhance,
-  } = superForm(untrack(() => data.form), {
+  } = superForm(actionForm || untrack(() => data.form), {
     resetForm: false,
   });
 
@@ -216,7 +216,6 @@
       <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
         <Label class="text-lg" for="attachment1">Attachment 1</Label>
         <Input
-          bind:value={$form.attachment1}
           class="w-64"
           name="attachment1"
           id="attachment1"
@@ -232,7 +231,6 @@
       <div class="flex justify-between items-center w-full max-w-sm gap-1.5">
         <Label class="text-lg" for="attachment2">Attachment 2</Label>
         <Input
-          bind:value={$form.attachment2}
           class="w-64"
           name="attachment2"
           id="attachment2"

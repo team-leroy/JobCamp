@@ -145,7 +145,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             where: {
                 hostId: hostInfo.id,
                 eventId: activeEvent.id
-            }
+            },
+            include: { attachments: true }
         })
         : [];
 
