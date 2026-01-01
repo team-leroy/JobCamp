@@ -5,8 +5,11 @@
   import * as Accordion from "$lib/components/ui/accordion/index.js";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { enhance } from "$app/forms";
+  import { Loader2 } from "lucide-svelte";
 
   let { data } = $props();
+
+  let deletingPositionId = $state<string | null>(null);
 
   // Format date for display
   function formatDate(date: string | Date | null): string {
@@ -123,13 +126,30 @@
                 </AlertDialog.Header>
                 <AlertDialog.Footer>
                   <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-                  <AlertDialog.Action
-                    ><form
-                      use:enhance
+                  <AlertDialog.Action asChild>
+                    <form
+                      use:enhance={() => {
+                        deletingPositionId = position.id;
+                        return async ({ update }) => {
+                          await update();
+                          deletingPositionId = null;
+                        };
+                      }}
                       method="POST"
                       action={"?/deletePosition&posId=" + position.id}
                     >
-                      <button type="submit">Delete</button>
+                      <button
+                        type="submit"
+                        disabled={deletingPositionId !== null}
+                        class="flex items-center gap-2"
+                      >
+                        {#if deletingPositionId === position.id}
+                          <Loader2 class="h-4 w-4 animate-spin" />
+                          Deleting...
+                        {:else}
+                          Delete
+                        {/if}
+                      </button>
                     </form></AlertDialog.Action
                   >
                 </AlertDialog.Footer>

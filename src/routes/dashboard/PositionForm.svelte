@@ -18,6 +18,12 @@
     enhance: formEnhance,
   } = superForm(actionForm || untrack(() => data.form), {
     resetForm: false,
+    invalidateAll: true, // Force a full data refresh on success
+    onResult: ({ result }) => {
+      if (result.type === "redirect") {
+        console.log("[PositionForm] Redirecting to:", result.location);
+      }
+    },
   });
 
   function getPositionId(): string | null {
@@ -27,27 +33,33 @@
   // Local state to track selected files for UI display and clearing
   let file1Input: HTMLInputElement | null = $state(null);
   let file2Input: HTMLInputElement | null = $state(null);
-  let hasFile1 = $state(false);
-  let hasFile2 = $state(false);
+  let selectedFile1Name = $state("");
+  let selectedFile2Name = $state("");
 
   const existingAttachments = $derived(data.position?.attachments || []);
   const remainingSlots = $derived(Math.max(0, 2 - existingAttachments.length));
 
   function handleFileChange(index: number, e: Event) {
     const input = e.target as HTMLInputElement;
-    if (index === 1) hasFile1 = !!input.files?.length;
-    if (index === 2) hasFile2 = !!input.files?.length;
+    const fileName = input.files?.[0]?.name || "";
+    if (index === 1) selectedFile1Name = fileName;
+    if (index === 2) selectedFile2Name = fileName;
   }
 
   function clearFile(index: number) {
     if (index === 1 && file1Input) {
       file1Input.value = "";
-      hasFile1 = false;
+      selectedFile1Name = "";
     }
     if (index === 2 && file2Input) {
       file2Input.value = "";
-      hasFile2 = false;
+      selectedFile2Name = "";
     }
+  }
+
+  function triggerFileInput(index: number) {
+    if (index === 1) file1Input?.click();
+    if (index === 2) file2Input?.click();
   }
 </script>
 
@@ -261,12 +273,26 @@
               <input
                 bind:this={file1Input}
                 onchange={(e) => handleFileChange(1, e)}
-                class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-64 rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                class="hidden"
                 name="attachment1"
                 id="attachment1"
                 type="file"
               />
-              {#if hasFile1}
+              <div
+                class="flex items-center gap-2 border-input bg-background ring-offset-background h-10 w-64 rounded-md border px-3 py-2 text-sm"
+              >
+                <button
+                  type="button"
+                  class="bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-xs border"
+                  onclick={() => triggerFileInput(1)}
+                >
+                  Choose File
+                </button>
+                <span class="truncate flex-1 text-slate-500">
+                  {selectedFile1Name || "No file chosen"}
+                </span>
+              </div>
+              {#if selectedFile1Name}
                 <button
                   type="button"
                   class="text-red-600 p-1 hover:bg-red-50 rounded-md"
@@ -298,12 +324,26 @@
                 <input
                   bind:this={file2Input}
                   onchange={(e) => handleFileChange(2, e)}
-                  class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-64 rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="hidden"
                   name="attachment2"
                   id="attachment2"
                   type="file"
                 />
-                {#if hasFile2}
+                <div
+                  class="flex items-center gap-2 border-input bg-background ring-offset-background h-10 w-64 rounded-md border px-3 py-2 text-sm"
+                >
+                  <button
+                    type="button"
+                    class="bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-xs border"
+                    onclick={() => triggerFileInput(2)}
+                  >
+                    Choose File
+                  </button>
+                  <span class="truncate flex-1 text-slate-500">
+                    {selectedFile2Name || "No file chosen"}
+                  </span>
+                </div>
+                {#if selectedFile2Name}
                   <button
                     type="button"
                     class="text-red-600 p-1 hover:bg-red-50 rounded-md"
