@@ -4,9 +4,7 @@
   import User from "lucide-svelte/icons/user";
   import LogOut from "lucide-svelte/icons/log-out";
   import AlignJustify from "lucide-svelte/icons/align-justify";
-  import { enhance } from "$app/forms";
   import { onMount } from "svelte";
-  import { buttonVariants } from "../ui/button";
   import logo from "$lib/assets/favicon.png";
 
   const {
@@ -31,8 +29,6 @@
   const isFullAdmin = $derived(isAdmin && userRole === "FULL_ADMIN");
 
   let collapsed = $state(false);
-  let adminLogoutForm = $state<HTMLFormElement | undefined>(undefined);
-  let userLogoutForm = $state<HTMLFormElement | undefined>(undefined);
 
   onMount(() => {
     const x = window.matchMedia("(max-width: 768px)");
@@ -88,14 +84,12 @@
             >Dashboard</Button
           >
           <DropdownMenu.Root>
-            <DropdownMenu.Trigger>
-              <div
-                class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
-              >
-                <User />
-              </div>
+            <DropdownMenu.Trigger
+              class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
+            >
+              <User />
             </DropdownMenu.Trigger>
-            <DropdownMenu.Content class="z-[60]">
+            <DropdownMenu.Content class="z-[60]" align="end">
               <DropdownMenu.Item asChild>
                 <a
                   href="/settings"
@@ -106,21 +100,14 @@
                 </a>
               </DropdownMenu.Item>
               <DropdownMenu.Separator />
-              <DropdownMenu.Item
-                class="cursor-pointer"
-                onclick={() => adminLogoutForm?.requestSubmit()}
-              >
-                <form
-                  method="POST"
-                  use:enhance
-                  action="/dashboard/?/logOut"
-                  bind:this={adminLogoutForm}
-                  class="hidden"
-                ></form>
-                <div class="flex items-center w-full">
+              <DropdownMenu.Item asChild>
+                <a
+                  href="/logout"
+                  class="flex items-center cursor-pointer px-2 py-1.5 w-full text-red-600"
+                >
                   <LogOut class="mr-2 h-4 w-4" />
                   <span>Log out</span>
-                </div>
+                </a>
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Root>
@@ -167,14 +154,12 @@
               >Dashboard</Button
             >
             <DropdownMenu.Root>
-              <DropdownMenu.Trigger>
-                <div
-                  class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
-                >
-                  <User />
-                </div>
+              <DropdownMenu.Trigger
+                class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
+              >
+                <User />
               </DropdownMenu.Trigger>
-              <DropdownMenu.Content class="z-[60]">
+              <DropdownMenu.Content class="z-[60]" align="end">
                 <DropdownMenu.Item asChild>
                   <a
                     href="/settings"
@@ -185,21 +170,14 @@
                   </a>
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator />
-                <DropdownMenu.Item
-                  class="cursor-pointer"
-                  onclick={() => userLogoutForm?.requestSubmit()}
-                >
-                  <form
-                    method="POST"
-                    use:enhance
-                    action="/dashboard/?/logOut"
-                    bind:this={userLogoutForm}
-                    class="hidden"
-                  ></form>
-                  <div class="flex items-center w-full">
+                <DropdownMenu.Item asChild>
+                  <a
+                    href="/logout"
+                    class="flex items-center cursor-pointer px-2 py-1.5 w-full text-red-600"
+                  >
                     <LogOut class="mr-2 h-4 w-4" />
                     <span>Log out</span>
-                  </div>
+                  </a>
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
@@ -254,19 +232,9 @@
           >Dashboard</Button
         >
         <Button href="/settings" variant="link" class="text-white text-xl">Settings</Button>
-        <form
-          method="POST"
-          use:enhance
-          action="/dashboard/?/logOut"
-          class="w-full flex items-center justify-center"
-        >
-          <button
-            type="submit"
-            class={buttonVariants({ variant: "link" }) +
-              " text-white text-xl"}
-            ><LogOut class="mr-2 h-4 w-4" />Log Out</button
-          >
-        </form>
+        <Button href="/logout" variant="link" class="text-white text-xl text-red-400">
+          <LogOut class="mr-2 h-4 w-4" />Log Out
+        </Button>
       {:else}
         {#if !loggedIn}
           <Button
@@ -314,19 +282,9 @@
             >Dashboard</Button
           >
           <Button href="/settings" variant="link" class="text-white text-xl">Settings</Button>
-          <form
-            method="POST"
-            use:enhance
-            action="/dashboard/?/logOut"
-            class="w-full flex items-center justify-center"
-          >
-            <button
-              type="submit"
-              class={buttonVariants({ variant: "link" }) +
-                " text-white text-xl"}
-              ><LogOut class="mr-2 h-4 w-4" />Log Out</button
-            >
-          </form>
+          <Button href="/logout" variant="link" class="text-white text-xl text-red-400">
+            <LogOut class="mr-2 h-4 w-4" />Log Out
+          </Button>
         {/if}
       {/if}
     </div>
