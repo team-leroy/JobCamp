@@ -88,7 +88,7 @@ export const actions: Actions = {
 
         // Enforce 2-attachment limit (existing + new)
         const existingAttachmentCount = positionOriginal.attachments.length;
-        const newAttachmentCount = (isValidFile(form.data.attachment1) ? 1 : 0) + (isValidFile(form.data.attachment2) ? 1 : 0);
+        const newAttachmentCount = (form.data.attachment1 ? 1 : 0) + (form.data.attachment2 ? 1 : 0);
         
         if (existingAttachmentCount + newAttachmentCount > 2) {
             // Remove File objects from form data before returning (they can't be serialized)
@@ -107,16 +107,10 @@ export const actions: Actions = {
         }
 
         const attachmentsForm = [];
-        
-        // Function to validate if an attachment is a valid file
-        const isValidFile = (file: unknown): file is File => {
-            return !!(file && typeof file === 'object' && 'name' in file && 'size' in file && (file as { size: number }).size > 0);
-        };
-
-        if (isValidFile(form.data.attachment1)) {
+        if (form.data.attachment1) {
             attachmentsForm.push(form.data.attachment1);
         }
-        if (isValidFile(form.data.attachment2)) {
+        if (form.data.attachment2) {
             attachmentsForm.push(form.data.attachment2);
         }
 

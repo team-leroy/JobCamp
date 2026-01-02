@@ -24,16 +24,6 @@
         console.log("[PositionForm] Redirecting to:", result.location);
       }
     },
-    onSubmit: ({ formData }) => {
-      // Manually append files from our state to ensure they are sent
-      // even if the browser cleared the input element on 'Cancel'
-      if (file1Object) {
-        formData.set("attachment1", file1Object);
-      }
-      if (file2Object) {
-        formData.set("attachment2", file2Object);
-      }
-    },
   });
 
   function getPositionId(): string | null {
@@ -45,8 +35,6 @@
   let file2Input: HTMLInputElement | null = $state(null);
   let selectedFile1Name = $state("");
   let selectedFile2Name = $state("");
-  let file1Object = $state<File | null>(null);
-  let file2Object = $state<File | null>(null);
   let deletingAttachmentId = $state("");
 
   const existingAttachments = $derived(data.position?.attachments || []);
@@ -58,13 +46,17 @@
       const file = input.files[0];
       if (index === 1) {
         selectedFile1Name = file.name;
-        file1Object = file;
-        $form.attachment1 = file;
       }
       if (index === 2) {
         selectedFile2Name = file.name;
-        file2Object = file;
-        $form.attachment2 = file;
+      }
+    } else {
+      // If no files (e.g. Cancel clicked), clear the selection
+      if (index === 1) {
+        selectedFile1Name = "";
+      }
+      if (index === 2) {
+        selectedFile2Name = "";
       }
     }
   }
@@ -73,14 +65,10 @@
     if (index === 1 && file1Input) {
       file1Input.value = "";
       selectedFile1Name = "";
-      file1Object = null;
-      $form.attachment1 = undefined;
     }
     if (index === 2 && file2Input) {
       file2Input.value = "";
       selectedFile2Name = "";
-      file2Object = null;
-      $form.attachment2 = undefined;
     }
   }
 
@@ -332,6 +320,7 @@
                 bind:this={file1Input}
                 onchange={(e) => handleFileChange(1, e)}
                 class="hidden"
+                name="attachment1"
                 id="attachment1"
                 type="file"
               />
@@ -382,6 +371,7 @@
                   bind:this={file2Input}
                   onchange={(e) => handleFileChange(2, e)}
                   class="hidden"
+                  name="attachment2"
                   id="attachment2"
                   type="file"
                 />
