@@ -126,7 +126,7 @@
                 </AlertDialog.Header>
                 <AlertDialog.Footer>
                   <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-                  <AlertDialog.Action asChild>
+                  <AlertDialog.Action>
                     <form
                       use:enhance={() => {
                         deletingPositionId = position.id;
@@ -141,7 +141,7 @@
                       <button
                         type="submit"
                         disabled={deletingPositionId !== null}
-                        class="flex items-center gap-2"
+                        class="w-full h-full flex items-center justify-center gap-2"
                       >
                         {#if deletingPositionId === position.id}
                           <Loader2 class="h-4 w-4 animate-spin" />

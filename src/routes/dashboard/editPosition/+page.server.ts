@@ -248,7 +248,6 @@ export const actions: Actions = {
             where: { id: attachmentId }
         });
 
-        // Redirect back to edit page
-        redirect(302, `/dashboard/editPosition?posId=${positionId}`);
+        return { success: true };
     }
 };

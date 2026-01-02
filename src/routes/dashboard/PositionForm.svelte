@@ -35,6 +35,7 @@
   let file2Input: HTMLInputElement | null = $state(null);
   let selectedFile1Name = $state("");
   let selectedFile2Name = $state("");
+  let deletingAttachmentId = $state("");
 
   const existingAttachments = $derived(data.position?.attachments || []);
   const remainingSlots = $derived(Math.max(0, 2 - existingAttachments.length));
@@ -62,6 +63,37 @@
   function triggerFileInput(index: number) {
     if (index === 1) file1Input?.click();
     if (index === 2) file2Input?.click();
+  }
+
+  async function deleteExistingAttachment(attachmentId: string) {
+    if (!getPositionId()) return;
+    
+    deletingAttachmentId = attachmentId;
+    try {
+      const formData = new FormData();
+      formData.append("attachmentId", attachmentId);
+      formData.append("posId", getPositionId() || "");
+
+      const response = await fetch(`?/deleteAttachment&posId=${getPositionId()}`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "x-sveltekit-action": "true",
+        },
+      });
+
+      if (response.ok) {
+        // Force SvelteKit to refresh the 'data' prop so the attachment disappears from the list
+        const { invalidateAll } = await import("$app/navigation");
+        await invalidateAll();
+      } else {
+        console.error("Failed to delete attachment");
+      }
+    } catch (e) {
+      console.error("Error deleting attachment:", e);
+    } finally {
+      deletingAttachmentId = "";
+    }
   }
 </script>
 
@@ -390,30 +422,14 @@
                 variant="ghost"
                 size="sm"
                 class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 h-auto"
-                onclick={async () => {
-                  const form = document.createElement("form");
-                  form.method = "POST";
-                  form.action = getPositionId()
-                    ? `?/deleteAttachment&posId=${getPositionId()}`
-                    : "#";
-
-                  const attachmentIdInput = document.createElement("input");
-                  attachmentIdInput.type = "hidden";
-                  attachmentIdInput.name = "attachmentId";
-                  attachmentIdInput.value = attachment.id;
-                  form.appendChild(attachmentIdInput);
-
-                  const posIdInput = document.createElement("input");
-                  posIdInput.type = "hidden";
-                  posIdInput.name = "posId";
-                  posIdInput.value = getPositionId() || "";
-                  form.appendChild(posIdInput);
-
-                  document.body.appendChild(form);
-                  form.submit();
-                }}
+                disabled={deletingAttachmentId === attachment.id}
+                onclick={() => deleteExistingAttachment(attachment.id)}
               >
-                <Trash2 class="h-4 w-4" />
+                {#if deletingAttachmentId === attachment.id}
+                  <Loader2 class="h-4 w-4 animate-spin" />
+                {:else}
+                  <Trash2 class="h-4 w-4" />
+                {/if}
               </Button>
             </div>
           {/each}
