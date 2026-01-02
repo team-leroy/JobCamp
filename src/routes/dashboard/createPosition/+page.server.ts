@@ -194,7 +194,7 @@ export const actions: Actions = {
             schoolId: school.id
         };
 
-        sendPositionUpdateEmail(userInfo.email, {
+        await sendPositionUpdateEmail(userInfo.email, {
             title: form.data.title,
             career: form.data.career,
             slots: form.data.slots.toString(),
@@ -208,7 +208,7 @@ export const actions: Actions = {
             start: form.data.start || 'Not provided',
             end: form.data.release || 'Not provided',
             attachmentCount: attachments.length.toString(),
-        }, eventData);
+        }, eventData, activeEvent.date);
 
         redirect(302, "/dashboard");
     }

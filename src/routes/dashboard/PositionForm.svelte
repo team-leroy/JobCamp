@@ -1,30 +1,20 @@
 <script lang="ts">
-  import { untrack } from "svelte";
   import { buttonVariants } from "$lib/components/ui/button";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea";
   import { careers } from "$lib/appconfig";
-  import { superForm } from "sveltekit-superforms";
   import { Trash2, Loader2 } from "lucide-svelte";
 
-  let { data, form: actionForm, formTitle, buttonName } = $props();
+  let { data, sf, formTitle, buttonName } = $props();
 
   const {
     form,
     errors,
     submitting,
     enhance: formEnhance,
-  } = superForm(actionForm || untrack(() => data.form), {
-    resetForm: false,
-    invalidateAll: true, // Force a full data refresh on success
-    onResult: ({ result }) => {
-      if (result.type === "redirect") {
-        console.log("[PositionForm] Redirecting to:", result.location);
-      }
-    },
-  });
+  } = sf;
 
   function getPositionId(): string | null {
     return $form.positionId || null;
@@ -121,11 +111,11 @@
   >
     <h1 class="text-xl">{formTitle}</h1>
 
-    {#if data.error || actionForm?.error}
+    {#if data.error || data.form?.error}
       <div
         class="w-full max-w-sm p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-md"
       >
-        {data.error || actionForm?.error}
+        {data.error || data.form?.error}
       </div>
     {/if}
 

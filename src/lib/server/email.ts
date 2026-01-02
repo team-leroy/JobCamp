@@ -238,9 +238,10 @@ export async function sendPermissionSlipEmail(
 export async function sendPositionUpdateEmail(
     hostEmail: string, 
     position: Position,
-    eventData: EventEmailData
+    eventData: EventEmailData,
+    rawEventDate: Date
 ) {
-    const twoWeeksBefore = calculateRelativeDate(new Date(eventData.eventDate), 2);
+    const twoWeeksBefore = calculateRelativeDate(rawEventDate, 2);
     
     const emailParams = {
         ...position,

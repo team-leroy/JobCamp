@@ -180,7 +180,7 @@ export const actions: Actions = {
             schoolId: position.event.school.id
         };
 
-        sendPositionUpdateEmail(locals.user.email, {
+        await sendPositionUpdateEmail(locals.user.email, {
             title: form.data.title,
             career: form.data.career,
             slots: form.data.slots.toString(),
@@ -194,7 +194,7 @@ export const actions: Actions = {
             start: form.data.start || 'Not provided',
             end: form.data.release || 'Not provided',
             attachmentCount: position.attachments.length.toString(),
-        }, eventData);
+        }, eventData, position.event.date);
 
         redirect(302, "/dashboard");
     },
