@@ -39,6 +39,12 @@ async function sendEmailViaSendGrid(to: string, subject: string, html: string): 
                 value: fullHtml
             }
         ],
+        tracking_settings: {
+            click_tracking: {
+                enable: false,
+                enable_text: false
+            }
+        },
         mail_settings: {
             sandbox_mode: {
                 enable: isSandbox

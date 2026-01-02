@@ -1,29 +1,44 @@
-<pre>
-Hi,
-Thank you for planning to participate in ${schoolName}'s ${eventName} on ${eventDate}. You have published a new position or updated an existing one. This position will now be visible to students for selection.
-
-Position Summary:
------------------------
-Title: ${title}
-Career: ${career}
-# of slots for students: ${slots}
-Summary: ${summary}
-Address: ${address}
-Instructions for Students: ${instructions}
-Attire Requirements: ${attire}
-Arrival time: ${arrival}
-Start time: ${start}
-End time: ${end}
-# of attachments: ${attachmentCount}
-
-You'll receive an email approximately 2 weeks before the event with the names of student(s) assigned to your position.
-
-<a href="jobcamp.org/dashboard">Go To Dashboard</a>
-
-Note: The primary contact's name and email will NOT be shared with students at this time. Immediately preceding ${eventName}, students will receive contact information in order to reach out with an introductory email and to confirm their attendance.
-
-Please let us know if you have any questions.
-Regards,
-JobCamp Team
-admin@jobcamp.org
-</pre>
+<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; line-height: 1.6; color: #333;">
+  <h2 style="color: #2563eb;">Position Confirmation</h2>
+  <p>Hi,</p>
+  <p>Thank you for planning to participate in <strong>${schoolName}'s ${eventName}</strong> on <strong>${eventDate}</strong>.</p>
+  <p>You have successfully published or updated a position. This position is now visible to students for selection.</p>
+  
+  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+    <h3 style="margin-top: 0; color: #2563eb;">Position Summary</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr><td style="padding: 4px 0; color: #64748b;">Title:</td><td style="padding: 4px 0;"><strong>${title}</strong></td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b;">Career:</td><td style="padding: 4px 0;">${career}</td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b;">Slots:</td><td style="padding: 4px 0;">${slots}</td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b; vertical-align: top;">Summary:</td><td style="padding: 4px 0;">${summary}</td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b; vertical-align: top;">Address:</td><td style="padding: 4px 0;">${address}</td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b; vertical-align: top;">Instructions:</td><td style="padding: 4px 0;">${instructions}</td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b;">Attire:</td><td style="padding: 4px 0;">${attire}</td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b;">Arrival:</td><td style="padding: 4px 0;">${arrival}</td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b;">Start:</td><td style="padding: 4px 0;">${start}</td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b;">End:</td><td style="padding: 4px 0;">${end}</td></tr>
+      <tr><td style="padding: 4px 0; color: #64748b;">Attachments:</td><td style="padding: 4px 0;">${attachmentCount}</td></tr>
+    </table>
+  </div>
+  
+  <p>You'll receive an email approximately 2 weeks before the event with the names of student(s) assigned to your position.</p>
+  
+  <div style="margin: 30px 0;">
+    <a href="https://jobcamp.org/dashboard" 
+       style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+      Go To Dashboard
+    </a>
+  </div>
+  
+  <p style="font-size: 0.9em; font-style: italic; color: #666;">
+    Note: Your contact information is not shared with students yet. Shortly before the event, students will receive your details to confirm their attendance.
+  </p>
+  
+  <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+  
+  <p style="font-size: 0.8em; color: #999;">
+    Regards,<br />
+    <strong>JobCamp Team</strong><br />
+    <a href="mailto:admin@jobcamp.org" style="color: #2563eb;">admin@jobcamp.org</a>
+  </p>
+</div>
