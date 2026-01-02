@@ -59,10 +59,12 @@
       if (index === 1) {
         selectedFile1Name = file.name;
         file1Object = file;
+        $form.attachment1 = file;
       }
       if (index === 2) {
         selectedFile2Name = file.name;
         file2Object = file;
+        $form.attachment2 = file;
       }
     }
   }
@@ -72,11 +74,13 @@
       file1Input.value = "";
       selectedFile1Name = "";
       file1Object = null;
+      $form.attachment1 = undefined;
     }
     if (index === 2 && file2Input) {
       file2Input.value = "";
       selectedFile2Name = "";
       file2Object = null;
+      $form.attachment2 = undefined;
     }
   }
 
@@ -328,7 +332,6 @@
                 bind:this={file1Input}
                 onchange={(e) => handleFileChange(1, e)}
                 class="hidden"
-                name="attachment1"
                 id="attachment1"
                 type="file"
               />
@@ -379,7 +382,6 @@
                   bind:this={file2Input}
                   onchange={(e) => handleFileChange(2, e)}
                   class="hidden"
-                  name="attachment2"
                   id="attachment2"
                   type="file"
                 />

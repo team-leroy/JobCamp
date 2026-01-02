@@ -96,7 +96,7 @@ export const actions: Actions = {
         }
 
         // Enforce 2-attachment limit
-        const attachmentCount = (form.data.attachment1 ? 1 : 0) + (form.data.attachment2 ? 1 : 0);
+        const attachmentCount = (isValidFile(form.data.attachment1) ? 1 : 0) + (isValidFile(form.data.attachment2) ? 1 : 0);
         if (attachmentCount > 2) {
             // Remove File objects from form data before returning (they can't be serialized)
             const formDataWithoutFiles = {
@@ -115,10 +115,16 @@ export const actions: Actions = {
 
         const attachments = [];
 
-        if (form.data.attachment1) {
+        // Function to validate if an attachment is a valid file
+        const isValidFile = (file: unknown): file is File => {
+            return !!(file && typeof file === 'object' && 'name' in file && 'size' in file && (file as { size: number }).size > 0);
+        };
+
+        if (isValidFile(form.data.attachment1)) {
+            const file1 = form.data.attachment1;
             try {
-                const bytes = await form.data.attachment1.bytes();
-                const originalFileName = form.data.attachment1.name;
+                const bytes = await file1.bytes();
+                const originalFileName = file1.name;
                 // Create storage path: sanitize title and combine with original filename
                 const sanitizedTitle = form.data.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
                 const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
@@ -130,14 +136,14 @@ export const actions: Actions = {
                 });
             } catch (error) {
                 console.error('Error uploading attachment1:', error);
-                // Continue without attachment if storage fails
             }
         }
 
-        if (form.data.attachment2) {
+        if (isValidFile(form.data.attachment2)) {
+            const file2 = form.data.attachment2;
             try {
-                const bytes = await form.data.attachment2.bytes();
-                const originalFileName = form.data.attachment2.name;
+                const bytes = await file2.bytes();
+                const originalFileName = file2.name;
                 // Create storage path: sanitize title and combine with original filename
                 const sanitizedTitle = form.data.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
                 const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
@@ -149,7 +155,6 @@ export const actions: Actions = {
                 });
             } catch (error) {
                 console.error('Error uploading attachment2:', error);
-                // Continue without attachment if storage fails
             }
         }
 
