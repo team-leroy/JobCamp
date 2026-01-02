@@ -180,21 +180,26 @@ export const actions: Actions = {
             schoolId: position.event.school.id
         };
 
-        await sendPositionUpdateEmail(locals.user.email, {
-            title: form.data.title,
-            career: form.data.career,
-            slots: form.data.slots.toString(),
-            summary: form.data.summary,
-            contact_name: form.data.fullName,
-            contact_email: form.data.email,
-            address: form.data.address || 'Not provided',
-            instructions: form.data.instructions || 'Not provided',
-            attire: form.data.attire || 'Not provided',
-            arrival: form.data.arrival || 'Not provided',
-            start: form.data.start || 'Not provided',
-            end: form.data.release || 'Not provided',
-            attachmentCount: position.attachments.length.toString(),
-        }, eventData, position.event.date);
+        try {
+            await sendPositionUpdateEmail(locals.user.email, {
+                title: form.data.title,
+                career: form.data.career,
+                slots: form.data.slots.toString(),
+                summary: form.data.summary,
+                contact_name: form.data.fullName,
+                contact_email: form.data.email,
+                address: form.data.address || 'Not provided',
+                instructions: form.data.instructions || 'Not provided',
+                attire: form.data.attire || 'Not provided',
+                arrival: form.data.arrival || 'Not provided',
+                start: form.data.start || 'Not provided',
+                end: form.data.release || 'Not provided',
+                attachmentCount: position.attachments.length.toString(),
+            }, eventData, position.event.date);
+        } catch (error) {
+            console.error('Error sending position confirmation email:', error);
+            // We don't want to fail the whole process if just the email fails
+        }
 
         redirect(302, "/dashboard");
     },
