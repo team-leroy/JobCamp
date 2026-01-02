@@ -134,7 +134,7 @@
 {/if}
 
 <div
-  class="flex sm:flex-row flex-col w-full h-screen pt-24"
+  class="flex sm:flex-row flex-col w-full h-screen pt-28"
   class:pointer-events-none={!data.canSignUp}
   class:opacity-50={!data.canSignUp}
 >

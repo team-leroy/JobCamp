@@ -211,7 +211,7 @@
 
 <Navbar loggedIn={true} isHost={false} isAdmin={false} />
 
-<section class="w-full border-b bg-slate-50/60 mb-6 mt-24">
+<section class="w-full border-b bg-slate-50/60 mb-6 mt-28">
   <div
     class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8"
   >

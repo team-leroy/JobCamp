@@ -16,7 +16,7 @@
   companyAccountsEnabled={data.companyAccountsEnabled}
 />
 
-<main class="w-full mt-24 p-4 flex flex-col gap-2">
+<main class="w-full mt-28 p-4 flex flex-col gap-2">
   <h1 class="text-4xl text-center my-3">Host Tips</h1>
 
   <div>

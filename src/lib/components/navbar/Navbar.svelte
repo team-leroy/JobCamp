@@ -5,6 +5,7 @@
   import LogOut from "lucide-svelte/icons/log-out";
   import AlignJustify from "lucide-svelte/icons/align-justify";
   import { onMount } from "svelte";
+  import { page } from "$app/state";
   import logo from "$lib/assets/favicon.png";
 
   const {
@@ -43,6 +44,7 @@
 
 <nav
   class="w-full fixed top-0 left-0 bg-gray-800 flex flex-col z-50 justify-center shadow-md"
+  class:h-20={!collapsed}
 >
   {#if !collapsed}
     <div class="flex h-20 flex-row justify-between items-center px-5">
@@ -83,34 +85,36 @@
           <Button href="/dashboard" variant="link" class="text-white text-xl"
             >Dashboard</Button
           >
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger
-              class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
-            >
-              <User />
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content class="z-[60]" align="end">
-              <DropdownMenu.Item asChild>
-                <a
-                  href="/settings"
-                  class="flex items-center cursor-pointer px-2 py-1.5 w-full"
-                >
-                  <User class="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </a>
-              </DropdownMenu.Item>
-              <DropdownMenu.Separator />
-              <DropdownMenu.Item asChild>
-                <a
-                  href="/logout"
-                  class="flex items-center cursor-pointer px-2 py-1.5 w-full text-red-600"
-                >
-                  <LogOut class="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </a>
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Root>
+          {#key page.url.pathname}
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger
+                class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
+              >
+                <User />
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content class="z-[100]" align="end">
+                <DropdownMenu.Item asChild>
+                  <a
+                    href="/settings"
+                    class="flex items-center cursor-pointer px-2 py-1.5 w-full"
+                  >
+                    <User class="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </a>
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator />
+                <DropdownMenu.Item asChild>
+                  <a
+                    href="/logout"
+                    class="flex items-center cursor-pointer px-2 py-1.5 w-full text-red-600"
+                  >
+                    <LogOut class="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </a>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          {/key}
         {:else}
           {#if !loggedIn}
             <Button
@@ -153,34 +157,36 @@
             <Button href="/dashboard" variant="link" class="text-white text-xl"
               >Dashboard</Button
             >
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger
-                class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
-              >
-                <User />
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content class="z-[60]" align="end">
-                <DropdownMenu.Item asChild>
-                  <a
-                    href="/settings"
-                    class="flex items-center cursor-pointer px-2 py-1.5 w-full"
-                  >
-                    <User class="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </a>
-                </DropdownMenu.Item>
-                <DropdownMenu.Separator />
-                <DropdownMenu.Item asChild>
-                  <a
-                    href="/logout"
-                    class="flex items-center cursor-pointer px-2 py-1.5 w-full text-red-600"
-                  >
-                    <LogOut class="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </a>
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
+            {#key page.url.pathname}
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger
+                  class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
+                >
+                  <User />
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content class="z-[100]" align="end">
+                  <DropdownMenu.Item asChild>
+                    <a
+                      href="/settings"
+                      class="flex items-center cursor-pointer px-2 py-1.5 w-full"
+                    >
+                      <User class="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </a>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Item asChild>
+                    <a
+                      href="/logout"
+                      class="flex items-center cursor-pointer px-2 py-1.5 w-full text-red-600"
+                    >
+                      <LogOut class="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </a>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
+            {/key}
           {/if}
         {/if}
       </div>
