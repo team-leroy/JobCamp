@@ -24,6 +24,16 @@
         console.log("[PositionForm] Redirecting to:", result.location);
       }
     },
+    onSubmit: ({ formData }) => {
+      // Manually append files from our state to ensure they are sent
+      // even if the browser cleared the input element on 'Cancel'
+      if (file1Object) {
+        formData.set("attachment1", file1Object);
+      }
+      if (file2Object) {
+        formData.set("attachment2", file2Object);
+      }
+    },
   });
 
   function getPositionId(): string | null {
@@ -35,6 +45,8 @@
   let file2Input: HTMLInputElement | null = $state(null);
   let selectedFile1Name = $state("");
   let selectedFile2Name = $state("");
+  let file1Object = $state<File | null>(null);
+  let file2Object = $state<File | null>(null);
   let deletingAttachmentId = $state("");
 
   const existingAttachments = $derived(data.position?.attachments || []);
@@ -43,9 +55,15 @@
   function handleFileChange(index: number, e: Event) {
     const input = e.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      const fileName = input.files[0].name;
-      if (index === 1) selectedFile1Name = fileName;
-      if (index === 2) selectedFile2Name = fileName;
+      const file = input.files[0];
+      if (index === 1) {
+        selectedFile1Name = file.name;
+        file1Object = file;
+      }
+      if (index === 2) {
+        selectedFile2Name = file.name;
+        file2Object = file;
+      }
     }
   }
 
@@ -53,10 +71,12 @@
     if (index === 1 && file1Input) {
       file1Input.value = "";
       selectedFile1Name = "";
+      file1Object = null;
     }
     if (index === 2 && file2Input) {
       file2Input.value = "";
       selectedFile2Name = "";
+      file2Object = null;
     }
   }
 
