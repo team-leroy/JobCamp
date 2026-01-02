@@ -22,9 +22,11 @@
   }
 
   let positions = $state({ posList: [] as typeof data.positions });
+  let initialized = false;
   $effect.pre(() => {
-    if (positions.posList.length === 0) {
+    if (!initialized) {
       positions.posList = data.positions;
+      initialized = true;
     }
   });
 

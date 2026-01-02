@@ -72,9 +72,11 @@
   };
 
   let count = $state(0);
+  let initialized = false;
   $effect.pre(() => {
-    if (count === 0) {
+    if (!initialized) {
       count = data.countSelected;
+      initialized = true;
     }
   });
 
