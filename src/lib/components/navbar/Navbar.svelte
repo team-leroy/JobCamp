@@ -31,20 +31,22 @@
   const isFullAdmin = $derived(isAdmin && userRole === "FULL_ADMIN");
 
   let collapsed = $state(false);
-  let form = $state<HTMLFormElement | undefined>(undefined);
+  let adminLogoutForm = $state<HTMLFormElement | undefined>(undefined);
+  let userLogoutForm = $state<HTMLFormElement | undefined>(undefined);
 
   onMount(() => {
-    var x = window.matchMedia("(max-width: 768px)");
-    $effect(() => {
-      if (x.matches) {
-        collapsed = false;
-      }
-    });
+    const x = window.matchMedia("(max-width: 768px)");
+    const listener = (e: MediaQueryListEvent) => {
+      if (e.matches) collapsed = false;
+    };
+    x.addEventListener("change", listener);
+    if (x.matches) collapsed = false;
+    return () => x.removeEventListener("change", listener);
   });
 </script>
 
 <nav
-  class="w-screen fixed top-0 left-0 bg-gray-800 flex flex-col z-50 justify-center"
+  class="w-full fixed top-0 left-0 bg-gray-800 flex flex-col z-50 justify-center shadow-md"
 >
   {#if !collapsed}
     <div class="flex h-20 flex-row justify-between items-center px-5">
@@ -87,35 +89,38 @@
           >
           <DropdownMenu.Root>
             <DropdownMenu.Trigger>
-              <span
-                class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer"
-                style="height: 2.5rem; width: 2.5rem;"
+              <div
+                class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
               >
                 <User />
-              </span>
+              </div>
             </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
+            <DropdownMenu.Content class="z-[60]">
               <DropdownMenu.Item asChild>
                 <a
                   href="/settings"
-                  class="flex items-center cursor-pointer px-2 py-1.5"
+                  class="flex items-center cursor-pointer px-2 py-1.5 w-full"
                 >
                   <User class="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </a>
               </DropdownMenu.Item>
-              <DropdownMenu.Item>
+              <DropdownMenu.Separator />
+              <DropdownMenu.Item
+                class="cursor-pointer"
+                onclick={() => adminLogoutForm?.requestSubmit()}
+              >
                 <form
                   method="POST"
                   use:enhance
                   action="/dashboard/?/logOut"
-                  bind:this={form}
-                >
-                  <DropdownMenu.Item onclick={() => form?.submit()}>
-                    <LogOut class="mr-2 h-4 w-4" />
-                    <input type="submit" value="Log out" />
-                  </DropdownMenu.Item>
-                </form>
+                  bind:this={adminLogoutForm}
+                  class="hidden"
+                ></form>
+                <div class="flex items-center w-full">
+                  <LogOut class="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </div>
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Root>
@@ -163,35 +168,38 @@
             >
             <DropdownMenu.Root>
               <DropdownMenu.Trigger>
-                <span
-                  class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer"
-                  style="height: 2.5rem; width: 2.5rem;"
+                <div
+                  class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
                 >
                   <User />
-                </span>
+                </div>
               </DropdownMenu.Trigger>
-              <DropdownMenu.Content>
+              <DropdownMenu.Content class="z-[60]">
                 <DropdownMenu.Item asChild>
                   <a
                     href="/settings"
-                    class="flex items-center cursor-pointer px-2 py-1.5"
+                    class="flex items-center cursor-pointer px-2 py-1.5 w-full"
                   >
                     <User class="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </a>
                 </DropdownMenu.Item>
-                <DropdownMenu.Item>
+                <DropdownMenu.Separator />
+                <DropdownMenu.Item
+                  class="cursor-pointer"
+                  onclick={() => userLogoutForm?.requestSubmit()}
+                >
                   <form
                     method="POST"
                     use:enhance
                     action="/dashboard/?/logOut"
-                    bind:this={form}
-                  >
-                    <DropdownMenu.Item onclick={() => form?.submit()}>
-                      <LogOut class="mr-2 h-4 w-4" />
-                      <input type="submit" value="Log out" />
-                    </DropdownMenu.Item>
-                  </form>
+                    bind:this={userLogoutForm}
+                    class="hidden"
+                  ></form>
+                  <div class="flex items-center w-full">
+                    <LogOut class="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </div>
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
@@ -215,7 +223,7 @@
         class="text-white hover:cursor-pointer"
       />
     </div>
-    <div class="flex flex-col gap-4 pb-5">
+    <div class="flex flex-col gap-4 pb-5 items-center">
       {#if isAdmin}
         {#if isFullAdmin}
           <Button href="/messaging" variant="link" class="text-white text-xl"
@@ -245,45 +253,21 @@
         <Button href="/dashboard" variant="link" class="text-white text-xl"
           >Dashboard</Button
         >
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
-            <span
-              class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer"
-              style="height: 2.5rem; width: 2.5rem;"
-            >
-              <User />
-            </span>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content>
-            <DropdownMenu.Item asChild>
-              <a
-                href="/settings"
-                class="flex items-center cursor-pointer px-2 py-1.5"
-              >
-                <User class="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </a>
-            </DropdownMenu.Item>
-            <DropdownMenu.Item>
-              <form
-                method="POST"
-                use:enhance
-                action="/dashboard/?/logOut"
-                bind:this={form}
-              >
-                <DropdownMenu.Item onclick={() => form?.submit()}>
-                  <LogOut class="mr-2 h-4 w-4" />
-                  <input type="submit" value="Log out" />
-                </DropdownMenu.Item>
-              </form>
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
+        <Button href="/settings" variant="link" class="text-white text-xl">Settings</Button>
+        <form
+          method="POST"
+          use:enhance
+          action="/dashboard/?/logOut"
+          class="w-full flex items-center justify-center"
+        >
+          <button
+            type="submit"
+            class={buttonVariants({ variant: "link" }) +
+              " text-white text-xl"}
+            ><LogOut class="mr-2 h-4 w-4" />Log Out</button
+          >
+        </form>
       {:else}
-        {#if loggedIn && !isHost}
-          <!-- <Button href="/dashboard/student/pick" variant="link" class="text-white text-xl">Pick Favorites</Button> -->
-        {/if}
-
         {#if !loggedIn}
           <Button
             href="/lghs/view-companies"
@@ -329,6 +313,7 @@
           <Button href="/dashboard" variant="link" class="text-white text-xl"
             >Dashboard</Button
           >
+          <Button href="/settings" variant="link" class="text-white text-xl">Settings</Button>
           <form
             method="POST"
             use:enhance

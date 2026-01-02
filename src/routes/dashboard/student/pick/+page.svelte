@@ -105,7 +105,7 @@
 
 <!-- Event Access Disabled Warning -->
 {#if !data.canSignUp}
-  <div class="mt-20 mx-auto max-w-4xl px-4">
+  <div class="mt-24 mx-auto max-w-4xl px-4">
     <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
       <div class="flex">
         <div class="ml-3">
@@ -132,7 +132,7 @@
 {/if}
 
 <div
-  class="flex sm:flex-row flex-col w-full h-screen pt-20"
+  class="flex sm:flex-row flex-col w-full h-screen pt-24"
   class:pointer-events-none={!data.canSignUp}
   class:opacity-50={!data.canSignUp}
 >

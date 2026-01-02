@@ -209,7 +209,7 @@
 
 <Navbar loggedIn={true} isHost={false} isAdmin={false} />
 
-<section class="w-full border-b bg-slate-50/60 mb-6 mt-20 sm:mt-20">
+<section class="w-full border-b bg-slate-50/60 mb-6 mt-24">
   <div
     class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8"
   >
@@ -308,7 +308,7 @@
   </div>
 </section>
 
-<div class="flex flex-col md:flex-row w-full min-h-screen pt-4 sm:pt-20">
+<div class="flex flex-col md:flex-row w-full min-h-screen pt-4 sm:pt-24">
   <div
     class={"flex flex-col gap-2 justify-start items-center md:m-4" + leftWidth}
   >
