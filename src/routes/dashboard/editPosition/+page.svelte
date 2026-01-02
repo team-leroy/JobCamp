@@ -8,6 +8,10 @@
   const sf = superForm(form || data.form, {
     resetForm: false,
     invalidateAll: true,
+    timeoutMs: 60000, // 60 seconds timeout for large uploads
+    onError: ({ result }) => {
+      console.error("Upload error:", result);
+    }
   });
 </script>
 

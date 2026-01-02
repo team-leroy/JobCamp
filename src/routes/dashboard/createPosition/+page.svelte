@@ -8,6 +8,12 @@
   const sf = superForm(form || data.form, {
     resetForm: false,
     invalidateAll: true,
+    timeoutMs: 60000, // 60 seconds timeout for large uploads
+    onError: ({ result }) => {
+      console.error("Upload error:", result);
+      // The blanking happens because the page reloads on hard error.
+      // Superforms usually handles this, but let's be safe.
+    }
   });
 </script>
 

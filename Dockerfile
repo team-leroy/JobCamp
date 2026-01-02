@@ -44,6 +44,7 @@ RUN pnpm run build
 
 # Expose the port for Cloud Run
 ENV PORT=8080
+ENV BODY_SIZE_LIMIT=20971520
 EXPOSE 8080
 
 # Set the command to run the app

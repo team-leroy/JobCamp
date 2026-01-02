@@ -34,6 +34,14 @@
     const input = e.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
+      
+      // Check file size (10MB limit per file)
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
+        input.value = "";
+        return;
+      }
+
       if (index === 1) {
         selectedFile1Name = file.name;
       }
