@@ -520,7 +520,7 @@
           use:enhance
         >
           <Label
-            >Parent Email<Input
+            >PARENT Email<Input
               type="email"
               name="parent-email"
               bind:value={data.parentEmail}
@@ -565,7 +565,7 @@
           use:enhance
         >
           <Label
-            >Parent Email<Input
+            >PARENT Email<Input
               type="email"
               name="parent-email"
               bind:value={data.parentEmail}

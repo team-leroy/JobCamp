@@ -39,7 +39,7 @@
     use:enhance
   >
     <div class="flex w-full justify-between items-center gap-4">
-      <label for="parentEmail" class="text-right min-w-32">Parent Email</label>
+      <label for="parentEmail" class="text-right min-w-32">PARENT Email</label>
       <Input
         class="px-2 py-0.5 rounded flex-1 min-w-52"
         type="email"
@@ -55,7 +55,7 @@
     {/if}
 
     <div class="flex w-full justify-between items-center gap-4">
-      <label for="phone" class="text-right min-w-32">Phone</label>
+      <label for="phone" class="text-right min-w-32">STUDENT Phone</label>
       <Input
         class="px-2 py-0.5 rounded flex-1 min-w-52"
         type="tel"

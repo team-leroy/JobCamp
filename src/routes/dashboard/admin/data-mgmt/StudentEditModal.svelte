@@ -176,7 +176,7 @@
             </div>
 
             <div>
-              <Label for="phone">Phone</Label>
+              <Label for="phone">STUDENT Phone</Label>
               <Input
                 id="phone"
                 name="phone"
@@ -204,7 +204,7 @@
             </div>
 
             <div>
-              <Label for="parentEmail">Parent Email</Label>
+              <Label for="parentEmail">PARENT Email</Label>
               <Input
                 id="parentEmail"
                 name="parentEmail"

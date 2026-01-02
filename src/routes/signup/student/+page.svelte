@@ -115,7 +115,7 @@
       >{/if}
 
     <div class="flex w-96 justify-between">
-      <label for="phone">Phone</label>
+      <label for="phone">STUDENT Phone</label>
       <Input
         class="px-2 py-0.5 rounded w-52 min-w-52"
         type="tel"
@@ -141,7 +141,7 @@
       >{/if}
 
     <div class="flex w-96 justify-between">
-      <label for="parentEmail">Parent Email</label>
+      <label for="parentEmail">PARENT Email</label>
       <Input
         class="px-2 py-0.5 rounded w-52 min-w-52"
         type="text"
