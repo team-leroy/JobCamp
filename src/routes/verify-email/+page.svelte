@@ -27,5 +27,5 @@
     >
   </form>
 
-  <a href="/login" class={loginLinkClasses}>Return to login</a>
+  <a href="/logout" class={loginLinkClasses}>Return to Login</a>
 </div>
