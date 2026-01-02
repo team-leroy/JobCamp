@@ -114,7 +114,7 @@ export const actions: Actions = {
                             userId: userId,
                         },
                         create: {
-                            firstName: form.data.firstName, // TODO: lastName
+                            firstName: form.data.firstName,
                             lastName: form.data.lastName,
                             graduatingClassYear,
                             phone: normalizedPhone,
@@ -123,7 +123,14 @@ export const actions: Actions = {
                                 connect: {
                                     id: school.id
                                 }
-                            }
+                            },
+                            // Automatically mark contact info as verified for the active event since they just signed up
+                            eventParticipation: activeEvent ? {
+                                create: {
+                                    eventId: activeEvent.id,
+                                    contactInfoVerifiedAt: new Date()
+                                }
+                            } : undefined
                         }
                     }
                 }
