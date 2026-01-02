@@ -41,9 +41,11 @@
 
   function handleFileChange(index: number, e: Event) {
     const input = e.target as HTMLInputElement;
-    const fileName = input.files?.[0]?.name || "";
-    if (index === 1) selectedFile1Name = fileName;
-    if (index === 2) selectedFile2Name = fileName;
+    if (input.files && input.files.length > 0) {
+      const fileName = input.files[0].name;
+      if (index === 1) selectedFile1Name = fileName;
+      if (index === 2) selectedFile2Name = fileName;
+    }
   }
 
   function clearFile(index: number) {
