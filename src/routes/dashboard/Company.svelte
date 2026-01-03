@@ -212,7 +212,7 @@
             </ul>
           </div>
         {:else}
-          <p class="text-slate-500 italic mt-4 text-sm">No attachments provided for this position.</p>
+          <p class="text-slate-500 italic mt-4 text-sm">Attachments: none</p>
         {/if}
       </Accordion.Content>
     </Accordion.Item>
