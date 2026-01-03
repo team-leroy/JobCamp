@@ -74,12 +74,17 @@
     </div>
   {/if}
 
-  <p class="mx-10">
-    Create one or more positions for job shadow day. A position represents a
-    career you'll be exposing students to.<br />E.g., Teacher, Software
-    developer, Architect, or Real estate agent.<br />Choose "Multiple Careers"
-    if you will be covering a variety of career positions during job shadow day.
-  </p>
+  <ul class="mx-10 list-disc list-outside space-y-2 text-slate-700">
+    <li>Create one or more positions for job shadow day.</li>
+    <li>
+      A position represents a career you'll be exposing students to. E.g.,
+      Teacher, Software developer, Architect, or Real estate agent.
+    </li>
+    <li>
+      Choose "Multiple Careers" if you will be covering a variety of career
+      positions during job shadow day.
+    </li>
+  </ul>
 
   <Button href="/dashboard/createPosition" class="ml-10 mt-5 text-lg"
     >Create New Position</Button
