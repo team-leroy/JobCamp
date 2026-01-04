@@ -176,7 +176,7 @@ export function formatImportantDatesHtml(dates: ImportantDateData[]): string {
     }
 
     return dates.map(date => {
-        const timeStr = date.time ? ` at ${date.time}` : '';
+        const timeStr = date.time ? ` - ${date.time}` : '';
         return `<li>${date.date}${timeStr} - ${date.title}</li>`;
     }).join('\n            ');
 }

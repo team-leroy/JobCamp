@@ -604,7 +604,7 @@
           <h1 class="text-xl mb-2">
             {formatDate(dateInfo.date)}
             {#if dateInfo.time}
-              <span class="text-gray-600">at {dateInfo.time}</span>
+              <span class="text-gray-600"> - {dateInfo.time}</span>
             {:else}
               <span class="text-gray-600">- All Day</span>
             {/if}

@@ -199,7 +199,7 @@
             </div>
 
             <div>
-              <Label for="time">Time (optional)</Label>
+              <Label for="time">Time and/or location (optional)</Label>
               <Input
                 type="text"
                 id="time"
@@ -209,7 +209,7 @@
                 class="mt-1"
               />
               <p class="text-xs text-gray-500 mt-1">
-                Leave blank for all-day events
+                Leave blank for all-day/anywhere events
               </p>
             </div>
           </div>
@@ -296,7 +296,7 @@
                   >
                     {formatDate(date.date)}
                     {#if date.time}
-                      <span class="text-gray-500">at {date.time}</span>
+                      <span class="text-gray-500"> - {date.time}</span>
                     {:else}
                       <span class="text-gray-500">- All Day</span>
                     {/if}

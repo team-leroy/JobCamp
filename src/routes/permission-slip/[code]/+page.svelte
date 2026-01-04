@@ -188,7 +188,7 @@
           {#each importantDates as dateInfo}
             <li>
               {dateInfo.title} on {formatDate(dateInfo.date)}{dateInfo.time
-                ? ` at ${dateInfo.time}`
+                ? ` - ${dateInfo.time}`
                 : ""}
               {#if dateInfo.description}
                 - {dateInfo.description}
