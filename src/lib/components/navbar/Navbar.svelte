@@ -43,7 +43,7 @@
 </script>
 
 <nav
-  class="w-full fixed top-0 left-0 bg-gray-800 flex flex-col z-50 justify-center shadow-md"
+  class="fixed top-0 left-0 right-0 bg-gray-800 flex flex-col z-50 justify-center shadow-md"
   class:h-20={!collapsed}
 >
   {#if !collapsed}

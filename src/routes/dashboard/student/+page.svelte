@@ -211,7 +211,7 @@
 
 <Navbar loggedIn={true} isHost={false} isAdmin={false} />
 
-<section class="w-full border-b bg-slate-50/60 mb-6 mt-28">
+<section class="w-full border-b bg-slate-50/60 mb-6 mt-28 overflow-x-hidden">
   <div
     class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8"
   >
@@ -310,7 +310,7 @@
   </div>
 </section>
 
-<div class="flex flex-col md:flex-row w-full min-h-screen pt-4 sm:pt-24">
+<div class="flex flex-col md:flex-row w-full min-h-screen pt-4 sm:pt-24 overflow-x-hidden">
   <div
     class={"flex flex-col gap-2 justify-start items-center md:m-4" + leftWidth}
   >
@@ -331,15 +331,15 @@
         value={data.lotteryResult.id}
         class="w-full px-4"
       >
-        <Accordion.Item value={data.lotteryResult.id} class="my-2 border rounded-md shadow-sm">
+        <Accordion.Item value={data.lotteryResult.id} class="my-2 border rounded-md shadow-sm overflow-hidden">
           <Accordion.Trigger
-            class="text-left bg-slate-100 hover:bg-slate-200 rounded-t-sm px-4 py-6"
+            class="text-left bg-slate-100 hover:bg-slate-200 rounded-t-sm px-4 py-6 min-w-0"
           >
-            <div class="flex flex-col gap-1 pr-8">
-              <span class="font-bold text-slate-900"
+            <div class="flex flex-col gap-1 pr-8 min-w-0">
+              <span class="font-bold text-slate-900 break-words overflow-hidden"
                 >{data.lotteryResult.host?.company?.companyName}</span
               >
-              <span class="text-slate-700">{data.lotteryResult.title}</span>
+              <span class="text-slate-700 break-words overflow-hidden">{data.lotteryResult.title}</span>
             </div>
           </Accordion.Trigger>
           <Accordion.Content class="px-5">
@@ -461,16 +461,16 @@
                 </div>
               {/if}
               <Accordion.Trigger
-                class="flex-1 text-left bg-white hover:bg-slate-50 px-4 py-4 min-h-[80px]"
+                class="flex-1 text-left bg-white hover:bg-slate-50 px-4 py-4 min-h-[80px] min-w-0"
               >
-                <div class="flex flex-col gap-1 pr-4">
-                  <div class="flex items-center gap-2">
-                    <span class="bg-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full">#{i + 1}</span>
-                    <span class="font-bold text-slate-900 leading-tight"
+                <div class="flex flex-col gap-1 pr-4 min-w-0">
+                  <div class="flex items-start gap-2 min-w-0">
+                    <span class="bg-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5">#{i + 1}</span>
+                    <span class="font-bold text-slate-900 leading-tight break-words overflow-hidden"
                       >{position.host?.company?.companyName}</span
                     >
                   </div>
-                  <span class="text-slate-600 text-sm ml-8 leading-tight">{position.title}</span>
+                  <span class="text-slate-600 text-sm ml-8 leading-tight break-words overflow-hidden">{position.title}</span>
                 </div>
               </Accordion.Trigger>
             </div>
