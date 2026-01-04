@@ -6,6 +6,8 @@ import { formatPhoneNumber } from '$lib/server/twilio';
 import { createContactInfoSchema } from './schema';
 import { getNavbarData } from '$lib/server/navbarData';
 import { userAccountSetupFlow, PageType } from '$lib/server/authFlow';
+import { generatePermissionSlipCode } from '$lib/server/auth';
+import { sendPermissionSlipEmail, formatEmailDate, type EventEmailData } from '$lib/server/email';
 
 export const load: PageServerLoad = async (event) => {
     // Use the auth flow helper to handle redirects
@@ -172,6 +174,24 @@ export const actions: Actions = {
                     contactInfoVerifiedAt: new Date()
                 }
             });
+        }
+
+        // Trigger automatic permission slip email to parent
+        if (student.school) {
+            const eventData: EventEmailData = {
+                eventName: activeEvent.name || 'JobCamp',
+                eventDate: formatEmailDate(activeEvent.date),
+                schoolName: student.school.name,
+                schoolId: student.school.id
+            };
+
+            try {
+                const code = await generatePermissionSlipCode(event.locals.user.id);
+                await sendPermissionSlipEmail(form.data.parentEmail.trim(), code, student.firstName, eventData);
+            } catch (error) {
+                console.error('Error sending automatic permission slip email:', error);
+                // Don't fail the verification if only the email fails, student can still trigger it manually from dashboard
+            }
         }
 
         redirect(302, "/dashboard");
