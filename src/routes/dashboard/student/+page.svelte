@@ -204,8 +204,8 @@
     data.lotteryResult
       ? " w-full"
       : positions.posList.length == 0
-        ? " w-72"
-        : " min-w-[32rem] w-full"
+        ? " w-full md:w-72"
+        : " w-full md:min-w-[32rem]"
   );
 </script>
 
@@ -315,26 +315,32 @@
     class={"flex flex-col gap-2 justify-start items-center md:m-4" + leftWidth}
   >
     {#if data.lotteryResult}
-      <h1 class="text-2xl text-center w-full mt-4 md:mt-0">
-        PLEASE CHECK ALL DETAILS OF THE POSITION, INCLUDING FORMS TO COMPLETE,
-        START TIME, LOCATION, REQUIRED ID (if needed) and INFO TO SEND TO
-        admin@jobcamp.org
-        <br />
-        You've been assigned to the following position:
-      </h1>
+      <div class="px-4 w-full">
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+          <p class="text-sm font-bold text-blue-800">
+            ACTION REQUIRED: PLEASE CHECK ALL DETAILS OF YOUR POSITION.
+          </p>
+          <p class="text-xs text-blue-700 mt-1">
+            Review start time, location, required ID, and any forms to complete.
+          </p>
+        </div>
+        <h2 class="text-xl font-semibold mb-2">Your Assigned Position:</h2>
+      </div>
       <Accordion.Root
         type="single"
         value={data.lotteryResult.id}
-        class="mt-2 max-w-screen md:w-full md:px-4 mx-4"
+        class="w-full px-4"
       >
-        <Accordion.Item value={data.lotteryResult.id} class="my-2 relative">
+        <Accordion.Item value={data.lotteryResult.id} class="my-2 border rounded-md shadow-sm">
           <Accordion.Trigger
-            class="relative text-md md:text-lg text-left bg-slate-100 hover:bg-slate-200 rounded-t-sm px-5 pl-9 min-h-[110px]"
+            class="text-left bg-slate-100 hover:bg-slate-200 rounded-t-sm px-4 py-6"
           >
-            <span class="pl-12 pr-32 text-wrap"
-              >{data.lotteryResult.host?.company?.companyName} - {data
-                .lotteryResult.title}</span
-            >
+            <div class="flex flex-col gap-1 pr-8">
+              <span class="font-bold text-slate-900"
+                >{data.lotteryResult.host?.company?.companyName}</span
+              >
+              <span class="text-slate-700">{data.lotteryResult.title}</span>
+            </div>
           </Accordion.Trigger>
           <Accordion.Content class="px-5">
             <p class="mt-1">Career: {data.lotteryResult.career}</p>
@@ -400,68 +406,75 @@
         </Accordion.Item>
       </Accordion.Root>
     {:else if positions.posList.length != 0}
-      <!-- Show student's position selections -->
-      <h1 class="text-2xl pb-4 w-full px-4">My Favorite Jobs</h1>
-      <Button href="/dashboard/student/pick" class="mb-4 mx-4">
-        Browse All Positions
-      </Button>
+      <h2 class="text-2xl font-bold pb-4 w-full px-4">My Favorite Jobs</h2>
+      <div class="px-4 mb-4">
+        <Button href="/dashboard/student/pick" class="w-full sm:w-auto">
+          Browse All Positions
+        </Button>
+      </div>
       <Accordion.Root type="multiple" class="w-full px-4">
         {#each positions.posList as position, i}
-          <Accordion.Item value={position.id} class="my-2 relative">
-            {#if data.studentSignupsEnabled}
-              {#if i != positions.posList.length - 1}
-                <button
-                  type="button"
-                  class={"absolute left-5 hover:cursor-pointer z-10 p-1 [touch-action:manipulation]" +
-                    (i == 0 ? " top-12" : " top-20")}
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    moveUp(position.id);
-                  }}
-                  aria-label="Move position down"
-                >
-                  <ArrowBigDown size={32} />
-                </button>
+          <Accordion.Item value={position.id} class="my-3 border rounded-md shadow-sm overflow-hidden">
+            <div class="flex items-stretch">
+              {#if data.studentSignupsEnabled}
+                <div class="flex flex-col justify-center bg-slate-50 border-r w-12 shrink-0">
+                  {#if i != 0}
+                    <button
+                      type="button"
+                      class="flex items-center justify-center h-1/3 hover:bg-blue-100 text-blue-600 transition-colors"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        moveDown(position.id);
+                      }}
+                      aria-label="Move position up"
+                    >
+                      <ArrowBigUp size={24} />
+                    </button>
+                  {/if}
+                  <button
+                    type="button"
+                    class="flex items-center justify-center h-1/3 hover:bg-red-100 text-red-600 transition-colors"
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      deletePosition(position.id);
+                    }}
+                    aria-label="Delete position"
+                  >
+                    <Trash2Icon size={20} />
+                  </button>
+                  {#if i != positions.posList.length - 1}
+                    <button
+                      type="button"
+                      class="flex items-center justify-center h-1/3 hover:bg-blue-100 text-blue-600 transition-colors"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        moveUp(position.id);
+                      }}
+                      aria-label="Move position down"
+                    >
+                      <ArrowBigDown size={24} />
+                    </button>
+                  {/if}
+                </div>
               {/if}
-              {#if i != 0}
-                <button
-                  type="button"
-                  class="absolute top-12 left-5 hover:cursor-pointer z-10 p-1 [touch-action:manipulation]"
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    moveDown(position.id);
-                  }}
-                  aria-label="Move position up"
-                >
-                  <ArrowBigUp size={32} />
-                </button>
-              {/if}
-              <button
-                type="button"
-                class="absolute left-[20px] top-3 hover:cursor-pointer z-10 p-1 [touch-action:manipulation]"
-                onclick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  deletePosition(position.id);
-                }}
-                aria-label="Delete position"
+              <Accordion.Trigger
+                class="flex-1 text-left bg-white hover:bg-slate-50 px-4 py-4 min-h-[80px]"
               >
-                <Trash2Icon size={32} />
-              </button>
-            {/if}
-            <Accordion.Trigger
-              class={"text-xl text-left bg-slate-100 hover:bg-slate-200 rounded-t-sm px-5" +
-                (i == positions.posList.length - 1 || i == 0
-                  ? " h-[90px]"
-                  : " h-[120px]")}
-            >
-              <span class="pl-12 pr-2"
-                >{position.host?.company?.companyName} - {position.title}</span
-              >
-            </Accordion.Trigger>
-            <Accordion.Content class="px-5">
+                <div class="flex flex-col gap-1 pr-4">
+                  <div class="flex items-center gap-2">
+                    <span class="bg-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full">#{i + 1}</span>
+                    <span class="font-bold text-slate-900 leading-tight"
+                      >{position.host?.company?.companyName}</span
+                    >
+                  </div>
+                  <span class="text-slate-600 text-sm ml-8 leading-tight">{position.title}</span>
+                </div>
+              </Accordion.Trigger>
+            </div>
+            <Accordion.Content class="px-5 pb-4 bg-white border-t">
               <p class="mt-1">Career: {position.career}</p>
               <br />
               <p class="mt-1">
@@ -507,113 +520,77 @@
   </div>
   <div class="flex flex-col w-full md:border-l-2 md:border-l-slate-950">
     {#if !data.permissionSlipCompleted}
-      <!-- Mobile version -->
-      <div
-        class="flex sm:hidden flex-col px-4 py-4 border rounded-lg m-3 bg-yellow-100"
-      >
-        <span class="text-base sm:text-2xl mb-3"
-          >To add Favorite Jobs, your parent permission slip must be completed.
-          To resend the permission slip, enter your parent's email address:</span
-        >
-        <form
-          class="flex flex-col gap-3"
-          method="post"
-          action="?/sendPermissionSlip"
-          use:enhance
-        >
-          <Label
-            >PARENT Email<Input
-              type="email"
-              name="parent-email"
-              bind:value={data.parentEmail}
-              class="w-full"
-            /></Label
+      <div class="px-4 py-6 w-full">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-sm">
+          <h3 class="text-lg font-bold text-amber-900 mb-2">Permission Slip Required</h3>
+          <p class="text-sm text-amber-800 mb-4 leading-relaxed">
+            To select favorite jobs, your parent permission slip must be completed.
+            Need to resend it? Enter your parent's email below:
+          </p>
+          
+          <form
+            class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end"
+            method="post"
+            action="?/sendPermissionSlip"
+            use:enhance
           >
-          <button
-            type="submit"
-            class="w-full px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-md text-white"
-            >Send</button
-          >
-          {#if form && form.sent}
-            <span class="text-green-500 text-lg font-bold">Sent</span>
-          {:else if form?.err}
-            {#if form?.reason === "school-domain"}
-              <span class="text-red-500 text-sm font-semibold">
-                Parent email cannot use school email domain (
-                {form.schoolDomain ?? "@lgsstudent.org"}). Please provide a
-                different email.
-              </span>
-            {:else}
-              <span class="text-red-500 text-sm font-semibold">
-                Internal error. Please try again.
-              </span>
-            {/if}
-          {/if}
-        </form>
-      </div>
+            <div class="flex-1 space-y-1.5">
+              <Label for="parent-email" class="text-amber-900 font-semibold">PARENT Email</Label>
+              <Input
+                id="parent-email"
+                type="email"
+                name="parent-email"
+                bind:value={data.parentEmail}
+                placeholder="parent@example.com"
+                class="bg-white border-amber-300 focus:ring-amber-500"
+              />
+            </div>
+            <Button
+              type="submit"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-8"
+            >
+              Send
+            </Button>
+          </form>
 
-      <!-- Desktop version -->
-      <div
-        class="hidden sm:flex flex-col px-10 py-4 border rounded-lg m-3 bg-yellow-100"
-      >
-        <span class="text-2xl"
-          >To add Favorite Jobs, your parent permission slip must be completed.
-          To resend the permission slip, enter your parent's email address:</span
-        >
-        <form
-          class="flex items-end gap-6 mt-3"
-          method="post"
-          action="?/sendPermissionSlip"
-          use:enhance
-        >
-          <Label
-            >PARENT Email<Input
-              type="email"
-              name="parent-email"
-              bind:value={data.parentEmail}
-              class="max-w-72"
-            /></Label
-          >
-          <button
-            type="submit"
-            class="px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-md text-white"
-            >Send</button
-          >
           {#if form && form.sent}
-            <span class="text-green-500 text-lg font-bold pb-1.5">Sent</span>
+            <div class="mt-3 flex items-center gap-2 text-emerald-600 font-bold">
+              <span class="text-lg">✓</span> Sent successfully!
+            </div>
           {:else if form?.err}
-            {#if form?.reason === "school-domain"}
-              <span class="text-red-500 text-sm font-semibold pb-1.5">
-                Parent email cannot use school email domain (
-                {form.schoolDomain ?? "@lgsstudent.org"}). Please provide a
-                different email.
-              </span>
-            {:else}
-              <span class="text-red-500 text-sm font-semibold pb-1.5">
+            <div class="mt-3 p-3 bg-red-100 border border-red-200 rounded-lg text-red-700 text-sm font-semibold">
+              {#if form?.reason === "school-domain"}
+                Parent email cannot use school email domain ({form.schoolDomain ?? "@lgsstudent.org"}).
+              {:else}
                 Internal error. Please try again.
-              </span>
-            {/if}
+              {/if}
+            </div>
           {/if}
-        </form>
+        </div>
       </div>
     {/if}
     {#if data.importantDates && data.importantDates.length > 0}
-      <h1 class="text-2xl px-4 py-4 text-center w-full">Important Dates</h1>
-      {#each data.importantDates as dateInfo}
-        <div class="m-2 mx-4 p-4 rounded-md shadow-xl border-2">
-          <h1 class="text-xl mb-2">
-            {formatDate(dateInfo.date)}
-            {#if dateInfo.time}
-              <span class="text-gray-600"> - {dateInfo.time}</span>
-            {:else}
-              <span class="text-gray-600">- All Day</span>
-            {/if}
-          </h1>
-          <h2 class="text-lg font-semibold mb-2">{dateInfo.title}</h2>
-          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-          <p class="whitespace-pre-wrap">{@html dateInfo.description}</p>
-        </div>
-      {/each}
+      <h2 class="text-2xl px-4 py-6 text-center w-full font-bold">Important Dates</h2>
+      <div class="space-y-4 px-4 pb-8">
+        {#each data.importantDates as dateInfo}
+          <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded">
+                {formatDate(dateInfo.date)}
+                {#if dateInfo.time}
+                  - {dateInfo.time}
+                {/if}
+              </span>
+              {#if !dateInfo.time}
+                <span class="bg-slate-100 text-slate-600 text-[10px] uppercase font-bold px-2 py-1 rounded">All Day</span>
+              {/if}
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2 leading-tight">{dateInfo.title}</h3>
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+            <div class="text-sm text-slate-600 prose prose-sm max-w-none">{@html dateInfo.description}</div>
+          </div>
+        {/each}
+      </div>
     {/if}
   </div>
 </div>
