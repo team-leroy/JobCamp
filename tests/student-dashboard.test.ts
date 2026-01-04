@@ -317,7 +317,12 @@ describe('Student Dashboard Server', () => {
             expect(result.positions).toHaveLength(1);
             expect(result.positions[0]).toEqual(mockPosition);
             expect(mockPrisma.positionsOnStudents.findMany).toHaveBeenCalledWith({
-                where: { studentId: 'student-1' },
+                where: { 
+                    studentId: 'student-1',
+                    position: {
+                        eventId: 'event-1'
+                    }
+                },
                 orderBy: { rank: 'asc' },
                 include: expect.objectContaining({
                     position: expect.any(Object)

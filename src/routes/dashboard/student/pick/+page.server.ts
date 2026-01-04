@@ -70,9 +70,14 @@ export const load: PageServerLoad = async ({ locals }) => {
     // Get permission slip status for the active event
     const permissionSlipStatus = await getPermissionSlipStatus(studentId, school.id);
 
-    const positionsOnStudents = await prisma.positionsOnStudents.findMany({ where: {
-        studentId: studentId
-    }})
+    const positionsOnStudents = activeEvent ? await prisma.positionsOnStudents.findMany({ 
+        where: {
+            studentId: studentId,
+            position: {
+                eventId: activeEvent.id
+            }
+        }
+    }) : [];
 
     positionData.map((val: {
         id: string;
@@ -208,7 +213,19 @@ export const actions: Actions = {
             redirect(302, "/login");
         }
 
-        let posIds: Array<{ positionId: string }> = await prisma.positionsOnStudents.findMany({ where: { studentId: studentId }});
+        const activeEventId = await getActiveEventIdForSchool(student.schoolId || "");
+        if (!activeEventId) {
+            return { success: false, message: "No active event found." };
+        }
+
+        let posIds: Array<{ positionId: string }> = await prisma.positionsOnStudents.findMany({ 
+            where: { 
+                studentId: studentId,
+                position: {
+                    eventId: activeEventId
+                }
+            }
+        });
 
         let deleted = false;
         posIds = posIds.filter((val: { positionId: string }) => {
@@ -232,20 +249,19 @@ export const actions: Actions = {
 
         await prisma.$transaction([
             prisma.positionsOnStudents.deleteMany({
-                where: { studentId: studentId }
+                where: { 
+                    studentId: studentId,
+                    position: {
+                        eventId: activeEventId
+                    }
+                }
             }),
             prisma.positionsOnStudents.createMany({
                 data: positions
             })
         ]);
 
-        // Track student participation in the active event
-        if (student.schoolId) {
-            const activeEventId = await getActiveEventIdForSchool(student.schoolId);
-            if (activeEventId) {
-                await trackStudentParticipation(studentId, activeEventId);
-            }
-        }
+        await trackStudentParticipation(studentId, activeEventId);
 
         return { sent: false, err: false };
     }

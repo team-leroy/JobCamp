@@ -107,8 +107,13 @@ export const load: PageServerLoad = async (event) => {
     const permissionSlipStatus = await getPermissionSlipStatus(student.id, student.schoolId || "");
 
     // Load student's position selections
-    const positionsOnStudents = await prisma.positionsOnStudents.findMany({
-        where: { studentId: student.id },
+    const positionsOnStudents = activeEvent ? await prisma.positionsOnStudents.findMany({
+        where: { 
+            studentId: student.id,
+            position: {
+                eventId: activeEvent.id
+            }
+        },
         orderBy: { rank: "asc" },
         include: { 
             position: {
@@ -121,7 +126,7 @@ export const load: PageServerLoad = async (event) => {
                 }
             }
         }
-    });
+    }) : [];
 
     const positions = positionsOnStudents.map(pos => pos.position);
 
@@ -265,29 +270,36 @@ export const actions: Actions = {
             return;
         }
 
-        const positions = posIds.map((val: string, i: number) => {
-            return {
-                rank: i,
-                studentId: student.id,
-                positionId: val,
-            };
-        })
-
-        await prisma.$transaction([
-            prisma.positionsOnStudents.deleteMany({
-                where: { studentId: studentId }
-            }),
-            prisma.positionsOnStudents.createMany({
-                data: positions
-            })
-        ]);
-
         // Track student participation in the active event
         if (student.schoolId) {
             const activeEventId = await getActiveEventIdForSchool(student.schoolId);
-            if (activeEventId) {
-                await trackStudentParticipation(studentId, activeEventId);
+            if (!activeEventId) {
+                return;
             }
+
+            const positions = posIds.map((val: string, i: number) => {
+                return {
+                    rank: i,
+                    studentId: student.id,
+                    positionId: val,
+                };
+            })
+
+            await prisma.$transaction([
+                prisma.positionsOnStudents.deleteMany({
+                    where: { 
+                        studentId: studentId,
+                        position: {
+                            eventId: activeEventId
+                        }
+                    }
+                }),
+                prisma.positionsOnStudents.createMany({
+                    data: positions
+                })
+            ]);
+
+            await trackStudentParticipation(studentId, activeEventId);
         }
     },
     deletePosition: async({ request, locals }) => {
@@ -339,8 +351,16 @@ export const actions: Actions = {
         });
 
         // Update ranks
+        const activeEventId = await getActiveEventIdForSchool(student.schoolId || "");
+        if (!activeEventId) return;
+
         const remainingPositions = await prisma.positionsOnStudents.findMany({
-            where: { studentId: studentId },
+            where: { 
+                studentId: studentId,
+                position: {
+                    eventId: activeEventId
+                }
+            },
             orderBy: { rank: "asc" }
         });
 
@@ -386,8 +406,16 @@ export const actions: Actions = {
             return;
         }
 
+        const activeEventId = await getActiveEventIdForSchool(student.schoolId || "");
+        if (!activeEventId) return;
+
         const positions = await prisma.positionsOnStudents.findMany({
-            where: { studentId: studentId },
+            where: { 
+                studentId: studentId,
+                position: {
+                    eventId: activeEventId
+                }
+            },
             orderBy: { rank: "asc" }
         });
 
