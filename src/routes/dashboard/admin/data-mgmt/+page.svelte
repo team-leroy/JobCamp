@@ -140,6 +140,16 @@
   const userRole = $derived(data.userRole);
   const canEdit = $derived(data.canEdit);
 
+  // Memoize event options for filters
+  const eventOptions = $derived([
+    { value: "All", label: "All Events" },
+    ...data.allEvents.map((event) => ({
+      value: event.id,
+      label:
+        event.name || `Event ${new Date(event.date).toLocaleDateString()}`,
+    })),
+  ]);
+
   // Filter states for Student
   let lastNameFilter = $state("");
   let gradeFilter = $state("All");
@@ -460,13 +470,7 @@
                   label="Event Participation"
                   bind:value={studentEventFilter}
                   placeholder="All Events"
-                  options={[
-                    { value: "All", label: "All Events" },
-                    ...data.allEvents.map((event) => ({
-                      value: event.id,
-                      label: event.name || `Event ${new Date(event.date).toLocaleDateString()}`,
-                    })),
-                  ]}
+                  options={eventOptions}
                 />
               </div>
 
@@ -484,6 +488,8 @@
                       params.set("permissionSlip", permissionSlipFilter);
                     if (lotteryStatusFilter !== "All")
                       params.set("lotteryStatus", lotteryStatusFilter);
+                    if (studentEventFilter !== "All")
+                      params.set("eventId", studentEventFilter);
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
                   }}
@@ -705,13 +711,7 @@
                   label="Event Participation"
                   bind:value={companyEventFilter}
                   placeholder="All Events"
-                  options={[
-                    { value: "All", label: "All Events" },
-                    ...data.allEvents.map((event) => ({
-                      value: event.id,
-                      label: event.name || `Event ${new Date(event.date).toLocaleDateString()}`,
-                    })),
-                  ]}
+                  options={eventOptions}
                 />
               </div>
 
@@ -725,6 +725,7 @@
                     const params = new URLSearchParams();
                     params.set("type", "companies");
                     if (companyNameFilter) params.set("companyName", companyNameFilter);
+                    if (companyEventFilter !== "All") params.set("eventId", companyEventFilter);
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
                   }}

@@ -59,6 +59,7 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
     const gradeFilter = url.searchParams.get('grade') || 'All';
     const permissionSlipFilter = url.searchParams.get('permissionSlip') || 'All';
     const lotteryStatusFilter = url.searchParams.get('lotteryStatus') || 'All';
+    const eventIdFilter = url.searchParams.get('eventId') || 'All';
 
         // Get students with same logic as load function
         const students = await prisma.student.findMany({
@@ -99,6 +100,11 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
                         eventId: activeEvent.id
                     },
                     take: 1
+                },
+                eventParticipation: {
+                    select: {
+                        eventId: true
+                    }
                 }
             },
             orderBy: {
@@ -168,11 +174,14 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
             
             const lotteryResult = lotteryMap.get(student.id);
             const lotteryStatus = lotteryResult ? 'Assigned' : (student.positionsSignedUpFor.length > 0 ? 'Unassigned' : 'No Picks');
-            const matchesLotteryStatus = lotteryStatusFilter === "All" || 
-                lotteryStatus === lotteryStatusFilter;
+                const matchesLotteryStatus = lotteryStatusFilter === "All" || 
+                    lotteryStatus === lotteryStatusFilter;
+                
+                const studentEventIds = student.eventParticipation.map(p => p.eventId);
+                const matchesEvent = eventIdFilter === "All" || studentEventIds.includes(eventIdFilter);
 
-            return matchesLastName && matchesGrade && matchesPermissionSlip && matchesLotteryStatus;
-        }).map(student => {
+                return matchesLastName && matchesGrade && matchesPermissionSlip && matchesLotteryStatus && matchesEvent;
+            }).map(student => {
             const permissionSlip = student.permissionSlips[0];
             const lotteryResult = lotteryMap.get(student.id);
             
@@ -231,6 +240,15 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
 async function exportCompanies(schoolIds: string[], url: URL) {
     // Get filter parameters from URL
     const companyNameFilter = url.searchParams.get('companyName') || '';
+    const eventIdFilter = url.searchParams.get('eventId') || 'All';
+
+    // Get active event for position count
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            schoolId: { in: schoolIds },
+            isActive: true
+        }
+    });
 
     // Get companies
     const companies = await prisma.company.findMany({
@@ -241,7 +259,8 @@ async function exportCompanies(schoolIds: string[], url: URL) {
             hosts: {
                 include: {
                     positions: {
-                        where: {
+                        select: {
+                            eventId: true,
                             isPublished: true
                         }
                     }
@@ -254,22 +273,33 @@ async function exportCompanies(schoolIds: string[], url: URL) {
     });
 
     // Transform and filter companies
-    const filteredCompanies = companies.filter(company => {
-        const matchesCompanyName = !companyNameFilter || 
-            company.companyName.toLowerCase().includes(companyNameFilter.toLowerCase());
-        return matchesCompanyName;
-    }).map(company => {
-        // Count active positions for this company
-        const positionCount = company.hosts.reduce((count, host) => {
-            return count + host.positions.length;
-        }, 0);
+    const filteredCompanies = companies.map(company => {
+        const eventIds = new Set<string>();
+        let activePositionCount = 0;
+
+        company.hosts.forEach(host => {
+            host.positions.forEach(pos => {
+                eventIds.add(pos.eventId);
+                if (activeEvent && pos.eventId === activeEvent.id && pos.isPublished) {
+                    activePositionCount++;
+                }
+            });
+        });
 
         return {
             companyName: company.companyName,
             companyDescription: company.companyDescription || '',
             companyUrl: company.companyUrl || '',
-            activePositionCount: positionCount
+            activePositionCount,
+            eventIds: Array.from(eventIds)
         };
+    }).filter(company => {
+        const matchesCompanyName = !companyNameFilter || 
+            company.companyName.toLowerCase().includes(companyNameFilter.toLowerCase());
+        
+        const matchesEvent = eventIdFilter === "All" || company.eventIds.includes(eventIdFilter);
+
+        return matchesCompanyName && matchesEvent;
     });
 
     // Generate CSV
