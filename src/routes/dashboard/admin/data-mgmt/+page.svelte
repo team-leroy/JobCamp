@@ -175,6 +175,13 @@
   let selectedTab = $state("Student");
   let showMessengerDialog = $state(false);
 
+  // Pagination states
+  let studentPage = $state(1);
+  let companyPage = $state(1);
+  let hostPage = $state(1);
+  let positionPage = $state(1);
+  const pageSize = 50;
+
   // Computed filtered students
   let filteredStudents = $derived(
     data.students.filter((student) => {
@@ -207,6 +214,10 @@
     })
   );
 
+  let paginatedStudents = $derived(
+    filteredStudents.slice(0, studentPage * pageSize)
+  );
+
   // Computed filtered companies
   let filteredCompanies = $derived(
     data.companies.filter((company) => {
@@ -224,6 +235,10 @@
     })
   );
 
+  let paginatedCompanies = $derived(
+    filteredCompanies.slice(0, companyPage * pageSize)
+  );
+
   // Computed filtered hosts
   let filteredHosts = $derived(
     data.hosts.filter((host) => {
@@ -234,6 +249,8 @@
       return matchesHostName;
     })
   );
+
+  let paginatedHosts = $derived(filteredHosts.slice(0, hostPage * pageSize));
 
   // Computed filtered positions
   let filteredPositions = $derived(
@@ -251,6 +268,45 @@
       return matchesTitle && matchesCareer;
     })
   );
+
+  let paginatedPositions = $derived(
+    filteredPositions.slice(0, positionPage * pageSize)
+  );
+
+  // Reset pagination when filters change
+  $effect(() => {
+    void selectedTab;
+    studentPage = 1;
+    companyPage = 1;
+    hostPage = 1;
+    positionPage = 1;
+  });
+
+  $effect(() => {
+    void lastNameFilter;
+    void gradeFilter;
+    void permissionSlipFilter;
+    void lotteryStatusFilter;
+    void studentEventFilter;
+    studentPage = 1;
+  });
+
+  $effect(() => {
+    void companyNameFilter;
+    void companyEventFilter;
+    companyPage = 1;
+  });
+
+  $effect(() => {
+    void hostNameFilter;
+    hostPage = 1;
+  });
+
+  $effect(() => {
+    void positionTitleFilter;
+    void positionCareerFilter;
+    positionPage = 1;
+  });
 
   function toggleStudentExpansion(studentId: string) {
     if (expandedStudents.has(studentId)) {
@@ -537,7 +593,7 @@
 
           <!-- Student List -->
           <div class="space-y-4">
-            {#each filteredStudents as student (student.id)}
+            {#each paginatedStudents as student (student.id)}
               <Card class="hover:shadow-md transition-shadow">
                 <CardContent class="p-6">
                   <!-- Student Header -->
@@ -751,7 +807,7 @@
 
           <!-- Company List -->
           <div class="space-y-4">
-            {#each filteredCompanies as company (company.id)}
+            {#each paginatedCompanies as company (company.id)}
               <Card class="hover:shadow-md transition-shadow">
                 <CardContent class="p-6">
                   <!-- Company Header -->
@@ -870,6 +926,19 @@
                 </CardContent>
               </Card>
             {/each}
+
+            {#if filteredCompanies.length > paginatedCompanies.length}
+              <div class="flex justify-center pt-4 pb-8">
+                <Button
+                  variant="outline"
+                  onclick={() => companyPage++}
+                  class="w-full max-w-xs"
+                >
+                  Load More Companies ({filteredCompanies.length -
+                    paginatedCompanies.length} remaining)
+                </Button>
+              </div>
+            {/if}
           </div>
 
           {#if filteredCompanies.length === 0}
@@ -946,7 +1015,7 @@
 
           <!-- Host List -->
           <div class="space-y-4">
-            {#each filteredHosts as host (host.id)}
+            {#each paginatedHosts as host (host.id)}
               <Card class="hover:shadow-md transition-shadow">
                 <CardContent class="p-6">
                   <!-- Host Header -->
@@ -985,6 +1054,19 @@
                 </CardContent>
               </Card>
             {/each}
+
+            {#if filteredHosts.length > paginatedHosts.length}
+              <div class="flex justify-center pt-4 pb-8">
+                <Button
+                  variant="outline"
+                  onclick={() => hostPage++}
+                  class="w-full max-w-xs"
+                >
+                  Load More Hosts ({filteredHosts.length -
+                    paginatedHosts.length} remaining)
+                </Button>
+              </div>
+            {/if}
           </div>
 
           {#if filteredHosts.length === 0}
@@ -1067,7 +1149,7 @@
 
           <!-- Position List -->
           <div class="space-y-4">
-            {#each filteredPositions as position}
+            {#each paginatedPositions as position (position.id)}
               <Card>
                 <CardContent class="p-4">
                   <div class="flex justify-between items-start mb-4">
@@ -1194,14 +1276,27 @@
                               {formatDate(position.createdAt)}
                             </p>
                           </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  {/if}
-                </CardContent>
-              </Card>
-            {/each}
-          </div>
+                    {/if}
+                  </CardContent>
+                </Card>
+              {/each}
+
+              {#if filteredPositions.length > paginatedPositions.length}
+                <div class="flex justify-center pt-4 pb-8">
+                  <Button
+                    variant="outline"
+                    onclick={() => positionPage++}
+                    class="w-full max-w-xs"
+                  >
+                    Load More Positions ({filteredPositions.length -
+                      paginatedPositions.length} remaining)
+                  </Button>
+                </div>
+              {/if}
+            </div>
 
           {#if filteredPositions.length === 0}
             <Card>
