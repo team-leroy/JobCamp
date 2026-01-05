@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
+  import { invalidateAll } from "$app/navigation";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -83,10 +84,10 @@
 
   function handleSuccess() {
     message = "Student updated successfully!";
-    setTimeout(() => {
+    setTimeout(async () => {
       isOpen = false;
       message = null;
-      window.location.reload();
+      await invalidateAll();
     }, 1000);
   }
 
@@ -144,7 +145,7 @@
       }}
     >
       <input type="hidden" name="studentId" value={student.id} />
-      <input type="hidden" name="isInternalTester" value={formData.isInternalTester} />
+      <input type="hidden" name="isInternalTester" value={formData.isInternalTester ? 'true' : 'false'} />
 
       <div class="space-y-6">
         <!-- Personal Information -->

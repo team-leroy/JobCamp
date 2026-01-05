@@ -174,7 +174,8 @@ export const load: PageServerLoad = async ({ locals }) => {
     // Convert graduatingClassYear to grade for display
     const transformedStudents = students.map(student => {
         const lotteryResult = lotteryMap.get(student.id);
-        const permissionSlip = student.permissionSlips[0];
+        const slip = student.permissionSlips[0];
+        
         const grade = student.graduatingClassYear 
             ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
             : null;
@@ -188,8 +189,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             phone: student.phone,
             email: student.user?.email || 'No Email',
             parentEmail: student.parentEmail,
-            permissionSlipStatus: permissionSlip ? 'Complete' : 'Not Started',
-            permissionSlipDate: permissionSlip?.createdAt ? new Date(permissionSlip.createdAt).toISOString() : null,
+            permissionSlipStatus: slip ? 'Complete' : 'Not Started',
+            permissionSlipDate: slip?.createdAt ? new Date(slip.createdAt).toISOString() : null,
             lastLogin: student.user?.lastLogin ? new Date(student.user.lastLogin).toISOString() : null,
             isInternalTester: student.user?.role === 'INTERNAL_TESTER',
             studentPicks: student.positionsSignedUpFor.map(pos => ({
@@ -568,7 +569,7 @@ export const actions: Actions = {
             const graduatingClassYear = getGraduatingClassYear(parseInt(grade), activeEvent.date);
 
             // Update student record
-            await prisma.student.update({
+            const updatedStudent = await prisma.student.update({
                 where: { id: studentId },
                 data: {
                     firstName,
@@ -576,18 +577,14 @@ export const actions: Actions = {
                     graduatingClassYear,
                     phone,
                     parentEmail
-                }
-            });
-
-            // Update user info (email and role)
-            const student = await prisma.student.findUnique({
-                where: { id: studentId },
+                },
                 select: { userId: true }
             });
 
-            if (student?.userId) {
+            // Update user info (email and role)
+            if (updatedStudent.userId) {
                 await prisma.user.update({
-                    where: { id: student.userId },
+                    where: { id: updatedStudent.userId },
                     data: { 
                         email: email || undefined,
                         role: isInternalTester ? 'INTERNAL_TESTER' : null
@@ -832,6 +829,7 @@ export const actions: Actions = {
             const companyName = formData.get('companyName')?.toString();
             const companyDescription = formData.get('companyDescription')?.toString();
             const companyUrl = formData.get('companyUrl')?.toString();
+            const isInternalTester = formData.get('isInternalTester') === 'true';
 
             if (!companyId || !companyName || !companyDescription) {
                 return { success: false, message: "Missing required fields" };
@@ -846,6 +844,22 @@ export const actions: Actions = {
                     companyUrl: companyUrl || null
                 }
             });
+
+            // Update all hosts of this company if isInternalTester is set
+            // This is a convenience to mark all hosts of a company as testers
+            const hosts = await prisma.host.findMany({
+                where: { companyId },
+                select: { userId: true }
+            });
+
+            for (const host of hosts) {
+                if (host.userId) {
+                    await prisma.user.update({
+                        where: { id: host.userId },
+                        data: { role: isInternalTester ? 'INTERNAL_TESTER' : null }
+                    });
+                }
+            }
 
             return { success: true, message: "Company updated successfully" };
         } catch (error) {
@@ -879,29 +893,23 @@ export const actions: Actions = {
                 return { success: false, message: "Missing required fields" };
             }
 
-            // Update host name
-            const host = await prisma.host.findUnique({
+            // Update host record
+            const updatedHost = await prisma.host.update({
                 where: { id: hostId },
+                data: { name },
                 select: { userId: true }
             });
 
-            if (!host) {
-                return { success: false, message: "Host not found" };
+            // Update user email and role
+            if (updatedHost.userId) {
+                await prisma.user.update({
+                    where: { id: updatedHost.userId },
+                    data: { 
+                        email,
+                        role: isInternalTester ? 'INTERNAL_TESTER' : null
+                    }
+                });
             }
-
-            await prisma.host.update({
-                where: { id: hostId },
-                data: { name }
-            });
-
-            // Update user email
-            await prisma.user.update({
-                where: { id: host.userId },
-                data: { 
-                    email,
-                    role: isInternalTester ? 'INTERNAL_TESTER' : null
-                }
-            });
 
             return { success: true, message: "Host updated successfully" };
         } catch (error) {

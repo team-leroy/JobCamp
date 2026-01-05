@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
+  import { invalidateAll } from "$app/navigation";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -19,6 +20,7 @@
     companyDescription: string;
     companyUrl: string;
     activePositionCount: number;
+    isInternalTester: boolean;
   }
 
   let { company }: { company: Company } = $props();
@@ -31,6 +33,7 @@
       companyName: company.companyName,
       companyDescription: company.companyDescription,
       companyUrl: company.companyUrl || "",
+      isInternalTester: company.isInternalTester
     }))
   );
 
@@ -43,6 +46,7 @@
       companyName: company.companyName,
       companyDescription: company.companyDescription,
       companyUrl: company.companyUrl || "",
+      isInternalTester: company.isInternalTester
     };
     message = null;
     error = null;
@@ -51,10 +55,9 @@
   function handleSuccess() {
     message = "Company updated successfully";
     error = null;
-    setTimeout(() => {
+    setTimeout(async () => {
       isOpen = false;
-      resetForm();
-      window.location.reload();
+      await invalidateAll();
     }, 1000);
   }
 
@@ -95,16 +98,16 @@
         handleSubmit();
         return async ({ update }) => {
           try {
-            await update();
+            await update({ reset: false });
             handleSuccess();
           } catch {
             handleError();
           }
         };
       }}
-      onsubmit={resetForm}
     >
       <input type="hidden" name="companyId" value={company.id} />
+      <input type="hidden" name="isInternalTester" value={formData.isInternalTester ? 'true' : 'false'} />
 
       {#if message}
         <div
@@ -154,6 +157,18 @@
               type="url"
               placeholder="https://example.com"
             />
+          </div>
+
+          <div class="flex items-center space-x-2 pt-2">
+            <input
+              type="checkbox"
+              id="isInternalTester"
+              bind:checked={formData.isInternalTester}
+              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <Label for="isInternalTester" class="text-sm font-medium text-gray-700">
+              Internal Tester Account (Hides all hosts/positions of this company)
+            </Label>
           </div>
         </div>
       </div>
