@@ -177,6 +177,7 @@
   let positionTitleFilter = $state("");
   let positionCareerFilter = $state("All");
   let positionEventFilter = $state(data.activeEvent?.id || "All");
+  let positionStatusFilter = $state("Published");
 
   // Global Filter for Internal Testers
   let showInternalTesters = $state(false);
@@ -293,9 +294,20 @@
         positionEventFilter === "All" ||
         position.eventId === positionEventFilter;
 
+      const matchesStatus =
+        positionStatusFilter === "All" ||
+        (positionStatusFilter === "Published" && position.isPublished) ||
+        (positionStatusFilter === "Draft" && !position.isPublished);
+
       const matchesTester = showInternalTesters || !position.isInternalTester;
 
-      return matchesTitle && matchesCareer && matchesEvent && matchesTester;
+      return (
+        matchesTitle &&
+        matchesCareer &&
+        matchesEvent &&
+        matchesStatus &&
+        matchesTester
+      );
     })
   );
 
@@ -337,6 +349,7 @@
     void positionTitleFilter;
     void positionCareerFilter;
     void positionEventFilter;
+    void positionStatusFilter;
     positionPage = 1;
   });
 
@@ -385,6 +398,7 @@
       positionTitleFilter = "";
       positionCareerFilter = "All";
       positionEventFilter = data.activeEvent?.id || "All";
+      positionStatusFilter = "Published";
     }
   }
 
@@ -1226,6 +1240,17 @@
                   placeholder="All Events"
                   options={eventOptions}
                 />
+
+                <FilterSelect
+                  label="Status"
+                  bind:value={positionStatusFilter}
+                  placeholder="All Status"
+                  options={[
+                    { value: "All", label: "All Status" },
+                    { value: "Published", label: "Published" },
+                    { value: "Draft", label: "Draft" },
+                  ]}
+                />
               </div>
 
               <div class="flex items-center space-x-2 mb-4">
@@ -1252,6 +1277,7 @@
                     if (positionTitleFilter) params.set("positionTitle", positionTitleFilter);
                     if (positionCareerFilter !== "All") params.set("positionCareer", positionCareerFilter);
                     if (positionEventFilter !== "All") params.set("eventId", positionEventFilter);
+                    if (positionStatusFilter !== "All") params.set("positionStatus", positionStatusFilter);
                     if (showInternalTesters) params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;

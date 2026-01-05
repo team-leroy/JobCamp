@@ -488,6 +488,7 @@ async function exportPositions(schoolIds: string[], url: URL) {
     // Get filter parameters from URL
     const positionTitleFilter = url.searchParams.get('positionTitle') || '';
     const positionCareerFilter = url.searchParams.get('positionCareer') || 'All';
+    const positionStatusFilter = url.searchParams.get('positionStatus') || 'All';
     const eventIdFilter = url.searchParams.get('eventId') || 'All';
     const showTesters = url.searchParams.get('showTesters') === 'true';
 
@@ -529,10 +530,14 @@ async function exportPositions(schoolIds: string[], url: URL) {
             position.career === positionCareerFilter;
 
         const matchesEvent = eventIdFilter === "All" || position.eventId === eventIdFilter;
+
+        const matchesStatus = positionStatusFilter === "All" || 
+            (positionStatusFilter === "Published" && position.isPublished) || 
+            (positionStatusFilter === "Draft" && !position.isPublished);
         
         const matchesTester = showTesters || position.host?.user?.role !== 'INTERNAL_TESTER';
         
-        return matchesTitle && matchesCareer && matchesEvent && matchesTester;
+        return matchesTitle && matchesCareer && matchesEvent && matchesStatus && matchesTester;
     }).map(position => {
         return {
             title: position.title,
