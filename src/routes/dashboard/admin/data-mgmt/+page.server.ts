@@ -185,24 +185,24 @@ export const load: PageServerLoad = async ({ locals }) => {
             grade: grade,
             graduatingClassYear: student.graduatingClassYear,
             phone: student.phone,
-            email: student.user.email,
+            email: student.user?.email || 'No Email',
             parentEmail: student.parentEmail,
             permissionSlipStatus: permissionSlip ? 'Complete' : 'Not Started',
-            permissionSlipDate: permissionSlip?.createdAt,
-            lastLogin: student.user.lastLogin,
+            permissionSlipDate: permissionSlip?.createdAt ? new Date(permissionSlip.createdAt).toISOString() : null,
+            lastLogin: student.user?.lastLogin ? new Date(student.user.lastLogin).toISOString() : null,
             studentPicks: student.positionsSignedUpFor.map(pos => ({
                 rank: pos.rank,
                 positionId: pos.position.id,
                 title: pos.position.title,
-                companyName: pos.position.host.company.companyName,
+                companyName: pos.position.host?.company?.companyName || 'No Company',
                 career: pos.position.career
             })),
             lotteryAssignment: lotteryResult ? {
                 positionId: lotteryResult.position.id,
                 title: lotteryResult.position.title,
-                companyName: lotteryResult.position.host.company.companyName,
+                companyName: lotteryResult.position.host?.company?.companyName || 'No Company',
                 career: lotteryResult.position.career,
-                assignedAt: lotteryResult.lotteryJob.completedAt
+                assignedAt: lotteryResult.lotteryJob.completedAt ? new Date(lotteryResult.lotteryJob.completedAt).toISOString() : null
             } : null,
             lotteryStatus: lotteryResult ? 'Assigned' : (student.positionsSignedUpFor.length > 0 ? 'Unassigned' : 'No Picks'),
             eventIds: student.eventParticipation.map(p => p.eventId)
@@ -258,10 +258,10 @@ export const load: PageServerLoad = async ({ locals }) => {
             arrival: position.arrival,
             start: position.start,
             end: position.end,
-            createdAt: position.createdAt,
-            hostName: position.host.name,
-            companyId: position.host.company?.id, // Added companyId
-            companyName: position.host.company?.companyName || 'No Company',
+            createdAt: position.createdAt ? new Date(position.createdAt).toISOString() : null,
+            hostName: position.host?.name || 'No Host',
+            companyId: position.host?.company?.id, // Added companyId
+            companyName: position.host?.company?.companyName || 'No Company',
             isPublished: position.isPublished
         };
     });
@@ -340,12 +340,48 @@ export const load: PageServerLoad = async ({ locals }) => {
         };
     });
 
+    // Get hosts from companies in the active event's school
+    const hosts = await prisma.host.findMany({
+        where: {
+            company: {
+                schoolId: { in: schoolIds }
+            }
+        },
+        include: {
+            user: {
+                select: {
+                    email: true,
+                    lastLogin: true
+                }
+            },
+            company: {
+                select: {
+                    companyName: true
+                }
+            }
+        },
+        orderBy: {
+            name: 'asc'
+        }
+    });
+
+    // Transform host data for the UI
+    const transformedHosts = hosts.map(host => {
+        return {
+            id: host.id,
+            name: host.name,
+            email: host.user?.email || 'No Email',
+            lastLogin: host.user?.lastLogin ? new Date(host.user.lastLogin).toISOString() : null,
+            companyName: host.company?.companyName || 'No Company'
+        };
+    });
+
     return {
         hasActiveEvent: true,
         activeEvent: {
             id: activeEvent.id,
             name: activeEvent.name,
-            date: activeEvent.date
+            date: activeEvent.date.toISOString()
         },
         allEvents: allEvents.map(e => ({
             id: e.id,
