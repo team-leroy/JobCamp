@@ -18,6 +18,7 @@
     name: string;
     email: string;
     lastLogin: Date | null;
+    isInternalTester: boolean;
     companyName: string;
   }
 
@@ -30,6 +31,7 @@
       id: host.id,
       name: host.name,
       email: host.email,
+      isInternalTester: host.isInternalTester,
     }))
   );
 
@@ -41,6 +43,7 @@
       id: host.id,
       name: host.name,
       email: host.email,
+      isInternalTester: host.isInternalTester,
     };
     message = null;
     error = null;
@@ -114,6 +117,7 @@
       onsubmit={resetForm}
     >
       <input type="hidden" name="hostId" value={host.id} />
+      <input type="hidden" name="isInternalTester" value={formData.isInternalTester} />
 
       {#if message}
         <div
@@ -146,6 +150,18 @@
               type="email"
               required
             />
+          </div>
+
+          <div class="flex items-center space-x-2 pt-2">
+            <input
+              type="checkbox"
+              id="isInternalTester"
+              bind:checked={formData.isInternalTester}
+              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <Label for="isInternalTester" class="text-sm font-medium text-gray-700">
+              Internal Tester Account (Hidden from admin dashboards)
+            </Label>
           </div>
         </div>
       </div>

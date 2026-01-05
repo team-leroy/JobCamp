@@ -82,7 +82,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             user: {
                 select: {
                     email: true,
-                    lastLogin: true
+                    lastLogin: true,
+                    role: true
                 }
             },
             positionsSignedUpFor: {
@@ -190,6 +191,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             permissionSlipStatus: permissionSlip ? 'Complete' : 'Not Started',
             permissionSlipDate: permissionSlip?.createdAt ? new Date(permissionSlip.createdAt).toISOString() : null,
             lastLogin: student.user?.lastLogin ? new Date(student.user.lastLogin).toISOString() : null,
+            isInternalTester: student.user?.role === 'INTERNAL_TESTER',
             studentPicks: student.positionsSignedUpFor.map(pos => ({
                 rank: pos.rank,
                 positionId: pos.position.id,
@@ -225,7 +227,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                     },
                     user: {
                         select: {
-                            email: true
+                            email: true,
+                            role: true
                         }
                     }
                 }
@@ -262,7 +265,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             hostName: position.host?.name || 'No Host',
             companyId: position.host?.company?.id, // Added companyId
             companyName: position.host?.company?.companyName || 'No Company',
-            isPublished: position.isPublished
+            isPublished: position.isPublished,
+            isInternalTester: position.host?.user?.role === 'INTERNAL_TESTER'
         };
     });
 
@@ -276,7 +280,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                 include: {
                     user: {
                         select: {
-                            lastLogin: true
+                            lastLogin: true,
+                            role: true
                         }
                     },
                     positions: {
@@ -328,6 +333,9 @@ export const load: PageServerLoad = async ({ locals }) => {
         // Get this company's positions for the active event
         const activePositions = transformedPositions.filter(p => p.companyId === company.id);
 
+        // A company is an internal tester company if it has hosts and all its hosts are internal testers
+        const isInternalTester = company.hosts.length > 0 && company.hosts.every(h => h.user?.role === 'INTERNAL_TESTER');
+
         return {
             id: company.id,
             companyName: company.companyName,
@@ -336,6 +344,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             activePositionCount,
             activeSlotsCount,
             activePositions,
+            isInternalTester,
             eventIds: Array.from(participatedEventIds)
         };
     });
@@ -351,7 +360,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             user: {
                 select: {
                     email: true,
-                    lastLogin: true
+                    lastLogin: true,
+                    role: true
                 }
             },
             company: {
@@ -372,6 +382,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             name: host.name,
             email: host.user?.email || 'No Email',
             lastLogin: host.user?.lastLogin ? new Date(host.user.lastLogin).toISOString() : null,
+            isInternalTester: host.user?.role === 'INTERNAL_TESTER',
             companyName: host.company?.companyName || 'No Company'
         };
     });
@@ -496,6 +507,7 @@ export const actions: Actions = {
             const phone = formData.get('phone')?.toString();
             const email = formData.get('email')?.toString();
             const parentEmail = formData.get('parentEmail')?.toString();
+            const isInternalTester = formData.get('isInternalTester') === 'true';
 
             if (!studentId || !firstName || !lastName || !grade) {
                 return { success: false, message: "Missing required fields" };
@@ -548,7 +560,10 @@ export const actions: Actions = {
                 if (student) {
                     await prisma.user.update({
                         where: { id: student.userId },
-                        data: { email }
+                        data: { 
+                            email,
+                            role: isInternalTester ? 'INTERNAL_TESTER' : null
+                        }
                     });
                 }
             }
@@ -831,6 +846,7 @@ export const actions: Actions = {
             const hostId = formData.get('hostId')?.toString();
             const name = formData.get('name')?.toString();
             const email = formData.get('email')?.toString();
+            const isInternalTester = formData.get('isInternalTester') === 'true';
 
             if (!hostId || !name || !email) {
                 return { success: false, message: "Missing required fields" };
@@ -854,7 +870,10 @@ export const actions: Actions = {
             // Update user email
             await prisma.user.update({
                 where: { id: host.userId },
-                data: { email }
+                data: { 
+                    email,
+                    role: isInternalTester ? 'INTERNAL_TESTER' : null
+                }
             });
 
             return { success: true, message: "Host updated successfully" };

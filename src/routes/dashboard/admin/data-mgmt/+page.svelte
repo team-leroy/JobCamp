@@ -60,6 +60,7 @@
       assignedAt: Date;
     } | null;
     lotteryStatus: string;
+    isInternalTester: boolean;
     eventIds: string[];
   }
 
@@ -69,6 +70,9 @@
     companyDescription: string;
     companyUrl: string;
     activePositionCount: number;
+    activeSlotsCount: number;
+    activePositions: Position[];
+    isInternalTester: boolean;
     eventIds: string[];
   }
 
@@ -84,6 +88,7 @@
     name: string;
     email: string;
     lastLogin: Date | null;
+    isInternalTester: boolean;
     companyName: string;
   }
 
@@ -105,6 +110,7 @@
     hostName: string;
     companyName: string;
     isPublished: boolean;
+    isInternalTester: boolean;
   }
 
   interface Props {
@@ -168,6 +174,9 @@
   let positionTitleFilter = $state("");
   let positionCareerFilter = $state("All");
 
+  // Global Filter for Internal Testers
+  let showInternalTesters = $state(false);
+
   // UI states
   let expandedStudents = $state(new Set<string>());
   let expandedCompanies = $state(new Set<string>());
@@ -204,12 +213,15 @@
         studentEventFilter === "All" ||
         student.eventIds.includes(studentEventFilter);
 
+      const matchesTester = showInternalTesters || !student.isInternalTester;
+
       return (
         matchesLastName &&
         matchesGrade &&
         matchesPermissionSlip &&
         matchesLotteryStatus &&
-        matchesEvent
+        matchesEvent &&
+        matchesTester
       );
     })
   );
@@ -231,7 +243,9 @@
         companyEventFilter === "All" ||
         company.eventIds.includes(companyEventFilter);
 
-      return matchesCompanyName && matchesEvent;
+      const matchesTester = showInternalTesters || !company.isInternalTester;
+
+      return matchesCompanyName && matchesEvent && matchesTester;
     })
   );
 
@@ -246,7 +260,9 @@
         !hostNameFilter ||
         host.name.toLowerCase().includes(hostNameFilter.toLowerCase());
 
-      return matchesHostName;
+      const matchesTester = showInternalTesters || !host.isInternalTester;
+
+      return matchesHostName && matchesTester;
     })
   );
 
@@ -265,7 +281,9 @@
         positionCareerFilter === "All" ||
         position.career === positionCareerFilter;
 
-      return matchesTitle && matchesCareer;
+      const matchesTester = showInternalTesters || !position.isInternalTester;
+
+      return matchesTitle && matchesCareer && matchesTester;
     })
   );
 
@@ -336,6 +354,7 @@
   }
 
   function clearFilters() {
+    showInternalTesters = false;
     if (selectedTab === "Student") {
       lastNameFilter = "";
       gradeFilter = "All";
@@ -530,6 +549,18 @@
                 />
               </div>
 
+              <div class="flex items-center space-x-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="showTestersStudent"
+                  bind:checked={showInternalTesters}
+                  class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label for="showTestersStudent" class="text-sm font-medium text-gray-700">
+                  Show Internal Tester Accounts
+                </Label>
+              </div>
+
               <div class="flex gap-2">
                 <Button variant="outline" onclick={clearFilters}>
                   Clear Filters
@@ -546,6 +577,8 @@
                       params.set("lotteryStatus", lotteryStatusFilter);
                     if (studentEventFilter !== "All")
                       params.set("eventId", studentEventFilter);
+                    if (showInternalTesters)
+                      params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
                   }}
@@ -606,6 +639,9 @@
                           {student.lastName}
                         </span>
                         <Badge variant="outline">Grade {student.grade}</Badge>
+                        {#if student.isInternalTester}
+                          <Badge variant="secondary" class="bg-purple-100 text-purple-700 border-purple-200">INTERNAL TESTER</Badge>
+                        {/if}
                       </div>
                     </div>
 
@@ -771,6 +807,18 @@
                 />
               </div>
 
+              <div class="flex items-center space-x-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="showTestersCompany"
+                  bind:checked={showInternalTesters}
+                  class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label for="showTestersCompany" class="text-sm font-medium text-gray-700">
+                  Show Internal Tester Accounts
+                </Label>
+              </div>
+
               <div class="flex gap-2">
                 <Button variant="outline" onclick={clearFilters}>
                   Clear Filters
@@ -782,6 +830,7 @@
                     params.set("type", "companies");
                     if (companyNameFilter) params.set("companyName", companyNameFilter);
                     if (companyEventFilter !== "All") params.set("eventId", companyEventFilter);
+                    if (showInternalTesters) params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
                   }}
@@ -818,6 +867,9 @@
                         <span class="font-semibold text-lg">
                           {company.companyName}
                         </span>
+                        {#if company.isInternalTester}
+                          <Badge variant="secondary" class="bg-purple-100 text-purple-700 border-purple-200">INTERNAL TESTER</Badge>
+                        {/if}
                         <Badge variant="outline">
                           {company.activePositionCount} Position{company.activePositionCount !==
                           1
@@ -906,6 +958,9 @@
                                     <span class="text-xs text-gray-500">{position.career} • {position.slots} slots</span>
                                   </div>
                                   <div class="flex items-center gap-2">
+                                    {#if position.isInternalTester}
+                                      <Badge variant="secondary" class="text-[10px] px-1 h-4 bg-purple-100 text-purple-700">TESTER</Badge>
+                                    {/if}
                                     {#if position.isPublished}
                                       <Badge variant="default" class="text-[10px] px-1 h-4">Published</Badge>
                                     {:else}
@@ -980,6 +1035,18 @@
                 </div>
               </div>
 
+              <div class="flex items-center space-x-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="showTestersHost"
+                  bind:checked={showInternalTesters}
+                  class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label for="showTestersHost" class="text-sm font-medium text-gray-700">
+                  Show Internal Tester Accounts
+                </Label>
+              </div>
+
               <div class="flex gap-2">
                 <Button variant="outline" onclick={clearFilters}>
                   Clear Filters
@@ -990,6 +1057,7 @@
                     const params = new URLSearchParams();
                     params.set("type", "hosts");
                     if (hostNameFilter) params.set("hostName", hostNameFilter);
+                    if (showInternalTesters) params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
                   }}
@@ -1027,6 +1095,9 @@
                           {host.name}
                         </span>
                         <Badge variant="outline">{host.companyName}</Badge>
+                        {#if host.isInternalTester}
+                          <Badge variant="secondary" class="bg-purple-100 text-purple-700 border-purple-200">INTERNAL TESTER</Badge>
+                        {/if}
                       </div>
                     </div>
 
@@ -1125,6 +1196,18 @@
                   ]}
                 />
               </div>
+
+              <div class="flex items-center space-x-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="showTestersPosition"
+                  bind:checked={showInternalTesters}
+                  class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label for="showTestersPosition" class="text-sm font-medium text-gray-700">
+                  Show Internal Tester Accounts
+                </Label>
+              </div>
               
               <div class="flex gap-2">
                 <Button variant="outline" onclick={clearFilters}>
@@ -1137,6 +1220,7 @@
                     params.set("type", "positions");
                     if (positionTitleFilter) params.set("positionTitle", positionTitleFilter);
                     if (positionCareerFilter !== "All") params.set("positionCareer", positionCareerFilter);
+                    if (showInternalTesters) params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
                   }}
@@ -1157,6 +1241,9 @@
                       <div class="flex items-center space-x-2 mb-2">
                         <h3 class="text-lg font-semibold">{position.title}</h3>
                         <Badge variant="outline">{position.career}</Badge>
+                        {#if position.isInternalTester}
+                          <Badge variant="secondary" class="bg-purple-100 text-purple-700 border-purple-200">INTERNAL TESTER</Badge>
+                        {/if}
                         {#if position.isPublished}
                           <Badge variant="default">Published</Badge>
                         {:else}

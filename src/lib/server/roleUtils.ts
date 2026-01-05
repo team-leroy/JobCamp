@@ -4,7 +4,7 @@
 
 import type { User } from '@prisma/client';
 
-export type UserRole = 'FULL_ADMIN' | 'READ_ONLY_ADMIN' | null;
+export type UserRole = 'FULL_ADMIN' | 'READ_ONLY_ADMIN' | 'INTERNAL_TESTER' | null;
 
 /**
  * Check if user is a full admin (has write access to all admin features)

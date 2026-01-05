@@ -60,6 +60,7 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
     const permissionSlipFilter = url.searchParams.get('permissionSlip') || 'All';
     const lotteryStatusFilter = url.searchParams.get('lotteryStatus') || 'All';
     const eventIdFilter = url.searchParams.get('eventId') || 'All';
+    const showTesters = url.searchParams.get('showTesters') === 'true';
 
         // Get students with same logic as load function
         const students = await prisma.student.findMany({
@@ -71,7 +72,8 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
                 user: {
                     select: {
                         email: true,
-                        lastLogin: true
+                        lastLogin: true,
+                        role: true
                     }
                 },
                 positionsSignedUpFor: {
@@ -180,7 +182,9 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
                 const studentEventIds = student.eventParticipation.map(p => p.eventId);
                 const matchesEvent = eventIdFilter === "All" || studentEventIds.includes(eventIdFilter);
 
-                return matchesLastName && matchesGrade && matchesPermissionSlip && matchesLotteryStatus && matchesEvent;
+                const matchesTester = showTesters || student.user?.role !== 'INTERNAL_TESTER';
+
+                return matchesLastName && matchesGrade && matchesPermissionSlip && matchesLotteryStatus && matchesEvent && matchesTester;
             }).map(student => {
             const permissionSlip = student.permissionSlips[0];
             const lotteryResult = lotteryMap.get(student.id);
@@ -241,6 +245,7 @@ async function exportCompanies(schoolIds: string[], url: URL) {
     // Get filter parameters from URL
     const companyNameFilter = url.searchParams.get('companyName') || '';
     const eventIdFilter = url.searchParams.get('eventId') || 'All';
+    const showTesters = url.searchParams.get('showTesters') === 'true';
 
     // Get active event for position count and login check
     const activeEvent = await prisma.event.findFirst({
@@ -264,7 +269,8 @@ async function exportCompanies(schoolIds: string[], url: URL) {
                 include: {
                     user: {
                         select: {
-                            lastLogin: true
+                            lastLogin: true,
+                            role: true
                         }
                     },
                     positions: {
@@ -311,12 +317,16 @@ async function exportCompanies(schoolIds: string[], url: URL) {
             }
         });
 
+        // A company is an internal tester company if it has hosts and all its hosts are internal testers
+        const isInternalTester = company.hosts.length > 0 && company.hosts.every(h => h.user?.role === 'INTERNAL_TESTER');
+
         return {
             companyName: company.companyName,
             companyDescription: company.companyDescription || '',
             companyUrl: company.companyUrl || '',
             activePositionCount,
             activeSlotsCount,
+            isInternalTester,
             eventIds: Array.from(participatedEventIds)
         };
     }).filter(company => {
@@ -325,7 +335,9 @@ async function exportCompanies(schoolIds: string[], url: URL) {
         
         const matchesEvent = eventIdFilter === "All" || company.eventIds.includes(eventIdFilter);
 
-        return matchesCompanyName && matchesEvent;
+        const matchesTester = showTesters || !company.isInternalTester;
+
+        return matchesCompanyName && matchesEvent && matchesTester;
     });
 
     // Generate CSV
@@ -355,6 +367,7 @@ async function exportCompanies(schoolIds: string[], url: URL) {
 async function exportHosts(schoolIds: string[], url: URL) {
     // Get filter parameters from URL
     const hostNameFilter = url.searchParams.get('hostName') || '';
+    const showTesters = url.searchParams.get('showTesters') === 'true';
 
     // Get hosts
     const hosts = await prisma.host.findMany({
@@ -367,7 +380,8 @@ async function exportHosts(schoolIds: string[], url: URL) {
             user: {
                 select: {
                     email: true,
-                    lastLogin: true
+                    lastLogin: true,
+                    role: true
                 }
             },
             company: {
@@ -385,7 +399,10 @@ async function exportHosts(schoolIds: string[], url: URL) {
     const filteredHosts = hosts.filter(host => {
         const matchesHostName = !hostNameFilter || 
             host.name.toLowerCase().includes(hostNameFilter.toLowerCase());
-        return matchesHostName;
+        
+        const matchesTester = showTesters || host.user?.role !== 'INTERNAL_TESTER';
+
+        return matchesHostName && matchesTester;
     }).map(host => {
         return {
             name: host.name,
@@ -422,6 +439,7 @@ async function exportPositions(eventId: string, url: URL) {
     // Get filter parameters from URL
     const positionTitleFilter = url.searchParams.get('positionTitle') || '';
     const positionCareerFilter = url.searchParams.get('positionCareer') || 'All';
+    const showTesters = url.searchParams.get('showTesters') === 'true';
 
     // Get positions for the active event
     const positions = await prisma.position.findMany({
@@ -438,7 +456,8 @@ async function exportPositions(eventId: string, url: URL) {
                     },
                     user: {
                         select: {
-                            email: true
+                            email: true,
+                            role: true
                         }
                     }
                 }
@@ -457,7 +476,9 @@ async function exportPositions(eventId: string, url: URL) {
         const matchesCareer = positionCareerFilter === "All" || 
             position.career === positionCareerFilter;
         
-        return matchesTitle && matchesCareer;
+        const matchesTester = showTesters || position.host?.user?.role !== 'INTERNAL_TESTER';
+        
+        return matchesTitle && matchesCareer && matchesTester;
     }).map(position => {
         return {
             title: position.title,

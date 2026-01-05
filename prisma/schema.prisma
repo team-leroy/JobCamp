@@ -150,6 +150,7 @@ model Host {
 enum UserRole {
   FULL_ADMIN
   READ_ONLY_ADMIN
+  INTERNAL_TESTER
 }
 
 model User {
