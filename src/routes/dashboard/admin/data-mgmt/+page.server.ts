@@ -28,18 +28,33 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     const schoolIds = userInfo.adminOfSchools.map(s => s.id);
 
-    // Get the active event for this school
-    const activeEvent = await prisma.event.findFirst({
+    // Get all events for these schools
+    const allEvents = await prisma.event.findMany({
         where: {
-            schoolId: { in: schoolIds },
+            schoolId: { in: schoolIds }
+        },
+        orderBy: { date: 'desc' },
+        select: {
+            id: true,
+            name: true,
+            date: true,
             isActive: true
         }
     });
+
+    // Get the active event for this school
+    const activeEvent = allEvents.find(e => e.isActive);
 
     if (!activeEvent) {
         return {
             hasActiveEvent: false,
             activeEvent: null,
+            allEvents: allEvents.map(e => ({
+                id: e.id,
+                name: e.name,
+                date: e.date.toISOString(),
+                isActive: e.isActive
+            })),
             students: [],
             totalStudents: 0,
             companies: [],
@@ -95,6 +110,11 @@ export const load: PageServerLoad = async ({ locals }) => {
                     eventId: activeEvent.id
                 },
                 take: 1
+            },
+            eventParticipation: {
+                select: {
+                    eventId: true
+                }
             }
         },
         orderBy: {
@@ -183,7 +203,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                 career: lotteryResult.position.career,
                 assignedAt: lotteryResult.lotteryJob.completedAt
             } : null,
-            lotteryStatus: lotteryResult ? 'Assigned' : (student.positionsSignedUpFor.length > 0 ? 'Unassigned' : 'No Picks')
+            lotteryStatus: lotteryResult ? 'Assigned' : (student.positionsSignedUpFor.length > 0 ? 'Unassigned' : 'No Picks'),
+            eventIds: student.eventParticipation.map(p => p.eventId)
         };
     });
 
@@ -196,8 +217,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             hosts: {
                 include: {
                     positions: {
-                        where: {
-                            eventId: activeEvent.id,
+                        select: {
+                            eventId: true,
                             isPublished: true
                         }
                     }
@@ -211,17 +232,26 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     // Transform company data for the UI
     const transformedCompanies = companies.map(company => {
-        // Count active positions for this company in the current event
-        const positionCount = company.hosts.reduce((count, host) => {
-            return count + host.positions.length;
-        }, 0);
+        // Get all unique event IDs this company has positions in
+        const eventIds = new Set<string>();
+        let activePositionCount = 0;
+
+        company.hosts.forEach(host => {
+            host.positions.forEach(pos => {
+                eventIds.add(pos.eventId);
+                if (activeEvent && pos.eventId === activeEvent.id && pos.isPublished) {
+                    activePositionCount++;
+                }
+            });
+        });
 
         return {
             id: company.id,
             companyName: company.companyName,
             companyDescription: company.companyDescription,
             companyUrl: company.companyUrl || '',
-            activePositionCount: positionCount
+            activePositionCount,
+            eventIds: Array.from(eventIds)
         };
     });
 
@@ -323,6 +353,12 @@ export const load: PageServerLoad = async ({ locals }) => {
             name: activeEvent.name,
             date: activeEvent.date
         },
+        allEvents: allEvents.map(e => ({
+            id: e.id,
+            name: e.name,
+            date: e.date.toISOString(),
+            isActive: e.isActive
+        })),
         students: transformedStudents,
         totalStudents: transformedStudents.length,
         companies: transformedCompanies,

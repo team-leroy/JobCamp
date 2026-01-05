@@ -60,6 +60,7 @@
       assignedAt: Date;
     } | null;
     lotteryStatus: string;
+    eventIds: string[];
   }
 
   interface Company {
@@ -68,6 +69,14 @@
     companyDescription: string;
     companyUrl: string;
     activePositionCount: number;
+    eventIds: string[];
+  }
+
+  interface Event {
+    id: string;
+    name: string | null;
+    date: string;
+    isActive: boolean;
   }
 
   interface Host {
@@ -106,6 +115,7 @@
         name: string;
         date: Date;
       } | null;
+      allEvents: Event[];
       students: Student[];
       totalStudents: number;
       companies: Company[];
@@ -135,9 +145,11 @@
   let gradeFilter = $state("All");
   let permissionSlipFilter = $state("All");
   let lotteryStatusFilter = $state("All");
+  let studentEventFilter = $state("All");
 
   // Filter states for Company
   let companyNameFilter = $state("");
+  let companyEventFilter = $state("All");
 
   // Filter states for Host
   let hostNameFilter = $state("");
@@ -171,11 +183,16 @@
         lotteryStatusFilter === "All" ||
         student.lotteryStatus === lotteryStatusFilter;
 
+      const matchesEvent =
+        studentEventFilter === "All" ||
+        student.eventIds.includes(studentEventFilter);
+
       return (
         matchesLastName &&
         matchesGrade &&
         matchesPermissionSlip &&
-        matchesLotteryStatus
+        matchesLotteryStatus &&
+        matchesEvent
       );
     })
   );
@@ -189,7 +206,11 @@
           .toLowerCase()
           .includes(companyNameFilter.toLowerCase());
 
-      return matchesCompanyName;
+      const matchesEvent =
+        companyEventFilter === "All" ||
+        company.eventIds.includes(companyEventFilter);
+
+      return matchesCompanyName && matchesEvent;
     })
   );
 
@@ -254,8 +275,10 @@
       gradeFilter = "All";
       permissionSlipFilter = "All";
       lotteryStatusFilter = "All";
+      studentEventFilter = "All";
     } else if (selectedTab === "Company") {
       companyNameFilter = "";
+      companyEventFilter = "All";
     } else if (selectedTab === "Host") {
       hostNameFilter = "";
     } else if (selectedTab === "Position") {
@@ -386,7 +409,7 @@
               <CardTitle class="text-lg">Filters</CardTitle>
             </CardHeader>
             <CardContent>
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                 <div>
                   <Label for="lastName">Last Name</Label>
                   <Input
@@ -430,6 +453,19 @@
                     { value: "Assigned", label: "Assigned" },
                     { value: "Unassigned", label: "Unassigned" },
                     { value: "No Picks", label: "No Picks" },
+                  ]}
+                />
+
+                <FilterSelect
+                  label="Event Participation"
+                  bind:value={studentEventFilter}
+                  placeholder="All Events"
+                  options={[
+                    { value: "All", label: "All Events" },
+                    ...data.allEvents.map((event) => ({
+                      value: event.id,
+                      label: event.name || `Event ${new Date(event.date).toLocaleDateString()}`,
+                    })),
                   ]}
                 />
               </div>
@@ -664,6 +700,19 @@
                     placeholder="Search by company name..."
                   />
                 </div>
+
+                <FilterSelect
+                  label="Event Participation"
+                  bind:value={companyEventFilter}
+                  placeholder="All Events"
+                  options={[
+                    { value: "All", label: "All Events" },
+                    ...data.allEvents.map((event) => ({
+                      value: event.id,
+                      label: event.name || `Event ${new Date(event.date).toLocaleDateString()}`,
+                    })),
+                  ]}
+                />
               </div>
 
               <div class="flex gap-2">
