@@ -209,6 +209,63 @@ export const load: PageServerLoad = async ({ locals }) => {
         };
     });
 
+    // Get positions for the active event
+    const eventPositions = await prisma.position.findMany({
+        where: {
+            eventId: activeEvent.id
+        },
+        include: {
+            host: {
+                include: {
+                    company: {
+                        select: {
+                            id: true, // Added id to link with companies
+                            companyName: true
+                        }
+                    },
+                    user: {
+                        select: {
+                            email: true
+                        }
+                    }
+                }
+            },
+            event: {
+                select: {
+                    name: true,
+                    date: true
+                }
+            }
+        },
+        orderBy: {
+            title: 'asc'
+        }
+    });
+
+    // Transform position data for the UI
+    const transformedPositions = eventPositions.map(position => {
+        return {
+            id: position.id,
+            title: position.title,
+            career: position.career,
+            slots: position.slots,
+            summary: position.summary,
+            contactName: position.contact_name,
+            contactEmail: position.contact_email,
+            address: position.address,
+            instructions: position.instructions,
+            attire: position.attire,
+            arrival: position.arrival,
+            start: position.start,
+            end: position.end,
+            createdAt: position.createdAt,
+            hostName: position.host.name,
+            companyId: position.host.company?.id, // Added companyId
+            companyName: position.host.company?.companyName || 'No Company',
+            isPublished: position.isPublished
+        };
+    });
+
     // Get companies from the active event's school
     const companies = await prisma.company.findMany({
         where: {
@@ -224,6 +281,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                     },
                     positions: {
                         select: {
+                            id: true, // Added id
                             eventId: true,
                             isPublished: true,
                             slots: true
@@ -267,6 +325,9 @@ export const load: PageServerLoad = async ({ locals }) => {
             }
         });
 
+        // Get this company's positions for the active event
+        const activePositions = transformedPositions.filter(p => p.companyId === company.id);
+
         return {
             id: company.id,
             companyName: company.companyName,
@@ -274,98 +335,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             companyUrl: company.companyUrl || '',
             activePositionCount,
             activeSlotsCount,
+            activePositions,
             eventIds: Array.from(participatedEventIds)
-        };
-    });
-
-    // Get hosts from companies in the active event's school
-    const hosts = await prisma.host.findMany({
-        where: {
-            company: {
-                schoolId: { in: schoolIds }
-            }
-        },
-        include: {
-            user: {
-                select: {
-                    email: true,
-                    lastLogin: true
-                }
-            },
-            company: {
-                select: {
-                    companyName: true
-                }
-            }
-        },
-        orderBy: {
-            name: 'asc'
-        }
-    });
-
-    // Transform host data for the UI
-    const transformedHosts = hosts.map(host => {
-        return {
-            id: host.id,
-            name: host.name,
-            email: host.user.email,
-            lastLogin: host.user.lastLogin,
-            companyName: host.company?.companyName || 'No Company'
-        };
-    });
-
-    // Get positions for the active event
-    const eventPositions = await prisma.position.findMany({
-        where: {
-            eventId: activeEvent.id
-        },
-        include: {
-            host: {
-                include: {
-                    company: {
-                        select: {
-                            companyName: true
-                        }
-                    },
-                    user: {
-                        select: {
-                            email: true
-                        }
-                    }
-                }
-            },
-            event: {
-                select: {
-                    name: true,
-                    date: true
-                }
-            }
-        },
-        orderBy: {
-            title: 'asc'
-        }
-    });
-
-    // Transform position data for the UI
-    const transformedPositions = eventPositions.map(position => {
-        return {
-            id: position.id,
-            title: position.title,
-            career: position.career,
-            slots: position.slots,
-            summary: position.summary,
-            contactName: position.contact_name,
-            contactEmail: position.contact_email,
-            address: position.address,
-            instructions: position.instructions,
-            attire: position.attire,
-            arrival: position.arrival,
-            start: position.start,
-            end: position.end,
-            createdAt: position.createdAt,
-            hostName: position.host.name,
-            companyName: position.host.company?.companyName || 'No Company',
-            isPublished: position.isPublished
         };
     });
 

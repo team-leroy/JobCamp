@@ -838,6 +838,32 @@
                             </p>
                           </div>
                         </div>
+
+                        {#if company.activePositions && company.activePositions.length > 0}
+                          <div class="mt-4">
+                            <h5 class="text-sm font-semibold mb-2">Positions in Current Event:</h5>
+                            <div class="space-y-2">
+                              {#each company.activePositions as position}
+                                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-md border text-sm">
+                                  <div class="flex flex-col">
+                                    <span class="font-medium">{position.title}</span>
+                                    <span class="text-xs text-gray-500">{position.career} • {position.slots} slots</span>
+                                  </div>
+                                  <div class="flex items-center gap-2">
+                                    {#if position.isPublished}
+                                      <Badge variant="default" class="text-[10px] px-1 h-4">Published</Badge>
+                                    {:else}
+                                      <Badge variant="secondary" class="text-[10px] px-1 h-4">Draft</Badge>
+                                    {/if}
+                                    {#if canEdit}
+                                      <PositionEditModal {position} careers={data.careers} />
+                                    {/if}
+                                  </div>
+                                </div>
+                              {/each}
+                            </div>
+                          </div>
+                        {/if}
                       </div>
                     </div>
                   {/if}
