@@ -211,10 +211,12 @@ export const load: PageServerLoad = async ({ locals }) => {
         };
     });
 
-    // Get positions for the active event
-    const eventPositions = await prisma.position.findMany({
+    // Get positions for all events in these schools
+    const allPositions = await prisma.position.findMany({
         where: {
-            eventId: activeEvent.id
+            event: {
+                schoolId: { in: schoolIds }
+            }
         },
         include: {
             host: {
@@ -246,7 +248,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     });
 
     // Transform position data for the UI
-    const transformedPositions = eventPositions.map(position => {
+    const transformedPositions = allPositions.map(position => {
         return {
             id: position.id,
             title: position.title,
@@ -261,6 +263,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             arrival: position.arrival,
             start: position.start,
             end: position.end,
+            eventId: position.eventId, // Added eventId
             createdAt: position.createdAt ? new Date(position.createdAt).toISOString() : null,
             hostName: position.host?.name || 'No Host',
             companyId: position.host?.company?.id, // Added companyId
@@ -368,6 +371,12 @@ export const load: PageServerLoad = async ({ locals }) => {
                 select: {
                     companyName: true
                 }
+            },
+            positions: {
+                select: {
+                    eventId: true,
+                    isPublished: true
+                }
             }
         },
         orderBy: {
@@ -377,13 +386,33 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     // Transform host data for the UI
     const transformedHosts = hosts.map(host => {
+        const participatedEventIds = new Set<string>();
+        
+        // 1. Add events where they have a published position
+        host.positions.forEach(pos => {
+            if (pos.isPublished) {
+                participatedEventIds.add(pos.eventId);
+            }
+        });
+
+        // 2. Add the active event if they have logged in since it was created
+        if (activeEvent && host.user?.lastLogin) {
+            const lastLoginTime = new Date(host.user.lastLogin).getTime();
+            const eventCreatedTime = new Date(activeEvent.createdAt).getTime();
+            
+            if (lastLoginTime >= eventCreatedTime) {
+                participatedEventIds.add(activeEvent.id);
+            }
+        }
+
         return {
             id: host.id,
             name: host.name,
             email: host.user?.email || 'No Email',
             lastLogin: host.user?.lastLogin ? new Date(host.user.lastLogin).toISOString() : null,
             isInternalTester: host.user?.role === 'INTERNAL_TESTER',
-            companyName: host.company?.companyName || 'No Company'
+            companyName: host.company?.companyName || 'No Company',
+            eventIds: Array.from(participatedEventIds)
         };
     });
 

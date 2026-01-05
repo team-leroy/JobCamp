@@ -42,7 +42,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
             case 'hosts':
                 return await exportHosts(schoolIds, url);
             case 'positions':
-                return await exportPositions(activeEvent.id, url);
+                return await exportPositions(schoolIds, url);
             case 'students':
             default:
                 return await exportStudents(schoolIds, activeEvent, url);
@@ -367,7 +367,20 @@ async function exportCompanies(schoolIds: string[], url: URL) {
 async function exportHosts(schoolIds: string[], url: URL) {
     // Get filter parameters from URL
     const hostNameFilter = url.searchParams.get('hostName') || '';
+    const eventIdFilter = url.searchParams.get('eventId') || 'All';
     const showTesters = url.searchParams.get('showTesters') === 'true';
+
+    // Get active event for login check
+    const activeEvent = await prisma.event.findFirst({
+        where: {
+            schoolId: { in: schoolIds },
+            isActive: true
+        },
+        select: {
+            id: true,
+            createdAt: true
+        }
+    });
 
     // Get hosts
     const hosts = await prisma.host.findMany({
@@ -388,6 +401,12 @@ async function exportHosts(schoolIds: string[], url: URL) {
                 select: {
                     companyName: true
                 }
+            },
+            positions: {
+                select: {
+                    eventId: true,
+                    isPublished: true
+                }
             }
         },
         orderBy: {
@@ -396,19 +415,49 @@ async function exportHosts(schoolIds: string[], url: URL) {
     });
 
     // Transform and filter hosts
-    const filteredHosts = hosts.filter(host => {
+    const filteredHosts = hosts.map(host => {
+        const participatedEventIds = new Set<string>();
+        
+        // 1. Add events where they have a published position
+        host.positions.forEach(pos => {
+            if (pos.isPublished) {
+                participatedEventIds.add(pos.eventId);
+            }
+        });
+
+        // 2. Add the active event if they have logged in since it was created
+        if (activeEvent && host.user?.lastLogin) {
+            const lastLoginTime = new Date(host.user.lastLogin).getTime();
+            const eventCreatedTime = new Date(activeEvent.createdAt).getTime();
+            
+            if (lastLoginTime >= eventCreatedTime) {
+                participatedEventIds.add(activeEvent.id);
+            }
+        }
+
+        return {
+            name: host.name,
+            email: host.user?.email || '',
+            companyName: host.company?.companyName || 'No Company',
+            lastLogin: host.user?.lastLogin ? new Date(host.user.lastLogin).toISOString() : 'Never',
+            userRole: host.user?.role,
+            eventIds: Array.from(participatedEventIds)
+        };
+    }).filter(host => {
         const matchesHostName = !hostNameFilter || 
             host.name.toLowerCase().includes(hostNameFilter.toLowerCase());
         
-        const matchesTester = showTesters || host.user?.role !== 'INTERNAL_TESTER';
+        const matchesEvent = eventIdFilter === "All" || host.eventIds.includes(eventIdFilter);
+        
+        const matchesTester = showTesters || host.userRole !== 'INTERNAL_TESTER';
 
-        return matchesHostName && matchesTester;
+        return matchesHostName && matchesEvent && matchesTester;
     }).map(host => {
         return {
             name: host.name,
-            email: host.user.email || '',
-            companyName: host.company?.companyName || 'No Company',
-            lastLogin: host.user.lastLogin ? new Date(host.user.lastLogin).toISOString() : 'Never'
+            email: host.email || '',
+            companyName: host.companyName || 'No Company',
+            lastLogin: host.lastLogin || 'Never'
         };
     });
 
@@ -435,16 +484,19 @@ async function exportHosts(schoolIds: string[], url: URL) {
     });
 }
 
-async function exportPositions(eventId: string, url: URL) {
+async function exportPositions(schoolIds: string[], url: URL) {
     // Get filter parameters from URL
     const positionTitleFilter = url.searchParams.get('positionTitle') || '';
     const positionCareerFilter = url.searchParams.get('positionCareer') || 'All';
+    const eventIdFilter = url.searchParams.get('eventId') || 'All';
     const showTesters = url.searchParams.get('showTesters') === 'true';
 
-    // Get positions for the active event
+    // Get positions for all events in these schools
     const positions = await prisma.position.findMany({
         where: {
-            eventId: eventId
+            event: {
+                schoolId: { in: schoolIds }
+            }
         },
         include: {
             host: {
@@ -475,10 +527,12 @@ async function exportPositions(eventId: string, url: URL) {
         
         const matchesCareer = positionCareerFilter === "All" || 
             position.career === positionCareerFilter;
+
+        const matchesEvent = eventIdFilter === "All" || position.eventId === eventIdFilter;
         
         const matchesTester = showTesters || position.host?.user?.role !== 'INTERNAL_TESTER';
         
-        return matchesTitle && matchesCareer && matchesTester;
+        return matchesTitle && matchesCareer && matchesEvent && matchesTester;
     }).map(position => {
         return {
             title: position.title,

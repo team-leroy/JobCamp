@@ -90,6 +90,7 @@
     lastLogin: Date | null;
     isInternalTester: boolean;
     companyName: string;
+    eventIds: string[];
   }
 
   interface Position {
@@ -106,6 +107,7 @@
     arrival: string;
     start: string;
     end: string;
+    eventId: string;
     createdAt: Date;
     hostName: string;
     companyName: string;
@@ -161,18 +163,20 @@
   let gradeFilter = $state("All");
   let permissionSlipFilter = $state("All");
   let lotteryStatusFilter = $state("All");
-  let studentEventFilter = $state("All");
+  let studentEventFilter = $state(data.activeEvent?.id || "All");
 
   // Filter states for Company
   let companyNameFilter = $state("");
-  let companyEventFilter = $state("All");
+  let companyEventFilter = $state(data.activeEvent?.id || "All");
 
   // Filter states for Host
   let hostNameFilter = $state("");
+  let hostEventFilter = $state(data.activeEvent?.id || "All");
 
   // Filter states for Position
   let positionTitleFilter = $state("");
   let positionCareerFilter = $state("All");
+  let positionEventFilter = $state(data.activeEvent?.id || "All");
 
   // Global Filter for Internal Testers
   let showInternalTesters = $state(false);
@@ -260,9 +264,13 @@
         !hostNameFilter ||
         host.name.toLowerCase().includes(hostNameFilter.toLowerCase());
 
+      const matchesEvent =
+        hostEventFilter === "All" ||
+        host.eventIds.includes(hostEventFilter);
+
       const matchesTester = showInternalTesters || !host.isInternalTester;
 
-      return matchesHostName && matchesTester;
+      return matchesHostName && matchesEvent && matchesTester;
     })
   );
 
@@ -281,9 +289,13 @@
         positionCareerFilter === "All" ||
         position.career === positionCareerFilter;
 
+      const matchesEvent =
+        positionEventFilter === "All" ||
+        position.eventId === positionEventFilter;
+
       const matchesTester = showInternalTesters || !position.isInternalTester;
 
-      return matchesTitle && matchesCareer && matchesTester;
+      return matchesTitle && matchesCareer && matchesEvent && matchesTester;
     })
   );
 
@@ -317,12 +329,14 @@
 
   $effect(() => {
     void hostNameFilter;
+    void hostEventFilter;
     hostPage = 1;
   });
 
   $effect(() => {
     void positionTitleFilter;
     void positionCareerFilter;
+    void positionEventFilter;
     positionPage = 1;
   });
 
@@ -360,15 +374,17 @@
       gradeFilter = "All";
       permissionSlipFilter = "All";
       lotteryStatusFilter = "All";
-      studentEventFilter = "All";
+      studentEventFilter = data.activeEvent?.id || "All";
     } else if (selectedTab === "Company") {
       companyNameFilter = "";
-      companyEventFilter = "All";
+      companyEventFilter = data.activeEvent?.id || "All";
     } else if (selectedTab === "Host") {
       hostNameFilter = "";
+      hostEventFilter = data.activeEvent?.id || "All";
     } else if (selectedTab === "Position") {
       positionTitleFilter = "";
       positionCareerFilter = "All";
+      positionEventFilter = data.activeEvent?.id || "All";
     }
   }
 
@@ -1033,6 +1049,13 @@
                     placeholder="Search by host name..."
                   />
                 </div>
+
+                <FilterSelect
+                  label="Event Participation"
+                  bind:value={hostEventFilter}
+                  placeholder="All Events"
+                  options={eventOptions}
+                />
               </div>
 
               <div class="flex items-center space-x-2 mb-4">
@@ -1057,6 +1080,7 @@
                     const params = new URLSearchParams();
                     params.set("type", "hosts");
                     if (hostNameFilter) params.set("hostName", hostNameFilter);
+                    if (hostEventFilter !== "All") params.set("eventId", hostEventFilter);
                     if (showInternalTesters) params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
@@ -1195,6 +1219,13 @@
                     })),
                   ]}
                 />
+
+                <FilterSelect
+                  label="Event Participation"
+                  bind:value={positionEventFilter}
+                  placeholder="All Events"
+                  options={eventOptions}
+                />
               </div>
 
               <div class="flex items-center space-x-2 mb-4">
@@ -1220,6 +1251,7 @@
                     params.set("type", "positions");
                     if (positionTitleFilter) params.set("positionTitle", positionTitleFilter);
                     if (positionCareerFilter !== "All") params.set("positionCareer", positionCareerFilter);
+                    if (positionEventFilter !== "All") params.set("eventId", positionEventFilter);
                     if (showInternalTesters) params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
