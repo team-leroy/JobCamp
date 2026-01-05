@@ -54,7 +54,6 @@
     error = null;
     setTimeout(() => {
       isOpen = false;
-      resetForm();
       window.location.reload();
     }, 1000);
   }
@@ -114,7 +113,6 @@
           }
         };
       }}
-      onsubmit={resetForm}
     >
       <input type="hidden" name="hostId" value={host.id} />
       <input type="hidden" name="isInternalTester" value={formData.isInternalTester} />

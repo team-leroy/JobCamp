@@ -82,12 +82,12 @@
   }
 
   function handleSuccess() {
-    // isSubmitting = false; // This state variable was removed, so this line is removed.
     message = "Student updated successfully!";
     setTimeout(() => {
       isOpen = false;
       message = null;
-    }, 2000);
+      window.location.reload();
+    }, 1000);
   }
 
   function handleError() {
@@ -107,7 +107,15 @@
   }
 </script>
 
-<Dialog bind:open={isOpen}>
+<Dialog
+  bind:open={isOpen}
+  onOpenChange={(open) => {
+    isOpen = open;
+    if (!open) {
+      resetForm();
+    }
+  }}
+>
   <Button variant="outline" size="sm" onclick={() => (isOpen = true)}>
     <Edit class="h-4 w-4 mr-2" />
     Edit
@@ -134,7 +142,6 @@
           }
         };
       }}
-      onsubmit={resetForm}
     >
       <input type="hidden" name="studentId" value={student.id} />
       <input type="hidden" name="isInternalTester" value={formData.isInternalTester} />
