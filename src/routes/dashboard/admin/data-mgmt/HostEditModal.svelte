@@ -106,7 +106,7 @@
         handleSubmit();
         return async ({ update }) => {
           try {
-            await update();
+            await update({ reset: false });
             handleSuccess();
           } catch {
             handleError();

@@ -579,22 +579,20 @@ export const actions: Actions = {
                 }
             });
 
-            // Update user email if provided
-            if (email) {
-                const student = await prisma.student.findUnique({
-                    where: { id: studentId },
-                    select: { userId: true }
-                });
+            // Update user info (email and role)
+            const student = await prisma.student.findUnique({
+                where: { id: studentId },
+                select: { userId: true }
+            });
 
-                if (student) {
-                    await prisma.user.update({
-                        where: { id: student.userId },
-                        data: { 
-                            email,
-                            role: isInternalTester ? 'INTERNAL_TESTER' : null
-                        }
-                    });
-                }
+            if (student?.userId) {
+                await prisma.user.update({
+                    where: { id: student.userId },
+                    data: { 
+                        email: email || undefined,
+                        role: isInternalTester ? 'INTERNAL_TESTER' : null
+                    }
+                });
             }
 
             return { success: true, message: "Student updated successfully" };
