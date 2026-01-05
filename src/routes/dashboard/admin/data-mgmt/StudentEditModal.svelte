@@ -76,18 +76,9 @@
     error = null;
   }
 
-  function handleSubmit(event: SubmitEvent) {
+  function handleSubmit() {
     message = null;
     error = null;
-    
-    // Log the actual form data being sent
-    const form = event.target as HTMLFormElement;
-    const data = new FormData(form);
-    console.log('Submitting form data:', {
-      studentId: data.get('studentId'),
-      isInternalTester: data.get('isInternalTester'),
-      firstName: data.get('firstName')
-    });
   }
 
   function handleSuccess() {
@@ -140,8 +131,15 @@
     <form
       method="POST"
       action="?/updateStudent"
-      onsubmit={handleSubmit}
-      use:enhance={() => {
+      use:enhance={({ formData: fData }) => {
+        handleSubmit();
+        // Log the actual form data being sent
+        console.log('Submitting Student Update:', {
+          studentId: fData.get('studentId'),
+          isInternalTester: fData.get('isInternalTester'),
+          firstName: fData.get('firstName')
+        });
+
         return async ({ update }) => {
           try {
             await update({ reset: false });

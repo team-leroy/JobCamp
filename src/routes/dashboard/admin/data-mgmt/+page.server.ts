@@ -531,6 +531,14 @@ export const actions: Actions = {
 
         try {
             const formData = await request.formData();
+            
+            // Log ALL form data keys for debugging
+            const allKeys = Array.from(formData.keys());
+            console.log(`[Update] DEBUG: Received form keys: ${allKeys.join(', ')}`);
+            for (const key of allKeys) {
+                console.log(`[Update] DEBUG: ${key} = ${formData.get(key)}`);
+            }
+
             const studentId = formData.get('studentId')?.toString();
             const firstName = formData.get('firstName')?.toString();
             const lastName = formData.get('lastName')?.toString();

@@ -94,8 +94,14 @@
     <form
       method="POST"
       action="?/updateCompany"
-      use:enhance={() => {
+      use:enhance={({ formData: fData }) => {
         handleSubmit();
+        console.log('Submitting Company Update:', {
+          companyId: fData.get('companyId'),
+          isInternalTester: fData.get('isInternalTester'),
+          companyName: fData.get('companyName')
+        });
+
         return async ({ update }) => {
           try {
             await update({ reset: false });

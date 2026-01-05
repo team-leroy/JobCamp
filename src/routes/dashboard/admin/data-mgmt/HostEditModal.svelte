@@ -103,8 +103,14 @@
     <form
       method="POST"
       action="?/updateHost"
-      use:enhance={() => {
+      use:enhance={({ formData: fData }) => {
         handleSubmit();
+        console.log('Submitting Host Update:', {
+          hostId: fData.get('hostId'),
+          isInternalTester: fData.get('isInternalTester'),
+          name: fData.get('name')
+        });
+
         return async ({ update }) => {
           try {
             await update({ reset: false });
