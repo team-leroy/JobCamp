@@ -270,7 +270,8 @@ async function exportCompanies(schoolIds: string[], url: URL) {
                     positions: {
                         select: {
                             eventId: true,
-                            isPublished: true
+                            isPublished: true,
+                            slots: true
                         }
                     }
                 }
@@ -285,6 +286,7 @@ async function exportCompanies(schoolIds: string[], url: URL) {
     const filteredCompanies = companies.map(company => {
         const participatedEventIds = new Set<string>();
         let activePositionCount = 0;
+        let activeSlotsCount = 0;
 
         company.hosts.forEach(host => {
             // 1. Add events where they have a published position
@@ -294,6 +296,7 @@ async function exportCompanies(schoolIds: string[], url: URL) {
                 }
                 if (activeEvent && pos.eventId === activeEvent.id && pos.isPublished) {
                     activePositionCount++;
+                    activeSlotsCount += pos.slots;
                 }
             });
 
@@ -313,6 +316,7 @@ async function exportCompanies(schoolIds: string[], url: URL) {
             companyDescription: company.companyDescription || '',
             companyUrl: company.companyUrl || '',
             activePositionCount,
+            activeSlotsCount,
             eventIds: Array.from(participatedEventIds)
         };
     }).filter(company => {
@@ -325,14 +329,15 @@ async function exportCompanies(schoolIds: string[], url: URL) {
     });
 
     // Generate CSV
-    const headers = ['Company Name', 'Description', 'URL', 'Active Positions'];
+    const headers = ['Company Name', 'Description', 'URL', 'Active Positions', 'Active Slots'];
     const csvRows = [
         headers.join(','),
         ...filteredCompanies.map(company => [
             `"${company.companyName}"`,
             `"${company.companyDescription}"`,
             `"${company.companyUrl}"`,
-            company.activePositionCount
+            company.activePositionCount,
+            company.activeSlotsCount
         ].join(','))
     ];
 

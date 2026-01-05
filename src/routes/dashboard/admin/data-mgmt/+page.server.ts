@@ -225,7 +225,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                     positions: {
                         select: {
                             eventId: true,
-                            isPublished: true
+                            isPublished: true,
+                            slots: true
                         }
                     }
                 }
@@ -241,6 +242,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         // Get all unique event IDs this company has positions in
         const participatedEventIds = new Set<string>();
         let activePositionCount = 0;
+        let activeSlotsCount = 0;
 
         company.hosts.forEach(host => {
             // 1. Add events where they have a published position
@@ -250,6 +252,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
                 if (activeEvent && pos.eventId === activeEvent.id && pos.isPublished) {
                     activePositionCount++;
+                    activeSlotsCount += pos.slots;
                 }
             });
 
@@ -270,6 +273,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             companyDescription: company.companyDescription,
             companyUrl: company.companyUrl || '',
             activePositionCount,
+            activeSlotsCount,
             eventIds: Array.from(participatedEventIds)
         };
     });

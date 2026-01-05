@@ -832,10 +832,9 @@
                               >Active Positions:</span
                             >
                             <p class="text-sm text-gray-600">
-                              {company.activePositionCount} position{company.activePositionCount !==
-                              1
-                                ? "s"
-                                : ""} in the current event
+                              {company.activePositionCount} position{company.activePositionCount !== 1 ? "s" : ""}
+                              ({company.activeSlotsCount} slot{company.activeSlotsCount !== 1 ? "s" : ""})
+                              in the current event
                             </p>
                           </div>
                         </div>
