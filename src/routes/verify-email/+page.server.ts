@@ -1,8 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
-import { generateEmailVerificationCode, setNewLuciaSession, updateLastLoginToNow } from '$lib/server/auth';
-import { sendEmailVerificationEmail } from '$lib/server/email';
+import { generateEmailVerificationCode, generatePermissionSlipCode, setNewLuciaSession, updateLastLoginToNow } from '$lib/server/auth';
+import { sendEmailVerificationEmail, sendPermissionSlipEmail, formatEmailDate, type EventEmailData } from '$lib/server/email';
 
 export const load: PageServerLoad = async (event) => {
     if (event.locals.user) {
@@ -51,6 +51,47 @@ export const load: PageServerLoad = async (event) => {
         await prisma.emailVerificationCodes.delete({
             where: { user_id: userId }
         });
+
+        // Trigger automatic permission slip email for brand new students
+        const student = await prisma.student.findFirst({
+            where: { userId: userId },
+            include: { school: true }
+        });
+
+        if (student && student.schoolId) {
+            const activeEvent = await prisma.event.findFirst({
+                where: {
+                    isActive: true,
+                    schoolId: student.schoolId
+                }
+            });
+
+            if (activeEvent) {
+                // Only send if they haven't already submitted one
+                const existingSubmission = await prisma.permissionSlipSubmission.findFirst({
+                    where: {
+                        studentId: student.id,
+                        eventId: activeEvent.id
+                    }
+                });
+
+                if (!existingSubmission && student.parentEmail) {
+                    const eventData: EventEmailData = {
+                        eventName: activeEvent.name || 'JobCamp',
+                        eventDate: formatEmailDate(activeEvent.date),
+                        schoolName: student.school?.name || 'School',
+                        schoolId: student.schoolId
+                    };
+
+                    try {
+                        const slipCode = await generatePermissionSlipCode(userId);
+                        await sendPermissionSlipEmail(student.parentEmail, slipCode, student.firstName, eventData);
+                    } catch (error) {
+                        console.error('Error sending automatic permission slip email on verification:', error);
+                    }
+                }
+            }
+        }
 
         if (!event.locals.user) {
             await updateLastLoginToNow(userId);

@@ -3,10 +3,10 @@ import type { PageServerLoad } from "./$types";
 import { createStudentSchema } from "./schema";
 import { message, setError, superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
-import { generateEmailVerificationCode, generatePermissionSlipCode, schoolEmailCheck, signup } from '$lib/server/auth';
+import { generateEmailVerificationCode, schoolEmailCheck, signup } from '$lib/server/auth';
 import { prisma } from '$lib/server/prisma';
 import { AuthError } from '$lib/server/authConstants';
-import { sendEmailVerificationEmail, sendPermissionSlipEmail, formatEmailDate, type EventEmailData } from '$lib/server/email';
+import { sendEmailVerificationEmail } from '$lib/server/email';
 import { getNavbarData } from '$lib/server/navbarData';
 import { getGraduatingClassYear } from '$lib/server/gradeUtils';
 import { formatPhoneNumber } from '$lib/server/twilio';
@@ -140,19 +140,6 @@ export const actions: Actions = {
         // runs in background while user is redirected
         const code = await generateEmailVerificationCode(userId, user.email)
         await sendEmailVerificationEmail(userId, user.email, code);
-
-        if (activeEvent) {
-            const eventData: EventEmailData = {
-                eventName: activeEvent.name || 'JobCamp',
-                eventDate: formatEmailDate(activeEvent.date),
-                schoolName: school.name,
-                schoolId: school.id
-            };
-
-            generatePermissionSlipCode(userId).then(
-                (code) => sendPermissionSlipEmail(form.data.parentEmail, code, form.data.firstName, eventData)
-            );
-        }
 
         redirect(302, "/verify-email");
     }
