@@ -1,6 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
+import type { UserRole } from '@prisma/client';
 import { careers } from '$lib/appconfig';
 import { scrypt } from '$lib/server/hash';
 import crypto from 'node:crypto';
@@ -583,13 +584,20 @@ export const actions: Actions = {
 
             // Update user info (email and role)
             if (updatedStudent.userId) {
-                await prisma.user.update({
+                const finalRole = isInternalTester ? 'INTERNAL_TESTER' : null;
+                console.log(`[Update] DEBUG: StudentId=${studentId}, UserId=${updatedStudent.userId}, isInternalTester=${isInternalTester}, Setting role to: ${finalRole}`);
+                
+                const updatedUser = await prisma.user.update({
                     where: { id: updatedStudent.userId },
                     data: { 
                         email: email || undefined,
-                        role: isInternalTester ? 'INTERNAL_TESTER' : null
+                        role: finalRole as UserRole | null
                     }
                 });
+                
+                console.log(`[Update] DEBUG: Final DB role for user ${updatedUser.id} is now: ${updatedUser.role}`);
+            } else {
+                console.log(`[Update] ERROR: No userId found for studentId ${studentId}`);
             }
 
             return { success: true, message: "Student updated successfully" };

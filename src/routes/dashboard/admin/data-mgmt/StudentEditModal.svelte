@@ -76,10 +76,18 @@
     error = null;
   }
 
-  function handleSubmit() {
-    // isSubmitting = true; // This state variable was removed, so this line is removed.
+  function handleSubmit(event: SubmitEvent) {
     message = null;
     error = null;
+    
+    // Log the actual form data being sent
+    const form = event.target as HTMLFormElement;
+    const data = new FormData(form);
+    console.log('Submitting form data:', {
+      studentId: data.get('studentId'),
+      isInternalTester: data.get('isInternalTester'),
+      firstName: data.get('firstName')
+    });
   }
 
   function handleSuccess() {
@@ -132,8 +140,8 @@
     <form
       method="POST"
       action="?/updateStudent"
+      onsubmit={handleSubmit}
       use:enhance={() => {
-        handleSubmit();
         return async ({ update }) => {
           try {
             await update({ reset: false });
@@ -225,17 +233,17 @@
               />
             </div>
 
-            <div class="flex items-center space-x-2 pt-2">
-              <input
-                type="checkbox"
-                id="isInternalTester"
-                bind:checked={formData.isInternalTester}
-                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <Label for="isInternalTester" class="text-sm font-medium text-gray-700">
-                Internal Tester Account (Hidden from admin dashboards)
-              </Label>
-            </div>
+          <div class="flex items-center space-x-2 pt-2">
+            <input
+              type="checkbox"
+              id="isInternalTesterCheckbox"
+              bind:checked={formData.isInternalTester}
+              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <Label for="isInternalTesterCheckbox" class="text-sm font-medium text-gray-700">
+              Internal Tester Account (Hidden from admin dashboards)
+            </Label>
+          </div>
           </div>
         </div>
 
