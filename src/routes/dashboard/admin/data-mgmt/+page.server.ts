@@ -38,7 +38,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             id: true,
             name: true,
             date: true,
-            isActive: true
+            isActive: true,
+            createdAt: true
         }
     });
 
@@ -216,6 +217,11 @@ export const load: PageServerLoad = async ({ locals }) => {
         include: {
             hosts: {
                 include: {
+                    user: {
+                        select: {
+                            lastLogin: true
+                        }
+                    },
                     positions: {
                         select: {
                             eventId: true,
@@ -233,16 +239,29 @@ export const load: PageServerLoad = async ({ locals }) => {
     // Transform company data for the UI
     const transformedCompanies = companies.map(company => {
         // Get all unique event IDs this company has positions in
-        const eventIds = new Set<string>();
+        const participatedEventIds = new Set<string>();
         let activePositionCount = 0;
 
         company.hosts.forEach(host => {
+            // 1. Add events where they have a published position
             host.positions.forEach(pos => {
-                eventIds.add(pos.eventId);
+                if (pos.isPublished) {
+                    participatedEventIds.add(pos.eventId);
+                }
                 if (activeEvent && pos.eventId === activeEvent.id && pos.isPublished) {
                     activePositionCount++;
                 }
             });
+
+            // 2. Add the active event if they have logged in since it was created
+            if (activeEvent && host.user?.lastLogin) {
+                const lastLoginTime = new Date(host.user.lastLogin).getTime();
+                const eventCreatedTime = new Date(activeEvent.createdAt).getTime();
+                
+                if (lastLoginTime >= eventCreatedTime) {
+                    participatedEventIds.add(activeEvent.id);
+                }
+            }
         });
 
         return {
@@ -251,7 +270,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             companyDescription: company.companyDescription,
             companyUrl: company.companyUrl || '',
             activePositionCount,
-            eventIds: Array.from(eventIds)
+            eventIds: Array.from(participatedEventIds)
         };
     });
 

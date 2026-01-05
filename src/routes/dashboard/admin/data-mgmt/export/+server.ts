@@ -242,11 +242,15 @@ async function exportCompanies(schoolIds: string[], url: URL) {
     const companyNameFilter = url.searchParams.get('companyName') || '';
     const eventIdFilter = url.searchParams.get('eventId') || 'All';
 
-    // Get active event for position count
+    // Get active event for position count and login check
     const activeEvent = await prisma.event.findFirst({
         where: {
             schoolId: { in: schoolIds },
             isActive: true
+        },
+        select: {
+            id: true,
+            createdAt: true
         }
     });
 
@@ -258,6 +262,11 @@ async function exportCompanies(schoolIds: string[], url: URL) {
         include: {
             hosts: {
                 include: {
+                    user: {
+                        select: {
+                            lastLogin: true
+                        }
+                    },
                     positions: {
                         select: {
                             eventId: true,
@@ -274,16 +283,29 @@ async function exportCompanies(schoolIds: string[], url: URL) {
 
     // Transform and filter companies
     const filteredCompanies = companies.map(company => {
-        const eventIds = new Set<string>();
+        const participatedEventIds = new Set<string>();
         let activePositionCount = 0;
 
         company.hosts.forEach(host => {
+            // 1. Add events where they have a published position
             host.positions.forEach(pos => {
-                eventIds.add(pos.eventId);
+                if (pos.isPublished) {
+                    participatedEventIds.add(pos.eventId);
+                }
                 if (activeEvent && pos.eventId === activeEvent.id && pos.isPublished) {
                     activePositionCount++;
                 }
             });
+
+            // 2. Add the active event if they have logged in since it was created
+            if (activeEvent && host.user?.lastLogin) {
+                const lastLoginTime = new Date(host.user.lastLogin).getTime();
+                const eventCreatedTime = new Date(activeEvent.createdAt).getTime();
+                
+                if (lastLoginTime >= eventCreatedTime) {
+                    participatedEventIds.add(activeEvent.id);
+                }
+            }
         });
 
         return {
@@ -291,7 +313,7 @@ async function exportCompanies(schoolIds: string[], url: URL) {
             companyDescription: company.companyDescription || '',
             companyUrl: company.companyUrl || '',
             activePositionCount,
-            eventIds: Array.from(eventIds)
+            eventIds: Array.from(participatedEventIds)
         };
     }).filter(company => {
         const matchesCompanyName = !companyNameFilter || 
