@@ -587,19 +587,14 @@ export const actions: Actions = {
             // Update user info (email and role)
             if (updatedStudent.userId) {
                 const finalRole = isInternalTester ? 'INTERNAL_TESTER' : null;
-                console.log(`[Update] DEBUG: StudentId=${studentId}, UserId=${updatedStudent.userId}, isInternalTester=${isInternalTester}, Setting role to: ${finalRole}`);
                 
-                const updatedUser = await prisma.user.update({
+                await prisma.user.update({
                     where: { id: updatedStudent.userId },
                     data: { 
                         email: email || undefined,
                         role: finalRole as UserRole | null
                     }
                 });
-                
-                console.log(`[Update] DEBUG: Final DB role for user ${updatedUser.id} is now: ${updatedUser.role}`);
-            } else {
-                console.log(`[Update] ERROR: No userId found for studentId ${studentId}`);
             }
 
             return { success: true, message: "Student updated successfully" };

@@ -812,8 +812,8 @@ export async function getArchivedEventStats(eventId: string) {
     where: {
       id: { in: Array.from(allStudentIds) },
       user: {
-        role: {
-          not: 'INTERNAL_TESTER'
+        NOT: {
+            role: 'INTERNAL_TESTER'
         }
       }
     }

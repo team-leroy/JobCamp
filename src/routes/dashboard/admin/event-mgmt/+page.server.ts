@@ -67,8 +67,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                         isPublished: true,
                         host: {
                             user: {
-                                role: {
-                                    not: 'INTERNAL_TESTER'
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
                                 }
                             }
                         }
@@ -83,8 +83,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                         isPublished: true,
                         host: {
                             user: {
-                                role: {
-                                    not: 'INTERNAL_TESTER'
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
                                 }
                             }
                         }

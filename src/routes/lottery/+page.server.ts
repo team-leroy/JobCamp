@@ -149,8 +149,8 @@ export const load: PageServerLoad = async ({ locals }) => {
         where: { 
             schoolId,
             user: {
-                role: {
-                    not: 'INTERNAL_TESTER'
+                NOT: {
+                    role: 'INTERNAL_TESTER'
                 }
             }
         },
@@ -180,11 +180,11 @@ export const load: PageServerLoad = async ({ locals }) => {
                 isActive: true 
             },
             host: {
-                user: {
-                    role: {
-                        not: 'INTERNAL_TESTER'
+                    user: {
+                        NOT: {
+                            role: 'INTERNAL_TESTER'
+                        }
                     }
-                }
             }
         },
         include: {
@@ -302,8 +302,8 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                 }
             },
             user: {
-                role: {
-                    not: 'INTERNAL_TESTER'
+                NOT: {
+                    role: 'INTERNAL_TESTER'
                 }
             }
         },

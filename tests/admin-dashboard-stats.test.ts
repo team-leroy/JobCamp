@@ -89,18 +89,36 @@ describe('Admin Dashboard Statistics', () => {
             const event = createMockEvent({ user: mockUser, session: null });
             const result = await load(event);
 
-            // Verify that company statistics queries use the event activation date
+            // Verify that company statistics queries 
             expect(prisma.company.count).toHaveBeenCalledWith({
                 where: { 
                     schoolId: { in: expect.any(Array) },
                     hosts: {
                         some: {
                             user: {
-                                role: {
-                                    not: 'INTERNAL_TESTER'
-                                },
-                                lastLogin: {
-                                    gte: mockActiveEvent.activatedAt // Should use activatedAt (Jan 15)
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            expect(prisma.company.count).toHaveBeenCalledWith({
+                where: { 
+                    schoolId: { in: expect.any(Array) },
+                    hosts: {
+                        some: {
+                            user: {
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
+                                }
+                            },
+                            positions: {
+                                some: {
+                                    eventId: mockActiveEvent.id,
+                                    isPublished: true
                                 }
                             }
                         }
@@ -114,8 +132,8 @@ describe('Admin Dashboard Statistics', () => {
                     isPublished: true,
                     host: {
                         user: {
-                            role: {
-                                not: 'INTERNAL_TESTER'
+                            NOT: {
+                                role: 'INTERNAL_TESTER'
                             }
                         }
                     }
@@ -174,18 +192,36 @@ describe('Admin Dashboard Statistics', () => {
             const event = createMockEvent({ user: mockUser, session: null });
             const result = await load(event);
 
-            // Verify that company statistics queries use the event creation date
+            // Verify that company statistics queries
             expect(prisma.company.count).toHaveBeenCalledWith({
                 where: { 
                     schoolId: { in: expect.any(Array) },
                     hosts: {
                         some: {
                             user: {
-                                role: {
-                                    not: 'INTERNAL_TESTER'
-                                },
-                                lastLogin: {
-                                    gte: mockActiveEvent.createdAt // Should use createdAt (Jan 1)
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            expect(prisma.company.count).toHaveBeenCalledWith({
+                where: { 
+                    schoolId: { in: expect.any(Array) },
+                    hosts: {
+                        some: {
+                            user: {
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
+                                }
+                            },
+                            positions: {
+                                some: {
+                                    eventId: mockActiveEvent.id,
+                                    isPublished: true
                                 }
                             }
                         }

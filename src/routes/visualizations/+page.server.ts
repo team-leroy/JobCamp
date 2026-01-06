@@ -219,8 +219,8 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                     }
                 },
                 user: {
-                    role: {
-                        not: 'INTERNAL_TESTER'
+                    NOT: {
+                        role: 'INTERNAL_TESTER'
                     }
                 }
             },
@@ -239,8 +239,8 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                         }
                     },
                     user: {
-                        role: {
-                            not: 'INTERNAL_TESTER'
+                        NOT: {
+                            role: 'INTERNAL_TESTER'
                         }
                     }
                 },
@@ -266,27 +266,16 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             notPlaced: notPlacedCount
         };
 
-        // Get the event to determine activation date for filtering
-        const event = await prisma.event.findUnique({
-            where: { id: activeEventId },
-            select: { activatedAt: true, createdAt: true }
-        });
-        
-        const eventStartDate = event?.activatedAt || event?.createdAt;
-        
-        // Get positions from companies that have logged in since event activation
-        // For archived events, show all positions regardless of login date
+        // Get positions for this event
+        // For archived events, show all positions
         const whereClause: {
             eventId: string;
             students: { some: Record<string, never> };
             host: {
                 user: {
-                    role: {
-                        not: 'INTERNAL_TESTER'
-                    };
-                    lastLogin?: {
-                        gte: Date;
-                    };
+                    NOT: {
+                        role: 'INTERNAL_TESTER'
+                    }
                 };
             };
         } = {
@@ -294,24 +283,12 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             students: { some: {} }, // Only positions that have student choices
             host: {
                 user: {
-                    role: {
-                        not: 'INTERNAL_TESTER'
+                    NOT: {
+                        role: 'INTERNAL_TESTER'
                     }
                 }
             }
         };
-        
-        // Only filter by login date for active events
-        const eventData = await prisma.event.findUnique({
-            where: { id: activeEventId },
-            select: { isActive: true, activatedAt: true, createdAt: true }
-        });
-        
-        if (eventData?.isActive && eventStartDate) {
-            whereClause.host.user.lastLogin = {
-                gte: eventStartDate
-            };
-        }
         
         const positionsWithCompanies = await prisma.position.findMany({
             where: whereClause,
@@ -418,27 +395,15 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
 
 async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) {
     try {
-        // Get the event to determine activation date for filtering
-        const event = await prisma.event.findUnique({
-            where: { id: activeEventId },
-            select: { activatedAt: true, createdAt: true }
-        });
-        
-        const eventStartDate = event?.activatedAt || event?.createdAt;
-        
-        // Get positions from companies that have logged in since event activation
         // Exclude internal testers
         const whereClause: {
             eventId: string;
             isPublished: boolean;
             host: {
                 user: {
-                    role: {
-                        not: 'INTERNAL_TESTER'
-                    };
-                    lastLogin?: {
-                        gte: Date;
-                    };
+                    NOT: {
+                        role: 'INTERNAL_TESTER'
+                    }
                 };
             };
         } = {
@@ -446,24 +411,12 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
             isPublished: true,
             host: {
                 user: {
-                    role: {
-                        not: 'INTERNAL_TESTER'
+                    NOT: {
+                        role: 'INTERNAL_TESTER'
                     }
                 }
             }
         };
-        
-        // Only filter by login date for active events
-        const eventData = await prisma.event.findUnique({
-            where: { id: activeEventId },
-            select: { isActive: true, activatedAt: true, createdAt: true }
-        });
-        
-        if (eventData?.isActive && eventStartDate) {
-            whereClause.host.user.lastLogin = {
-                gte: eventStartDate
-            };
-        }
         
         const positionsWithChoices = await prisma.position.findMany({
             where: whereClause,
@@ -639,49 +592,23 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
             throw new Error('Event not found');
         }
         
-        const eventStartDate = event?.activatedAt || event?.createdAt;
-        
-        // Get positions from companies that have logged in since event activation
-        // Exclude internal testers
-        const whereClause: {
-            eventId: string;
-            isPublished: boolean;
-            host: {
-                user: {
-                    role: {
-                        not: 'INTERNAL_TESTER'
-                    };
-                    lastLogin?: {
-                        gte: Date;
-                    };
-                };
-            };
-        } = {
-            eventId: activeEventId,
-            isPublished: true,
-            host: {
-                user: {
-                    role: {
-                        not: 'INTERNAL_TESTER'
-                    }
-                }
-            }
-        };
-        
-        // Only filter by login date for active events
         const eventData = await prisma.event.findUnique({
             where: { id: activeEventId },
-            select: { isActive: true, activatedAt: true, createdAt: true }
+            select: { isActive: true, activatedAt: true, createdAt: true, schoolId: true }
         });
-        
-        if (eventData?.isActive && eventStartDate) {
-            whereClause.host.user.lastLogin = {
-                gte: eventStartDate
-            };
-        }
-        
+
         const allPositions = await prisma.position.findMany({
-            where: whereClause,
+            where: {
+                eventId: activeEventId,
+                isPublished: true,
+                host: {
+                    user: {
+                        NOT: {
+                            role: 'INTERNAL_TESTER'
+                        }
+                    }
+                }
+            },
             include: {
                 host: {
                     include: {
@@ -728,21 +655,16 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
         let studentsWithChoices: Awaited<ReturnType<typeof prisma.student.findMany>> = [];
 
         if (eventData?.isActive) {
-            // For active events, include students who have logged in since the event started
+            // For active events, include students who are active
             const activeStudentWhere: Prisma.StudentWhereInput = {
                 ...baseStudentWhere,
-                isActive: true
-            };
-
-            if (eventStartDate) {
-                activeStudentWhere.user = {
-                    is: {
-                        lastLogin: {
-                            gte: eventStartDate
-                        }
+                isActive: true,
+                user: {
+                    NOT: {
+                        role: 'INTERNAL_TESTER'
                     }
-                };
-            }
+                }
+            };
 
             studentsWithChoices = await prisma.student.findMany({
                 where: activeStudentWhere,
@@ -1011,35 +933,16 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             select: { isActive: true, activatedAt: true, createdAt: true }
         });
         
-        const eventStartDate = eventData?.activatedAt || eventData?.createdAt;
-
         // Get all students with their choice data (for active event only)
         // Exclude internal testers
-        const studentWhereClause: {
-            schoolId: { in: string[] };
-            user: {
-                role: {
-                    not: 'INTERNAL_TESTER'
-                };
-                lastLogin?: {
-                    gte: Date;
-                };
-            };
-        } = {
+        const studentWhereClause = {
             schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
             user: {
-                role: {
-                    not: 'INTERNAL_TESTER'
+                NOT: {
+                    role: 'INTERNAL_TESTER'
                 }
             }
         };
-        
-        // Only filter by login date for active events
-        if (eventData?.isActive && eventStartDate) {
-            studentWhereClause.user.lastLogin = {
-                gte: eventStartDate
-            };
-        }
 
         const students = await prisma.student.findMany({
             where: studentWhereClause,
@@ -1061,39 +964,18 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
 
         // Get all companies with their activity data
         // Exclude internal testers
-        const companyWhereClause: {
-            schoolId: { in: string[] };
-            hosts: {
-                some: {
-                    user: {
-                        role: {
-                            not: 'INTERNAL_TESTER'
-                        };
-                        lastLogin?: {
-                            gte: Date;
-                        };
-                    };
-                };
-            };
-        } = {
+        const companyWhereClause = {
             schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
             hosts: {
                 some: {
                     user: {
-                        role: {
-                            not: 'INTERNAL_TESTER'
+                        NOT: {
+                            role: 'INTERNAL_TESTER'
                         }
                     }
                 }
             }
         };
-        
-        // Only filter by login date for active events
-        if (eventData?.isActive && eventStartDate) {
-            companyWhereClause.hosts.some.user.lastLogin = {
-                gte: eventStartDate
-            };
-        }
 
         const companies = await prisma.company.findMany({
             where: companyWhereClause,
@@ -1108,38 +990,17 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         });
 
         // Get all positions from the active event
-        // For active events, only include positions from companies that have logged in since event creation
-        const positionWhereClause: {
-            eventId: string;
-            isPublished: boolean;
-            host: {
-                user: {
-                    role: {
-                        not: string;
-                    };
-                    lastLogin?: {
-                        gte: Date;
-                    };
-                };
-            };
-        } = {
+        const positionWhereClause = {
             eventId: activeEventId,
             isPublished: true,
             host: {
                 user: {
-                    role: {
-                        not: 'INTERNAL_TESTER'
+                    NOT: {
+                        role: 'INTERNAL_TESTER'
                     }
                 }
             }
         };
-        
-        // Only filter by login date for active events
-        if (eventData?.isActive && eventStartDate) {
-            positionWhereClause.host.user.lastLogin = {
-                gte: eventStartDate
-            };
-        }
 
         const positions = await prisma.position.findMany({
             where: positionWhereClause,

@@ -60,11 +60,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                     schoolId: { in: schoolIds },
                     isActive: true,
                     user: {
-                        role: {
-                            not: 'INTERNAL_TESTER'
-                        },
-                        lastLogin: {
-                            gte: upcomingEvent.createdAt
+                        NOT: {
+                            role: 'INTERNAL_TESTER'
                         }
                     }
                 }
@@ -79,11 +76,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                         schoolId: { in: schoolIds },
                         isActive: true,
                         user: {
-                            role: {
-                                not: 'INTERNAL_TESTER'
-                            },
-                            lastLogin: {
-                                gte: upcomingEvent.createdAt
+                            NOT: {
+                                role: 'INTERNAL_TESTER'
                             }
                         }
                     }
@@ -97,11 +91,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                     schoolId: { in: schoolIds },
                     isActive: true,
                     user: {
-                        role: {
-                            not: 'INTERNAL_TESTER'
-                        },
-                        lastLogin: {
-                            gte: upcomingEvent.createdAt
+                        NOT: {
+                            role: 'INTERNAL_TESTER'
                         }
                     },
                     positionsSignedUpFor: {
@@ -122,11 +113,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                         schoolId: { in: schoolIds },
                         isActive: true,
                         user: {
-                            role: {
-                                not: 'INTERNAL_TESTER'
-                            },
-                            lastLogin: {
-                                gte: upcomingEvent.createdAt
+                            NOT: {
+                                role: 'INTERNAL_TESTER'
                             }
                         }
                     },
@@ -141,11 +129,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                     schoolId: { in: schoolIds },
                     isActive: true,
                     user: {
-                        role: {
-                            not: 'INTERNAL_TESTER'
-                        },
-                        lastLogin: {
-                            gte: upcomingEvent.createdAt
+                        NOT: {
+                            role: 'INTERNAL_TESTER'
                         }
                     }
                 },
@@ -196,16 +181,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     // Company Statistics (only if there's an active event)
     if (upcomingEvent) {
-        // Use event activation date if available, otherwise use event creation date
-        const eventStartDate = upcomingEvent.activatedAt || upcomingEvent.createdAt;
-        
         const [
             totalCompanies,
             companiesLoggedInThisEvent,
             positionsThisEvent,
             slotsThisEvent
         ] = await Promise.all([
-            // Total companies that have logged in since event creation
+            // Total companies that have ever signed up for this school
             // Exclude internal testers
             prisma.company.count({
                 where: { 
@@ -213,11 +195,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                     hosts: {
                         some: {
                             user: {
-                                role: {
-                                    not: 'INTERNAL_TESTER'
-                                },
-                                lastLogin: {
-                                    gte: upcomingEvent.createdAt
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
                                 }
                             }
                         }
@@ -225,7 +204,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Companies logged in since event activation
+            // Companies with published positions in this event
             // Exclude internal testers
             prisma.company.count({
                 where: { 
@@ -233,11 +212,14 @@ export const load: PageServerLoad = async ({ locals }) => {
                     hosts: {
                         some: {
                             user: {
-                                role: {
-                                    not: 'INTERNAL_TESTER'
-                                },
-                                lastLogin: {
-                                    gte: eventStartDate
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
+                                }
+                            },
+                            positions: {
+                                some: {
+                                    eventId: upcomingEvent.id,
+                                    isPublished: true
                                 }
                             }
                         }
@@ -252,11 +234,11 @@ export const load: PageServerLoad = async ({ locals }) => {
                     eventId: upcomingEvent.id,
                     isPublished: true,
                     host: {
-                        user: {
-                            role: {
-                                not: 'INTERNAL_TESTER'
+                            user: {
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
+                                }
                             }
-                        }
                     }
                 }
             }),
@@ -268,11 +250,11 @@ export const load: PageServerLoad = async ({ locals }) => {
                     eventId: upcomingEvent.id,
                     isPublished: true,
                     host: {
-                        user: {
-                            role: {
-                                not: 'INTERNAL_TESTER'
+                            user: {
+                                NOT: {
+                                    role: 'INTERNAL_TESTER'
+                                }
                             }
-                        }
                     }
                 },
                 _sum: { slots: true }

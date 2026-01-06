@@ -181,18 +181,15 @@ describe('Admin Dashboard Statistics', () => {
     it('should filter student choices by active event', async () => {
       await load({ locals: mockLocals });
 
-      // Verify student choices query filters by active event (active students who logged in since event creation)
+      // Verify student choices query filters by active event
       expect(prisma.positionsOnStudents.count).toHaveBeenCalledWith({
         where: {
           student: { 
             schoolId: { in: ['school-1'] },
             isActive: true,
             user: {
-              role: {
-                not: 'INTERNAL_TESTER'
-              },
-              lastLogin: {
-                gte: mockActiveEvent.createdAt
+              NOT: {
+                role: 'INTERNAL_TESTER'
               }
             }
           },
@@ -204,17 +201,14 @@ describe('Admin Dashboard Statistics', () => {
     it('should filter students without choices by active event', async () => {
       await load({ locals: mockLocals });
 
-      // Verify students without choices query filters by active event (active students who logged in since event creation)
+      // Verify students without choices query filters by active event
       expect(prisma.student.count).toHaveBeenCalledWith({
         where: { 
           schoolId: { in: ['school-1'] },
           isActive: true,
           user: {
-            role: {
-              not: 'INTERNAL_TESTER'
-            },
-            lastLogin: {
-              gte: mockActiveEvent.createdAt
+            NOT: {
+              role: 'INTERNAL_TESTER'
             }
           },
           positionsSignedUpFor: { 
@@ -238,8 +232,8 @@ describe('Admin Dashboard Statistics', () => {
           isPublished: true,
           host: {
             user: {
-              role: {
-                not: 'INTERNAL_TESTER'
+              NOT: {
+                role: 'INTERNAL_TESTER'
               }
             }
           }
@@ -257,8 +251,8 @@ describe('Admin Dashboard Statistics', () => {
           isPublished: true,
           host: {
             user: {
-              role: {
-                not: 'INTERNAL_TESTER'
+              NOT: {
+                role: 'INTERNAL_TESTER'
               }
             }
           }

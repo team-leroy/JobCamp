@@ -601,8 +601,8 @@ export async function getAvailableSlotsAfterLottery(schoolId: string): Promise<A
       isPublished: true,
       host: {
         user: {
-          role: {
-            not: 'INTERNAL_TESTER'
+          NOT: {
+            role: 'INTERNAL_TESTER'
           }
         }
       }
