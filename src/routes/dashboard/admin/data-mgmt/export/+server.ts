@@ -59,6 +59,7 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
     const gradeFilter = url.searchParams.get('grade') || 'All';
     const permissionSlipFilter = url.searchParams.get('permissionSlip') || 'All';
     const lotteryStatusFilter = url.searchParams.get('lotteryStatus') || 'All';
+    const emailVerifiedFilter = url.searchParams.get('emailVerified') || 'All';
     const eventIdFilter = url.searchParams.get('eventId') || 'All';
     const showTesters = url.searchParams.get('showTesters') === 'true';
 
@@ -73,7 +74,8 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
                     select: {
                         email: true,
                         lastLogin: true,
-                        role: true
+                        role: true,
+                        emailVerified: true
                     }
                 },
                 positionsSignedUpFor: {
@@ -179,12 +181,16 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
                 const matchesLotteryStatus = lotteryStatusFilter === "All" || 
                     lotteryStatus === lotteryStatusFilter;
                 
+                const matchesEmailVerified = emailVerifiedFilter === "All" || 
+                    (emailVerifiedFilter === "Verified" && student.user?.emailVerified) || 
+                    (emailVerifiedFilter === "Unverified" && !student.user?.emailVerified);
+                
                 const studentEventIds = student.eventParticipation.map(p => p.eventId);
                 const matchesEvent = eventIdFilter === "All" || studentEventIds.includes(eventIdFilter);
 
                 const matchesTester = showTesters || student.user?.role !== 'INTERNAL_TESTER';
 
-                return matchesLastName && matchesGrade && matchesPermissionSlip && matchesLotteryStatus && matchesEvent && matchesTester;
+                return matchesLastName && matchesGrade && matchesPermissionSlip && matchesLotteryStatus && matchesEmailVerified && matchesEvent && matchesTester;
             }).map(student => {
             const permissionSlip = student.permissionSlips[0];
             const lotteryResult = lotteryMap.get(student.id);
@@ -197,9 +203,10 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
             return {
                 firstName: student.firstName,
                 lastName: student.lastName,
-            grade: grade,
+                grade: grade,
                 phone: student.phone || '',
                 email: student.user.email || '',
+                emailVerified: student.user.emailVerified ? 'Yes' : 'No',
                 parentEmail: student.parentEmail || '',
                 permissionSlipStatus: permissionSlip ? 'Complete' : 'Not Started',
                 lastLogin: student.user.lastLogin ? new Date(student.user.lastLogin).toISOString() : 'Never',
@@ -213,7 +220,7 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
         });
 
         // Generate CSV
-        const headers = ['First Name', 'Last Name', 'Grade', 'Phone', 'Email', 'Parent Email', 'Permission Slip Status', 'Last Login', 'Student Picks', 'Lottery Assignment'];
+        const headers = ['First Name', 'Last Name', 'Grade', 'Phone', 'Email', 'Email Verified', 'Parent Email', 'Permission Slip Status', 'Last Login', 'Student Picks', 'Lottery Assignment'];
         const csvRows = [
             headers.join(','),
             ...filteredStudents.map(student => [
@@ -222,6 +229,7 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
                 student.grade,
                 `"${student.phone}"`,
                 `"${student.email}"`,
+                `"${student.emailVerified}"`,
                 `"${student.parentEmail}"`,
                 `"${student.permissionSlipStatus}"`,
                 `"${student.lastLogin}"`,
@@ -244,6 +252,7 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
 async function exportCompanies(schoolIds: string[], url: URL) {
     // Get filter parameters from URL
     const companyNameFilter = url.searchParams.get('companyName') || '';
+    const emailVerifiedFilter = url.searchParams.get('emailVerified') || 'All';
     const eventIdFilter = url.searchParams.get('eventId') || 'All';
     const showTesters = url.searchParams.get('showTesters') === 'true';
 
@@ -270,7 +279,8 @@ async function exportCompanies(schoolIds: string[], url: URL) {
                     user: {
                         select: {
                             lastLogin: true,
-                            role: true
+                            role: true,
+                            emailVerified: true
                         }
                     },
                     positions: {
@@ -320,6 +330,9 @@ async function exportCompanies(schoolIds: string[], url: URL) {
         // A company is an internal tester company if it has hosts and all its hosts are internal testers
         const isInternalTester = company.hosts.length > 0 && company.hosts.every(h => h.user?.role === 'INTERNAL_TESTER');
 
+        // A company has a verified host if any of its hosts are verified
+        const emailVerified = company.hosts.some(h => h.user?.emailVerified);
+
         return {
             companyName: company.companyName,
             companyDescription: company.companyDescription || '',
@@ -327,27 +340,33 @@ async function exportCompanies(schoolIds: string[], url: URL) {
             activePositionCount,
             activeSlotsCount,
             isInternalTester,
+            emailVerified,
             eventIds: Array.from(participatedEventIds)
         };
     }).filter(company => {
         const matchesCompanyName = !companyNameFilter || 
             company.companyName.toLowerCase().includes(companyNameFilter.toLowerCase());
         
+        const matchesEmailVerified = emailVerifiedFilter === "All" || 
+            (emailVerifiedFilter === "Verified" && company.emailVerified) || 
+            (emailVerifiedFilter === "Unverified" && !company.emailVerified);
+        
         const matchesEvent = eventIdFilter === "All" || company.eventIds.includes(eventIdFilter);
 
         const matchesTester = showTesters || !company.isInternalTester;
 
-        return matchesCompanyName && matchesEvent && matchesTester;
+        return matchesCompanyName && matchesEmailVerified && matchesEvent && matchesTester;
     });
 
     // Generate CSV
-    const headers = ['Company Name', 'Description', 'URL', 'Active Positions', 'Active Slots'];
+    const headers = ['Company Name', 'Description', 'URL', 'Email Verified', 'Active Positions', 'Active Slots'];
     const csvRows = [
         headers.join(','),
         ...filteredCompanies.map(company => [
             `"${company.companyName}"`,
             `"${company.companyDescription}"`,
             `"${company.companyUrl}"`,
+            company.emailVerified ? 'Yes' : 'No',
             company.activePositionCount,
             company.activeSlotsCount
         ].join(','))
@@ -367,6 +386,7 @@ async function exportCompanies(schoolIds: string[], url: URL) {
 async function exportHosts(schoolIds: string[], url: URL) {
     // Get filter parameters from URL
     const hostNameFilter = url.searchParams.get('hostName') || '';
+    const emailVerifiedFilter = url.searchParams.get('emailVerified') || 'All';
     const eventIdFilter = url.searchParams.get('eventId') || 'All';
     const showTesters = url.searchParams.get('showTesters') === 'true';
 
@@ -394,7 +414,8 @@ async function exportHosts(schoolIds: string[], url: URL) {
                 select: {
                     email: true,
                     lastLogin: true,
-                    role: true
+                    role: true,
+                    emailVerified: true
                 }
             },
             company: {
@@ -438,6 +459,7 @@ async function exportHosts(schoolIds: string[], url: URL) {
         return {
             name: host.name,
             email: host.user?.email || '',
+            emailVerified: host.user?.emailVerified,
             companyName: host.company?.companyName || 'No Company',
             lastLogin: host.user?.lastLogin ? new Date(host.user.lastLogin).toISOString() : 'Never',
             userRole: host.user?.role,
@@ -447,27 +469,33 @@ async function exportHosts(schoolIds: string[], url: URL) {
         const matchesHostName = !hostNameFilter || 
             host.name.toLowerCase().includes(hostNameFilter.toLowerCase());
         
+        const matchesEmailVerified = emailVerifiedFilter === "All" || 
+            (emailVerifiedFilter === "Verified" && host.emailVerified) || 
+            (emailVerifiedFilter === "Unverified" && !host.emailVerified);
+        
         const matchesEvent = eventIdFilter === "All" || host.eventIds.includes(eventIdFilter);
         
         const matchesTester = showTesters || host.userRole !== 'INTERNAL_TESTER';
 
-        return matchesHostName && matchesEvent && matchesTester;
+        return matchesHostName && matchesEmailVerified && matchesEvent && matchesTester;
     }).map(host => {
         return {
             name: host.name,
             email: host.email || '',
+            emailVerified: host.emailVerified ? 'Yes' : 'No',
             companyName: host.companyName || 'No Company',
             lastLogin: host.lastLogin || 'Never'
         };
     });
 
     // Generate CSV
-    const headers = ['Name', 'Email', 'Company', 'Last Login'];
+    const headers = ['Name', 'Email', 'Email Verified', 'Company', 'Last Login'];
     const csvRows = [
         headers.join(','),
         ...filteredHosts.map(host => [
             `"${host.name}"`,
             `"${host.email}"`,
+            `"${host.emailVerified}"`,
             `"${host.companyName}"`,
             `"${host.lastLogin}"`
         ].join(','))

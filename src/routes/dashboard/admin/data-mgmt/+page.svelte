@@ -41,6 +41,7 @@
     grade: number;
     phone: string;
     email: string;
+    emailVerified: boolean;
     parentEmail: string;
     permissionSlipStatus: string;
     permissionSlipDate: Date | null;
@@ -73,6 +74,7 @@
     activeSlotsCount: number;
     activePositions: Position[];
     isInternalTester: boolean;
+    emailVerified: boolean;
     eventIds: string[];
   }
 
@@ -87,6 +89,7 @@
     id: string;
     name: string;
     email: string;
+    emailVerified: boolean;
     lastLogin: Date | null;
     isInternalTester: boolean;
     companyName: string;
@@ -163,14 +166,17 @@
   let gradeFilter = $state("All");
   let permissionSlipFilter = $state("All");
   let lotteryStatusFilter = $state("All");
+  let emailVerifiedFilter = $state("All");
   let studentEventFilter = $state(data.activeEvent?.id || "All");
 
   // Filter states for Company
   let companyNameFilter = $state("");
+  let companyEmailVerifiedFilter = $state("All");
   let companyEventFilter = $state(data.activeEvent?.id || "All");
 
   // Filter states for Host
   let hostNameFilter = $state("");
+  let hostEmailVerifiedFilter = $state("All");
   let hostEventFilter = $state(data.activeEvent?.id || "All");
 
   // Filter states for Position
@@ -214,6 +220,11 @@
         lotteryStatusFilter === "All" ||
         student.lotteryStatus === lotteryStatusFilter;
 
+      const matchesEmailVerified =
+        emailVerifiedFilter === "All" ||
+        (emailVerifiedFilter === "Verified" && student.emailVerified) ||
+        (emailVerifiedFilter === "Unverified" && !student.emailVerified);
+
       const matchesEvent =
         studentEventFilter === "All" ||
         student.eventIds.includes(studentEventFilter);
@@ -225,6 +236,7 @@
         matchesGrade &&
         matchesPermissionSlip &&
         matchesLotteryStatus &&
+        matchesEmailVerified &&
         matchesEvent &&
         matchesTester
       );
@@ -244,13 +256,18 @@
           .toLowerCase()
           .includes(companyNameFilter.toLowerCase());
 
+      const matchesEmailVerified =
+        companyEmailVerifiedFilter === "All" ||
+        (companyEmailVerifiedFilter === "Verified" && company.emailVerified) ||
+        (companyEmailVerifiedFilter === "Unverified" && !company.emailVerified);
+
       const matchesEvent =
         companyEventFilter === "All" ||
         company.eventIds.includes(companyEventFilter);
 
       const matchesTester = showInternalTesters || !company.isInternalTester;
 
-      return matchesCompanyName && matchesEvent && matchesTester;
+      return matchesCompanyName && matchesEmailVerified && matchesEvent && matchesTester;
     })
   );
 
@@ -265,13 +282,18 @@
         !hostNameFilter ||
         host.name.toLowerCase().includes(hostNameFilter.toLowerCase());
 
+      const matchesEmailVerified =
+        hostEmailVerifiedFilter === "All" ||
+        (hostEmailVerifiedFilter === "Verified" && host.emailVerified) ||
+        (hostEmailVerifiedFilter === "Unverified" && !host.emailVerified);
+
       const matchesEvent =
         hostEventFilter === "All" ||
         host.eventIds.includes(hostEventFilter);
 
       const matchesTester = showInternalTesters || !host.isInternalTester;
 
-      return matchesHostName && matchesEvent && matchesTester;
+      return matchesHostName && matchesEmailVerified && matchesEvent && matchesTester;
     })
   );
 
@@ -387,12 +409,15 @@
       gradeFilter = "All";
       permissionSlipFilter = "All";
       lotteryStatusFilter = "All";
+      emailVerifiedFilter = "All";
       studentEventFilter = data.activeEvent?.id || "All";
     } else if (selectedTab === "Company") {
       companyNameFilter = "";
+      companyEmailVerifiedFilter = "All";
       companyEventFilter = data.activeEvent?.id || "All";
     } else if (selectedTab === "Host") {
       hostNameFilter = "";
+      hostEmailVerifiedFilter = "All";
       hostEventFilter = data.activeEvent?.id || "All";
     } else if (selectedTab === "Position") {
       positionTitleFilter = "";
@@ -524,7 +549,7 @@
               <CardTitle class="text-lg">Filters</CardTitle>
             </CardHeader>
             <CardContent>
-              <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+              <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
                 <div>
                   <Label for="lastName">Last Name</Label>
                   <Input
@@ -572,6 +597,17 @@
                 />
 
                 <FilterSelect
+                  label="Email Verified"
+                  bind:value={emailVerifiedFilter}
+                  placeholder="All"
+                  options={[
+                    { value: "All", label: "All" },
+                    { value: "Verified", label: "Verified" },
+                    { value: "Unverified", label: "Unverified" },
+                  ]}
+                />
+
+                <FilterSelect
                   label="Event Participation"
                   bind:value={studentEventFilter}
                   placeholder="All Events"
@@ -605,6 +641,8 @@
                       params.set("permissionSlip", permissionSlipFilter);
                     if (lotteryStatusFilter !== "All")
                       params.set("lotteryStatus", lotteryStatusFilter);
+                    if (emailVerifiedFilter !== "All")
+                      params.set("emailVerified", emailVerifiedFilter);
                     if (studentEventFilter !== "All")
                       params.set("eventId", studentEventFilter);
                     if (showInternalTesters)
@@ -715,7 +753,7 @@
                   </div>
 
                   <!-- Status Information -->
-                  <div class="flex items-center space-x-6 mb-4">
+                  <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4">
                     {#each [{ status: student.permissionSlipStatus, label: "Permission Slip" }, { status: student.lotteryStatus, label: "Lottery" }] as statusInfo}
                       {@const Icon = getStatusIcon(statusInfo.status)}
                       <div class="flex items-center space-x-2">
@@ -729,6 +767,16 @@
                         </span>
                       </div>
                     {/each}
+
+                    <div class="flex items-center space-x-2">
+                      {#if student.emailVerified}
+                        <CheckCircle class="h-4 w-4 text-green-600" />
+                        <span class="text-sm text-green-600">Email Verified</span>
+                      {:else}
+                        <XCircle class="h-4 w-4 text-red-600" />
+                        <span class="text-sm text-red-600">Email Unverified</span>
+                      {/if}
+                    </div>
 
                     <div class="flex items-center space-x-2">
                       <Calendar class="h-4 w-4 text-gray-500" />
@@ -819,7 +867,7 @@
               <CardTitle class="text-lg">Filters</CardTitle>
             </CardHeader>
             <CardContent>
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                 <div>
                   <Label for="companyName">Company Name</Label>
                   <Input
@@ -828,6 +876,17 @@
                     placeholder="Search by company name..."
                   />
                 </div>
+
+                <FilterSelect
+                  label="Email Verified"
+                  bind:value={companyEmailVerifiedFilter}
+                  placeholder="All"
+                  options={[
+                    { value: "All", label: "All" },
+                    { value: "Verified", label: "Verified" },
+                    { value: "Unverified", label: "Unverified" },
+                  ]}
+                />
 
                 <FilterSelect
                   label="Event Participation"
@@ -859,6 +918,7 @@
                     const params = new URLSearchParams();
                     params.set("type", "companies");
                     if (companyNameFilter) params.set("companyName", companyNameFilter);
+                    if (companyEmailVerifiedFilter !== "All") params.set("emailVerified", companyEmailVerifiedFilter);
                     if (companyEventFilter !== "All") params.set("eventId", companyEventFilter);
                     if (showInternalTesters) params.set("showTesters", "true");
 
@@ -906,6 +966,11 @@
                             ? "s"
                             : ""}
                         </Badge>
+                        {#if company.emailVerified}
+                          <Badge variant="default" class="bg-green-100 text-green-700 border-green-200">VERIFIED</Badge>
+                        {:else}
+                          <Badge variant="default" class="bg-red-100 text-red-700 border-red-200">UNVERIFIED</Badge>
+                        {/if}
                       </div>
                     </div>
 
@@ -1054,7 +1119,7 @@
               <CardTitle class="text-lg">Filters</CardTitle>
             </CardHeader>
             <CardContent>
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                 <div>
                   <Label for="hostName">Host Name</Label>
                   <Input
@@ -1063,6 +1128,17 @@
                     placeholder="Search by host name..."
                   />
                 </div>
+
+                <FilterSelect
+                  label="Email Verified"
+                  bind:value={hostEmailVerifiedFilter}
+                  placeholder="All"
+                  options={[
+                    { value: "All", label: "All" },
+                    { value: "Verified", label: "Verified" },
+                    { value: "Unverified", label: "Unverified" },
+                  ]}
+                />
 
                 <FilterSelect
                   label="Event Participation"
@@ -1094,6 +1170,7 @@
                     const params = new URLSearchParams();
                     params.set("type", "hosts");
                     if (hostNameFilter) params.set("hostName", hostNameFilter);
+                    if (hostEmailVerifiedFilter !== "All") params.set("emailVerified", hostEmailVerifiedFilter);
                     if (hostEventFilter !== "All") params.set("eventId", hostEventFilter);
                     if (showInternalTesters) params.set("showTesters", "true");
 
@@ -1147,10 +1224,20 @@
                   </div>
 
                   <!-- Host Information -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div class="flex items-center space-x-2">
                       <Mail class="h-4 w-4 text-gray-500" />
                       <span class="text-sm">{host.email}</span>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                      {#if host.emailVerified}
+                        <CheckCircle class="h-4 w-4 text-green-600" />
+                        <span class="text-sm text-green-600">Email Verified</span>
+                      {:else}
+                        <XCircle class="h-4 w-4 text-red-600" />
+                        <span class="text-sm text-red-600">Email Unverified</span>
+                      {/if}
                     </div>
 
                     <div class="flex items-center space-x-2">

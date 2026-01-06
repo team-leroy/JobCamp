@@ -84,7 +84,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                 select: {
                     email: true,
                     lastLogin: true,
-                    role: true
+                    role: true,
+                    emailVerified: true
                 }
             },
             positionsSignedUpFor: {
@@ -189,6 +190,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             graduatingClassYear: student.graduatingClassYear,
             phone: student.phone,
             email: student.user?.email || 'No Email',
+            emailVerified: student.user?.emailVerified || false,
             parentEmail: student.parentEmail,
             permissionSlipStatus: slip ? 'Complete' : 'Not Started',
             permissionSlipDate: slip?.createdAt ? new Date(slip.createdAt).toISOString() : null,
@@ -286,7 +288,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                     user: {
                         select: {
                             lastLogin: true,
-                            role: true
+                            role: true,
+                            emailVerified: true
                         }
                     },
                     positions: {
@@ -341,6 +344,9 @@ export const load: PageServerLoad = async ({ locals }) => {
         // A company is an internal tester company if it has hosts and all its hosts are internal testers
         const isInternalTester = company.hosts.length > 0 && company.hosts.every(h => h.user?.role === 'INTERNAL_TESTER');
 
+        // A company has a verified host if any of its hosts are verified
+        const emailVerified = company.hosts.some(h => h.user?.emailVerified);
+
         return {
             id: company.id,
             companyName: company.companyName,
@@ -350,6 +356,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             activeSlotsCount,
             activePositions,
             isInternalTester,
+            emailVerified,
             eventIds: Array.from(participatedEventIds)
         };
     });
@@ -366,7 +373,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                 select: {
                     email: true,
                     lastLogin: true,
-                    role: true
+                    role: true,
+                    emailVerified: true
                 }
             },
             company: {
@@ -411,6 +419,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             id: host.id,
             name: host.name,
             email: host.user?.email || 'No Email',
+            emailVerified: host.user?.emailVerified || false,
             lastLogin: host.user?.lastLogin ? new Date(host.user.lastLogin).toISOString() : null,
             isInternalTester: host.user?.role === 'INTERNAL_TESTER',
             companyName: host.company?.companyName || 'No Company',
