@@ -76,11 +76,6 @@
     error = null;
   }
 
-  function handleSubmit() {
-    message = null;
-    error = null;
-  }
-
   function handleSuccess() {
     message = "Student updated successfully!";
     setTimeout(async () => {
@@ -91,7 +86,6 @@
   }
 
   function handleError() {
-    // isSubmitting = false; // This state variable was removed, so this line is removed.
     error = "Failed to update student. Please try again.";
   }
 
@@ -132,25 +126,24 @@
       method="POST"
       action="?/updateStudent"
       use:enhance={({ formData: fData }) => {
-        handleSubmit();
-        // Log the actual form data being sent
-        console.log('Submitting Student Update:', {
-          studentId: fData.get('studentId'),
-          isInternalTester: fData.get('isInternalTester'),
-          firstName: fData.get('firstName')
-        });
-
-        return async ({ update }) => {
-          try {
-            await update({ reset: false });
+        message = null;
+        error = null;
+        console.log('--- ENHANCE START ---');
+        console.log('Form entries:', Array.from(fData.entries()));
+        
+        return async ({ result, update }) => {
+          console.log('--- ENHANCE RESULT ---', result.type);
+          if (result.type === 'success') {
             handleSuccess();
-          } catch {
+          } else if (result.type === 'error' || result.type === 'failure') {
             handleError();
           }
+          await update({ reset: false });
         };
       }}
     >
       <input type="hidden" name="studentId" value={student.id} />
+      <!-- Ensure value is actually a string 'true' or 'false' -->
       <input type="hidden" name="isInternalTester" value={formData.isInternalTester ? 'true' : 'false'} />
 
       <div class="space-y-6">
@@ -159,48 +152,54 @@
           <h3 class="text-lg font-semibold mb-4">Personal Information</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label for="firstName">First Name</Label>
+              <Label for="edit-firstName-{student.id}">First Name</Label>
               <Input
-                id="firstName"
+                id="edit-firstName-{student.id}"
                 name="firstName"
                 bind:value={formData.firstName}
                 required
+                autocomplete="given-name"
               />
             </div>
 
             <div>
-              <Label for="lastName">Last Name</Label>
+              <Label for="edit-lastName-{student.id}">Last Name</Label>
               <Input
-                id="lastName"
+                id="edit-lastName-{student.id}"
                 name="lastName"
                 bind:value={formData.lastName}
                 required
+                autocomplete="family-name"
               />
             </div>
 
             <div>
-              <Label for="grade">Grade</Label>
-              <FilterSelect
-                label=""
-                bind:value={formData.grade}
-                placeholder="Select grade"
-                options={[
-                  { value: "9", label: "Grade 9" },
-                  { value: "10", label: "Grade 10" },
-                  { value: "11", label: "Grade 11" },
-                  { value: "12", label: "Grade 12" },
-                ]}
-              />
+              <Label for="edit-grade-{student.id}">Grade</Label>
+              <div id="edit-grade-{student.id}">
+                <FilterSelect
+                  label=""
+                  bind:value={formData.grade}
+                  placeholder="Select grade"
+                  options={[
+                    { value: "9", label: "Grade 9" },
+                    { value: "10", label: "Grade 10" },
+                    { value: "11", label: "Grade 11" },
+                    { value: "12", label: "Grade 12" },
+                  ]}
+                />
+              </div>
+              <input type="hidden" name="grade" value={formData.grade} />
             </div>
 
             <div>
-              <Label for="phone">STUDENT Phone</Label>
+              <Label for="edit-phone-{student.id}">STUDENT Phone</Label>
               <Input
-                id="phone"
+                id="edit-phone-{student.id}"
                 name="phone"
                 bind:value={formData.phone}
                 type="tel"
                 placeholder="(555) 123-4567"
+                autocomplete="tel"
               />
             </div>
           </div>
@@ -211,34 +210,36 @@
           <h3 class="text-lg font-semibold mb-4">Contact Information</h3>
           <div class="space-y-4">
             <div>
-              <Label for="email">Student Email</Label>
+              <Label for="edit-email-{student.id}">Student Email</Label>
               <Input
-                id="email"
+                id="edit-email-{student.id}"
                 name="email"
                 bind:value={formData.email}
                 type="email"
                 required
+                autocomplete="email"
               />
             </div>
 
             <div>
-              <Label for="parentEmail">PARENT Email</Label>
+              <Label for="edit-parentEmail-{student.id}">PARENT Email</Label>
               <Input
-                id="parentEmail"
+                id="edit-parentEmail-{student.id}"
                 name="parentEmail"
                 bind:value={formData.parentEmail}
                 type="email"
+                autocomplete="email"
               />
             </div>
 
           <div class="flex items-center space-x-2 pt-2">
             <input
               type="checkbox"
-              id="isInternalTesterCheckbox"
+              id="edit-isInternalTester-{student.id}"
               bind:checked={formData.isInternalTester}
               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <Label for="isInternalTesterCheckbox" class="text-sm font-medium text-gray-700">
+            <Label for="edit-isInternalTester-{student.id}" class="text-sm font-medium text-gray-700">
               Internal Tester Account (Hidden from admin dashboards)
             </Label>
           </div>
