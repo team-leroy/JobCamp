@@ -312,18 +312,12 @@ export const load: PageServerLoad = async ({ locals }) => {
     const transformedCompanies = companies.map(company => {
         // Get all unique event IDs this company has positions in
         const participatedEventIds = new Set<string>();
-        let activePositionCount = 0;
-        let activeSlotsCount = 0;
 
         company.hosts.forEach(host => {
             // 1. Add events where they have a published position
             host.positions.forEach(pos => {
                 if (pos.isPublished) {
                     participatedEventIds.add(pos.eventId);
-                }
-                if (activeEvent && pos.eventId === activeEvent.id && pos.isPublished) {
-                    activePositionCount++;
-                    activeSlotsCount += pos.slots;
                 }
             });
 
@@ -339,7 +333,16 @@ export const load: PageServerLoad = async ({ locals }) => {
         });
 
         // Get this company's positions for the active event
-        const activePositions = transformedPositions.filter(p => p.companyId === company.id);
+        const activePositions = transformedPositions.filter(p => 
+            p.companyId === company.id && 
+            p.eventId === activeEvent.id
+        );
+
+        // Calculate counts from the current event's positions
+        // Only count published positions for the "Active Positions" summary
+        const currentEventPublishedPositions = activePositions.filter(p => p.isPublished);
+        const activePositionCount = currentEventPublishedPositions.length;
+        const activeSlotsCount = currentEventPublishedPositions.reduce((sum, p) => sum + p.slots, 0);
 
         // A company is an internal tester company if it has hosts and all its hosts are internal testers
         const isInternalTester = company.hosts.length > 0 && company.hosts.every(h => h.user?.role === 'INTERNAL_TESTER');
