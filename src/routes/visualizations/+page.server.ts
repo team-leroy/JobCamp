@@ -944,9 +944,10 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         const studentWhereClause = {
             schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
             user: {
-                NOT: {
-                    role: 'INTERNAL_TESTER'
-                }
+                OR: [
+                    { role: null },
+                    { role: { not: 'INTERNAL_TESTER' } }
+                ]
             }
         };
 
@@ -954,6 +955,11 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             where: studentWhereClause,
             include: {
                 user: true,
+                eventParticipation: {
+                    where: {
+                        eventId: activeEventId
+                    }
+                },
                 positionsSignedUpFor: {
                     where: {
                         position: {
@@ -975,9 +981,10 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             hosts: {
                 some: {
                     user: {
-                        NOT: {
-                            role: 'INTERNAL_TESTER'
-                        }
+                        OR: [
+                            { role: null },
+                            { role: { not: 'INTERNAL_TESTER' } }
+                        ]
                     }
                 }
             }
@@ -1036,7 +1043,8 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         if (eventData?.isActive) {
             // For active events, timeline starts from when the event was activated/created
             // This shows all engagement activity since the event became active
-            timelineStart = eventStartDate ? new Date(eventStartDate) : new Date(event.createdAt);
+            const eventStartDate = eventData?.activatedAt || eventData?.createdAt || event.createdAt;
+            timelineStart = new Date(eventStartDate);
         } else {
             // For archived events, use 6 months leading up to the event to capture more activity
             timelineStart = new Date(eventDate);
@@ -1048,13 +1056,15 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         const companyStats: TimelineStats[] = [];
         const positionStats: TimelineStats[] = [];
 
-        // Generate timeline data based on real student activity
-        const studentUsers = students.filter(s => s.user);
+        // Generate timeline data based on real engagement activity
         const hostUsers = companies.flatMap(c => c.hosts).filter(h => h.user);
 
-        // Registration timeline (based on user createdAt dates)
-        const registrationDates = studentUsers
-            .map(s => s.user?.createdAt)
+        // Registration timeline (prefer eventParticipation dates, fallback to user createdAt)
+        const registrationDates = students
+            .map(s => {
+                const participation = s.eventParticipation.find(p => p.eventId === activeEventId);
+                return participation?.createdAt || s.user?.createdAt;
+            })
             .filter(date => date && date >= timelineStart && date <= eventDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
