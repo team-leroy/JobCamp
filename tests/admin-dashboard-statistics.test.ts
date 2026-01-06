@@ -188,9 +188,10 @@ describe('Admin Dashboard Statistics', () => {
             schoolId: { in: ['school-1'] },
             isActive: true,
             user: {
-              NOT: {
-                role: 'INTERNAL_TESTER'
-              }
+              OR: [
+                { role: null },
+                { role: { not: 'INTERNAL_TESTER' } }
+              ]
             }
           },
           position: { eventId: 'active-event-1' }
@@ -207,9 +208,10 @@ describe('Admin Dashboard Statistics', () => {
           schoolId: { in: ['school-1'] },
           isActive: true,
           user: {
-            NOT: {
-              role: 'INTERNAL_TESTER'
-            }
+            OR: [
+              { role: null },
+              { role: { not: 'INTERNAL_TESTER' } }
+            ]
           },
           positionsSignedUpFor: { 
             none: {
@@ -232,9 +234,10 @@ describe('Admin Dashboard Statistics', () => {
           isPublished: true,
           host: {
             user: {
-              NOT: {
-                role: 'INTERNAL_TESTER'
-              }
+              OR: [
+                { role: null },
+                { role: { not: 'INTERNAL_TESTER' } }
+              ]
             }
           }
         }
@@ -251,9 +254,10 @@ describe('Admin Dashboard Statistics', () => {
           isPublished: true,
           host: {
             user: {
-              NOT: {
-                role: 'INTERNAL_TESTER'
-              }
+              OR: [
+                { role: null },
+                { role: { not: 'INTERNAL_TESTER' } }
+              ]
             }
           }
         },

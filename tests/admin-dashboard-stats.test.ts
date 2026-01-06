@@ -96,9 +96,10 @@ describe('Admin Dashboard Statistics', () => {
                     hosts: {
                         some: {
                             user: {
-                                NOT: {
-                                    role: 'INTERNAL_TESTER'
-                                }
+                                OR: [
+                                    { role: null },
+                                    { role: { not: 'INTERNAL_TESTER' } }
+                                ]
                             }
                         }
                     }
@@ -111,9 +112,10 @@ describe('Admin Dashboard Statistics', () => {
                     hosts: {
                         some: {
                             user: {
-                                NOT: {
-                                    role: 'INTERNAL_TESTER'
-                                }
+                                OR: [
+                                    { role: null },
+                                    { role: { not: 'INTERNAL_TESTER' } }
+                                ]
                             },
                             positions: {
                                 some: {
@@ -132,9 +134,10 @@ describe('Admin Dashboard Statistics', () => {
                     isPublished: true,
                     host: {
                         user: {
-                            NOT: {
-                                role: 'INTERNAL_TESTER'
-                            }
+                            OR: [
+                                { role: null },
+                                { role: { not: 'INTERNAL_TESTER' } }
+                            ]
                         }
                     }
                 }
@@ -199,9 +202,10 @@ describe('Admin Dashboard Statistics', () => {
                     hosts: {
                         some: {
                             user: {
-                                NOT: {
-                                    role: 'INTERNAL_TESTER'
-                                }
+                                OR: [
+                                    { role: null },
+                                    { role: { not: 'INTERNAL_TESTER' } }
+                                ]
                             }
                         }
                     }
@@ -214,9 +218,10 @@ describe('Admin Dashboard Statistics', () => {
                     hosts: {
                         some: {
                             user: {
-                                NOT: {
-                                    role: 'INTERNAL_TESTER'
-                                }
+                                OR: [
+                                    { role: null },
+                                    { role: { not: 'INTERNAL_TESTER' } }
+                                ]
                             },
                             positions: {
                                 some: {

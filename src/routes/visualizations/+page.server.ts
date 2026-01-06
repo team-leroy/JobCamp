@@ -219,9 +219,10 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                     }
                 },
                 user: {
-                    NOT: {
-                        role: 'INTERNAL_TESTER'
-                    }
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
                 }
             },
             select: { id: true }
@@ -273,9 +274,10 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             students: { some: Record<string, never> };
             host: {
                 user: {
-                    NOT: {
-                        role: 'INTERNAL_TESTER'
-                    }
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
                 };
             };
         } = {
@@ -283,9 +285,10 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             students: { some: {} }, // Only positions that have student choices
             host: {
                 user: {
-                    NOT: {
-                        role: 'INTERNAL_TESTER'
-                    }
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
                 }
             }
         };
@@ -401,9 +404,10 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
             isPublished: boolean;
             host: {
                 user: {
-                    NOT: {
-                        role: 'INTERNAL_TESTER'
-                    }
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
                 };
             };
         } = {
@@ -411,9 +415,10 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
             isPublished: true,
             host: {
                 user: {
-                    NOT: {
-                        role: 'INTERNAL_TESTER'
-                    }
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
                 }
             }
         };
@@ -660,9 +665,10 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
                 ...baseStudentWhere,
                 isActive: true,
                 user: {
-                    NOT: {
-                        role: 'INTERNAL_TESTER'
-                    }
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
                 }
             };
 
@@ -995,9 +1001,10 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             isPublished: true,
             host: {
                 user: {
-                    NOT: {
-                        role: 'INTERNAL_TESTER'
-                    }
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
                 }
             }
         };

@@ -181,9 +181,10 @@ export const load: PageServerLoad = async ({ locals }) => {
             },
             host: {
                     user: {
-                        NOT: {
-                            role: 'INTERNAL_TESTER'
-                        }
+                        OR: [
+                            { role: null },
+                            { role: { not: 'INTERNAL_TESTER' } }
+                        ]
                     }
             }
         },

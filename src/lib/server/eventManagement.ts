@@ -812,9 +812,10 @@ export async function getArchivedEventStats(eventId: string) {
     where: {
       id: { in: Array.from(allStudentIds) },
       user: {
-        NOT: {
-            role: 'INTERNAL_TESTER'
-        }
+        OR: [
+            { role: null },
+            { role: { not: 'INTERNAL_TESTER' } }
+        ]
       }
     }
   });

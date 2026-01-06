@@ -95,9 +95,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                             student: {
                                 schoolId: selectedEvent.schoolId,
                                 user: {
-                                    NOT: {
-                                        role: 'INTERNAL_TESTER'
-                                    }
+                                    OR: [
+                                        { role: null },
+                                        { role: { not: 'INTERNAL_TESTER' } }
+                                    ]
                                 }
                             }
                         }
@@ -130,9 +131,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                             student: { 
                                 schoolId: selectedEvent.schoolId,
                                 user: {
-                                    NOT: {
-                                        role: 'INTERNAL_TESTER'
-                                    }
+                                    OR: [
+                                        { role: null },
+                                        { role: { not: 'INTERNAL_TESTER' } }
+                                    ]
                                 }
                             },
                             position: { eventId: selectedEvent.id }
@@ -184,9 +186,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                             isPublished: true,
                             host: {
                                 user: {
-                                    NOT: {
-                                        role: 'INTERNAL_TESTER'
-                                    }
+                                    OR: [
+                                        { role: null },
+                                        { role: { not: 'INTERNAL_TESTER' } }
+                                    ]
                                 }
                             }
                         }
@@ -200,9 +203,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                             isPublished: true,
                             host: {
                                 user: {
-                                    NOT: {
-                                        role: 'INTERNAL_TESTER'
-                                    }
+                                    OR: [
+                                        { role: null },
+                                        { role: { not: 'INTERNAL_TESTER' } }
+                                    ]
                                 }
                             }
                         },

@@ -601,9 +601,10 @@ export async function getAvailableSlotsAfterLottery(schoolId: string): Promise<A
       isPublished: true,
       host: {
         user: {
-          NOT: {
-            role: 'INTERNAL_TESTER'
-          }
+          OR: [
+            { role: null },
+            { role: { not: 'INTERNAL_TESTER' } }
+          ]
         }
       }
     },
