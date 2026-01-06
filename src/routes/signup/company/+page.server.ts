@@ -86,9 +86,13 @@ export const actions: Actions = {
             }
         })
 
+        const school = await prisma.school.findUnique({
+            where: { id: schoolId }
+        });
+
         // runs in background while user is redirected
         const code = await generateEmailVerificationCode(userId, user.email)
-        await sendEmailVerificationEmail(userId, user.email, code);
+        await sendEmailVerificationEmail(userId, user.email, code, school?.name);
 
         redirect(302, "/verify-email");
     }

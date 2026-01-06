@@ -69,11 +69,20 @@ export const actions: Actions = {
             return { waiting: 0, msg: "Please Enter an Email", code: "", userId: "" };
         }
 
-        const userId = (await prisma.user.findFirst({where: { email }}))?.id;
-        if (!userId) { return { waiting: 0, msg: "User Account Does Not Exist", code: "", userId: "" }; }
+        const userInfo = await prisma.user.findFirst({
+            where: { email },
+            include: { 
+                student: { include: { school: true } },
+                host: { include: { company: { include: { school: true } } } }
+            }
+        });
+        
+        if (!userInfo) { return { waiting: 0, msg: "User Account Does Not Exist", code: "", userId: "" }; }
 
-        const code = await createPasswordResetToken(userId)
-        await sendPasswordResetEmail(userId, email, code);
+        const schoolName = userInfo.student?.school?.name || userInfo.host?.company?.school?.name;
+
+        const code = await createPasswordResetToken(userInfo.id)
+        await sendPasswordResetEmail(userInfo.id, email, code, schoolName);
 
         return { waiting: 1, msg: "", code: "", userId: "" };
     }

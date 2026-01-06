@@ -119,7 +119,20 @@ export const actions: Actions = {
         if (!event.locals.user) return;
 
         const email = event.locals.user.email;
-        const code = await generateEmailVerificationCode(event.locals.user.id, email)
-        await sendEmailVerificationEmail(event.locals.user.id, email, code);
+        const userId = event.locals.user.id;
+
+        // Try to find school name for user
+        const userInfo = await prisma.user.findFirst({
+            where: { id: userId },
+            include: { 
+                student: { include: { school: true } },
+                host: { include: { company: { include: { school: true } } } }
+            }
+        });
+
+        const schoolName = userInfo?.student?.school?.name || userInfo?.host?.company?.school?.name;
+
+        const code = await generateEmailVerificationCode(userId, email)
+        await sendEmailVerificationEmail(userId, email, code, schoolName);
     }
 };

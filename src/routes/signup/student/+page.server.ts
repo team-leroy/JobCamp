@@ -139,7 +139,7 @@ export const actions: Actions = {
 
         // runs in background while user is redirected
         const code = await generateEmailVerificationCode(userId, user.email)
-        await sendEmailVerificationEmail(userId, user.email, code);
+        await sendEmailVerificationEmail(userId, user.email, code, school.name);
 
         redirect(302, "/verify-email");
     }

@@ -29,6 +29,12 @@ async function sendEmailViaSendGrid(to: string, subject: string, html: string): 
             email: env.SENDGRID_FROM_EMAIL || 'admin@jobcamp.org',
             name: env.SENDGRID_FROM_NAME || 'JobCamp'
         },
+        // Add robust headers to reduce spaminess
+        headers: {
+            "List-Unsubscribe": `<mailto:admin@jobcamp.org?subject=unsubscribe-${to}>`,
+            "X-Mailer": "JobCamp Custom Mailer",
+            "X-Priority": "3"
+        },
         content: [
             {
                 type: 'text/plain',
@@ -181,19 +187,25 @@ export function formatImportantDatesHtml(dates: ImportantDateData[]): string {
     }).join('\n            ');
 }
 
-export async function sendEmailLotteryEmail(email: string) {
+export async function sendEmailLotteryEmail(email: string, schoolName?: string) {
+    const subject = schoolName 
+        ? `JobCamp Alert: Your job shadow assignment for ${schoolName} is ready!` 
+        : "JobCamp Alert: Your job shadow assignment is ready!";
     await sendEmailViaSendGrid(
         email,
-        "JobCamp lottery results are out!",
+        subject,
         lotteryResults
     );
 }
 
-export async function sendEmailVerificationEmail(uid: string, email: string, code: string) {
+export async function sendEmailVerificationEmail(uid: string, email: string, code: string, schoolName?: string) {
+    const subject = schoolName 
+        ? `Action Required: Verify your JobCamp account for ${schoolName}` 
+        : "Action Required: Verify your JobCamp Email";
     try {
         await sendEmailViaSendGrid(
             email,
-            "Verify JobCamp Email",
+            subject,
             renderEmailTemplate(verificationEmail, {uid, code})
         );
     } catch (error) {
@@ -201,11 +213,14 @@ export async function sendEmailVerificationEmail(uid: string, email: string, cod
     }
 }
 
-export async function sendPasswordResetEmail(uid: string, email: string, code: string) {
+export async function sendPasswordResetEmail(uid: string, email: string, code: string, schoolName?: string) {
+    const subject = schoolName 
+        ? `Action Required: Reset your JobCamp password for ${schoolName}` 
+        : "Action Required: Reset your JobCamp Password";
     try {
         await sendEmailViaSendGrid(
             email,
-            "Reset JobCamp Password",
+            subject,
             renderEmailTemplate(resetPasswordEmail, {uid, code})
         );
     } catch (error) {
@@ -223,7 +238,7 @@ export async function sendPermissionSlipEmail(
     
     await sendEmailViaSendGrid(
         parentEmail,
-        `Permission Slip for ${name}`,
+        `Action Required: Permission Slip for ${name} (${eventData.schoolName})`,
         renderEmailTemplate(permissionSlipEmail, {
             link: "https://jobcamp.org/permission-slip/"+code,
             name: name,
@@ -252,7 +267,7 @@ export async function sendPositionUpdateEmail(
     };
 
     const emailHtml = renderEmailTemplate(positionUpdateEmail, emailParams);
-    const subject = `JobCamp.org position published for ${eventData.eventDate}`;
+    const subject = `JobCamp Update: Position published for ${eventData.schoolName} (${eventData.eventDate})`;
 
     if (hostEmail != position.contact_email) {
         await sendEmailViaSendGrid(
