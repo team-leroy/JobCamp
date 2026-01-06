@@ -183,7 +183,7 @@
   let positionTitleFilter = $state("");
   let positionCareerFilter = $state("All");
   let positionEventFilter = $state(data.activeEvent?.id || "All");
-  let positionStatusFilter = $state("Published");
+  let positionStatusFilter = $state("All");
 
   // Global Filter for Internal Testers
   let showInternalTesters = $state(false);
@@ -423,7 +423,7 @@
       positionTitleFilter = "";
       positionCareerFilter = "All";
       positionEventFilter = data.activeEvent?.id || "All";
-      positionStatusFilter = "Published";
+      positionStatusFilter = "All";
     }
   }
 
