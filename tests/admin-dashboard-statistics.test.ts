@@ -188,6 +188,9 @@ describe('Admin Dashboard Statistics', () => {
             schoolId: { in: ['school-1'] },
             isActive: true,
             user: {
+              role: {
+                not: 'INTERNAL_TESTER'
+              },
               lastLogin: {
                 gte: mockActiveEvent.createdAt
               }
@@ -207,6 +210,9 @@ describe('Admin Dashboard Statistics', () => {
           schoolId: { in: ['school-1'] },
           isActive: true,
           user: {
+            role: {
+              not: 'INTERNAL_TESTER'
+            },
             lastLogin: {
               gte: mockActiveEvent.createdAt
             }
@@ -229,7 +235,14 @@ describe('Admin Dashboard Statistics', () => {
       expect(prisma.position.count).toHaveBeenCalledWith({
         where: {
           eventId: 'active-event-1',
-          isPublished: true
+          isPublished: true,
+          host: {
+            user: {
+              role: {
+                not: 'INTERNAL_TESTER'
+              }
+            }
+          }
         }
       });
     });
@@ -241,7 +254,14 @@ describe('Admin Dashboard Statistics', () => {
       expect(prisma.position.aggregate).toHaveBeenCalledWith({
         where: {
           eventId: 'active-event-1',
-          isPublished: true
+          isPublished: true,
+          host: {
+            user: {
+              role: {
+                not: 'INTERNAL_TESTER'
+              }
+            }
+          }
         },
         _sum: { slots: true }
       });

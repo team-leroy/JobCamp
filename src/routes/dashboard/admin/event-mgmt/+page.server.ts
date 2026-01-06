@@ -60,18 +60,34 @@ export const load: PageServerLoad = async ({ locals }) => {
             
             const [filteredPositions, filteredSlots] = await Promise.all([
                 // Positions for this event (only published positions)
+                // Exclude internal testers
                 prisma.position.count({
                     where: {
                         eventId: event.id,
-                        isPublished: true
+                        isPublished: true,
+                        host: {
+                            user: {
+                                role: {
+                                    not: 'INTERNAL_TESTER'
+                                }
+                            }
+                        }
                     }
                 }),
                 
                 // Slots for this event (only published positions)
+                // Exclude internal testers
                 prisma.position.aggregate({
                     where: {
                         eventId: event.id,
-                        isPublished: true
+                        isPublished: true,
+                        host: {
+                            user: {
+                                role: {
+                                    not: 'INTERNAL_TESTER'
+                                }
+                            }
+                        }
                     },
                     _sum: { slots: true }
                 }).then(res => res._sum.slots || 0)

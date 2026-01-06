@@ -594,10 +594,18 @@ export async function getAvailableSlotsAfterLottery(schoolId: string): Promise<A
   const assignmentMap = new Map(positionAssignments.map((assignment) => [assignment.positionId, assignment._count.positionId]));
 
   // Get all positions and their assignments
+  // Exclude internal testers
   const positions = await prisma.position.findMany({
     where: {
       eventId: activeEvent.id,
-      isPublished: true
+      isPublished: true,
+      host: {
+        user: {
+          role: {
+            not: 'INTERNAL_TESTER'
+          }
+        }
+      }
     },
     include: {
       host: {

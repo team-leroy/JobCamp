@@ -144,8 +144,16 @@ export const load: PageServerLoad = async ({ locals }) => {
     }
 
     // Get all students for manual assignment dropdown
+    // Exclude internal testers
     const studentsRaw = await prisma.student.findMany({
-        where: { schoolId },
+        where: { 
+            schoolId,
+            user: {
+                role: {
+                    not: 'INTERNAL_TESTER'
+                }
+            }
+        },
         orderBy: { lastName: 'asc' },
         select: {
             id: true,
@@ -164,11 +172,19 @@ export const load: PageServerLoad = async ({ locals }) => {
     }));
 
     // Get all positions from the active event for manual assignment dropdown
+    // Exclude internal testers
     const positions = await prisma.position.findMany({
         where: {
             event: { 
                 schoolId,
                 isActive: true 
+            },
+            host: {
+                user: {
+                    role: {
+                        not: 'INTERNAL_TESTER'
+                    }
+                }
             }
         },
         include: {
@@ -275,6 +291,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 async function calculateLotteryStats(results: { studentId: string; positionId: string }[], activeEventId: string) {
     // Get all students who made choices for the active event
     // Only count students who have positions from the active event
+    // Exclude internal testers
     const allStudentsWithChoices = await prisma.student.findMany({
         where: {
             positionsSignedUpFor: {
@@ -282,6 +299,11 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                     position: {
                         eventId: activeEventId
                     }
+                }
+            },
+            user: {
+                role: {
+                    not: 'INTERNAL_TESTER'
                 }
             }
         },

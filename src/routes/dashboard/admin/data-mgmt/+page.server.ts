@@ -552,12 +552,6 @@ export const actions: Actions = {
                 return { success: false, message: "Missing required fields" };
             }
 
-            // Get active event to convert grade to graduatingClassYear
-            const userInfo = await prisma.user.findFirst({
-                where: { id: locals.user.id },
-                include: { adminOfSchools: true }
-            });
-
             if (!userInfo?.adminOfSchools?.length) {
                 return { success: false, message: "Not authorized" };
             }

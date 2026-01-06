@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma';
 import { getCurrentGrade } from '$lib/server/gradeUtils';
+import type { Prisma } from '@prisma/client';
 
 interface Locals {
     user?: {
@@ -209,12 +210,17 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
 async function calculateLotteryStats(results: { studentId: string; positionId: string }[], activeEventId: string) {
     try {
         // Get all students who participated in this event
-        // For archived events, fall back to students with position choices if no participation records exist
+        // Exclude internal testers
         let allStudentsWithChoices = await prisma.student.findMany({
             where: {
                 eventParticipation: {
                     some: {
                         eventId: activeEventId
+                    }
+                },
+                user: {
+                    role: {
+                        not: 'INTERNAL_TESTER'
                     }
                 }
             },
@@ -230,6 +236,11 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                             position: {
                                 eventId: activeEventId
                             }
+                        }
+                    },
+                    user: {
+                        role: {
+                            not: 'INTERNAL_TESTER'
                         }
                     }
                 },
@@ -268,16 +279,26 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
         const whereClause: {
             eventId: string;
             students: { some: Record<string, never> };
-            host?: {
+            host: {
                 user: {
-                    lastLogin: {
+                    role: {
+                        not: 'INTERNAL_TESTER'
+                    };
+                    lastLogin?: {
                         gte: Date;
                     };
                 };
             };
         } = {
             eventId: activeEventId,
-            students: { some: {} } // Only positions that have student choices
+            students: { some: {} }, // Only positions that have student choices
+            host: {
+                user: {
+                    role: {
+                        not: 'INTERNAL_TESTER'
+                    }
+                }
+            }
         };
         
         // Only filter by login date for active events
@@ -287,12 +308,8 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
         });
         
         if (eventData?.isActive && eventStartDate) {
-            whereClause.host = {
-                user: {
-                    lastLogin: {
-                        gte: eventStartDate
-                    }
-                }
+            whereClause.host.user.lastLogin = {
+                gte: eventStartDate
             };
         }
         
@@ -410,20 +427,30 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
         const eventStartDate = event?.activatedAt || event?.createdAt;
         
         // Get positions from companies that have logged in since event activation
-        // For archived events, show all positions regardless of login date
+        // Exclude internal testers
         const whereClause: {
             eventId: string;
             isPublished: boolean;
-            host?: {
+            host: {
                 user: {
-                    lastLogin: {
+                    role: {
+                        not: 'INTERNAL_TESTER'
+                    };
+                    lastLogin?: {
                         gte: Date;
                     };
                 };
             };
         } = {
             eventId: activeEventId,
-            isPublished: true
+            isPublished: true,
+            host: {
+                user: {
+                    role: {
+                        not: 'INTERNAL_TESTER'
+                    }
+                }
+            }
         };
         
         // Only filter by login date for active events
@@ -433,12 +460,8 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
         });
         
         if (eventData?.isActive && eventStartDate) {
-            whereClause.host = {
-                user: {
-                    lastLogin: {
-                        gte: eventStartDate
-                    }
-                }
+            whereClause.host.user.lastLogin = {
+                gte: eventStartDate
             };
         }
         
@@ -619,20 +642,30 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
         const eventStartDate = event?.activatedAt || event?.createdAt;
         
         // Get positions from companies that have logged in since event activation
-        // For archived events, show all positions regardless of login date
+        // Exclude internal testers
         const whereClause: {
             eventId: string;
             isPublished: boolean;
-            host?: {
+            host: {
                 user: {
-                    lastLogin: {
+                    role: {
+                        not: 'INTERNAL_TESTER'
+                    };
+                    lastLogin?: {
                         gte: Date;
                     };
                 };
             };
         } = {
             eventId: activeEventId,
-            isPublished: true
+            isPublished: true,
+            host: {
+                user: {
+                    role: {
+                        not: 'INTERNAL_TESTER'
+                    }
+                }
+            }
         };
         
         // Only filter by login date for active events
@@ -642,12 +675,8 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
         });
         
         if (eventData?.isActive && eventStartDate) {
-            whereClause.host = {
-                user: {
-                    lastLogin: {
-                        gte: eventStartDate
-                    }
-                }
+            whereClause.host.user.lastLogin = {
+                gte: eventStartDate
             };
         }
         
@@ -985,24 +1014,30 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         const eventStartDate = eventData?.activatedAt || eventData?.createdAt;
 
         // Get all students with their choice data (for active event only)
-        // For active events, only include students who have logged in since event creation
+        // Exclude internal testers
         const studentWhereClause: {
             schoolId: { in: string[] };
-            user?: {
-                lastLogin: {
+            user: {
+                role: {
+                    not: 'INTERNAL_TESTER'
+                };
+                lastLogin?: {
                     gte: Date;
                 };
             };
         } = {
-            schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
+            schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
+            user: {
+                role: {
+                    not: 'INTERNAL_TESTER'
+                }
+            }
         };
         
         // Only filter by login date for active events
         if (eventData?.isActive && eventStartDate) {
-            studentWhereClause.user = {
-                lastLogin: {
-                    gte: eventStartDate
-                }
+            studentWhereClause.user.lastLogin = {
+                gte: eventStartDate
             };
         }
 
@@ -1025,32 +1060,38 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         });
 
         // Get all companies with their activity data
-        // For active events, only include companies that have logged in since event creation
+        // Exclude internal testers
         const companyWhereClause: {
             schoolId: { in: string[] };
-            hosts?: {
+            hosts: {
                 some: {
                     user: {
-                        lastLogin: {
+                        role: {
+                            not: 'INTERNAL_TESTER'
+                        };
+                        lastLogin?: {
                             gte: Date;
                         };
                     };
                 };
             };
         } = {
-            schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) }
+            schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
+            hosts: {
+                some: {
+                    user: {
+                        role: {
+                            not: 'INTERNAL_TESTER'
+                        }
+                    }
+                }
+            }
         };
         
         // Only filter by login date for active events
         if (eventData?.isActive && eventStartDate) {
-            companyWhereClause.hosts = {
-                some: {
-                    user: {
-                        lastLogin: {
-                            gte: eventStartDate
-                        }
-                    }
-                }
+            companyWhereClause.hosts.some.user.lastLogin = {
+                gte: eventStartDate
             };
         }
 
@@ -1070,26 +1111,33 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         // For active events, only include positions from companies that have logged in since event creation
         const positionWhereClause: {
             eventId: string;
-            host?: {
+            isPublished: boolean;
+            host: {
                 user: {
-                    lastLogin: {
+                    role: {
+                        not: string;
+                    };
+                    lastLogin?: {
                         gte: Date;
                     };
                 };
             };
         } = {
             eventId: activeEventId,
-            isPublished: true
+            isPublished: true,
+            host: {
+                user: {
+                    role: {
+                        not: 'INTERNAL_TESTER'
+                    }
+                }
+            }
         };
         
         // Only filter by login date for active events
         if (eventData?.isActive && eventStartDate) {
-            positionWhereClause.host = {
-                user: {
-                    lastLogin: {
-                        gte: eventStartDate
-                    }
-                }
+            positionWhereClause.host.user.lastLogin = {
+                gte: eventStartDate
             };
         }
 

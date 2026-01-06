@@ -807,11 +807,19 @@ export async function getArchivedEventStats(eventId: string) {
     )
   );
 
+  // Exclude internal testers
   const students = await prisma.student.findMany({
     where: {
-      id: { in: Array.from(allStudentIds) }
+      id: { in: Array.from(allStudentIds) },
+      user: {
+        role: {
+          not: 'INTERNAL_TESTER'
+        }
+      }
     }
   });
+
+  const filteredStudentIds = new Set(students.map(s => s.id));
 
   // Convert graduatingClassYear to grade for distribution statistics
   const gradeDistribution = students.reduce((acc, student) => {
@@ -823,16 +831,20 @@ export async function getArchivedEventStats(eventId: string) {
   }, {} as Record<number, number>);
 
   // Count permission slips for this specific event
+  // Exclude internal testers
   const permissionSlipsCompleted = await prisma.permissionSlipSubmission.count({
     where: {
       eventId: eventId,
-      studentId: { in: Array.from(allStudentIds) }
+      studentId: { in: Array.from(filteredStudentIds) }
     }
   });
 
   // Calculate company statistics
+  // Exclude positions from internal tester hosts
+  const activePositions = event.positions.filter(pos => pos.host?.user?.role !== 'INTERNAL_TESTER');
+  
   const companies = new Set(
-    event.positions.map(pos => pos.host?.company?.id).filter(Boolean)
+    activePositions.map(pos => pos.host?.company?.id).filter(Boolean)
   );
 
   return {
@@ -845,14 +857,14 @@ export async function getArchivedEventStats(eventId: string) {
     },
     studentStats: {
       totalStudents: students.length,
-      studentsWithChoices: allStudentIds.size,
+      studentsWithChoices: filteredStudentIds.size,
       gradeDistribution,
       permissionSlipsCompleted
     },
     companyStats: {
       totalCompanies: companies.size,
-      totalPositions: event.positions.length,
-      totalSlots: event.positions.reduce((sum, pos) => sum + pos.slots, 0)
+      totalPositions: activePositions.length,
+      totalSlots: activePositions.reduce((sum, pos) => sum + pos.slots, 0)
     }
   };
 }

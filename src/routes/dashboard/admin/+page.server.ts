@@ -54,11 +54,15 @@ export const load: PageServerLoad = async ({ locals }) => {
             gradeDistribution
         ] = await Promise.all([
             // Total active students who have logged in since event creation
+            // Exclude internal testers
             prisma.student.count({
                 where: { 
                     schoolId: { in: schoolIds },
                     isActive: true,
                     user: {
+                        role: {
+                            not: 'INTERNAL_TESTER'
+                        },
                         lastLogin: {
                             gte: upcomingEvent.createdAt
                         }
@@ -67,6 +71,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             }),
             
             // Permission slips signed for active event (from active students who logged in since event creation)
+            // Exclude internal testers
             prisma.permissionSlipSubmission.count({
                 where: {
                     eventId: upcomingEvent.id,
@@ -74,6 +79,9 @@ export const load: PageServerLoad = async ({ locals }) => {
                         schoolId: { in: schoolIds },
                         isActive: true,
                         user: {
+                            role: {
+                                not: 'INTERNAL_TESTER'
+                            },
                             lastLogin: {
                                 gte: upcomingEvent.createdAt
                             }
@@ -83,11 +91,15 @@ export const load: PageServerLoad = async ({ locals }) => {
             }),
             
             // Active students without choices for active event (who logged in since event creation)
+            // Exclude internal testers
             prisma.student.count({
                 where: { 
                     schoolId: { in: schoolIds },
                     isActive: true,
                     user: {
+                        role: {
+                            not: 'INTERNAL_TESTER'
+                        },
                         lastLogin: {
                             gte: upcomingEvent.createdAt
                         }
@@ -103,12 +115,16 @@ export const load: PageServerLoad = async ({ locals }) => {
             }),
             
             // Total student choices for active event (from active students who logged in since event creation)
+            // Exclude internal testers
             prisma.positionsOnStudents.count({
                 where: {
                     student: { 
                         schoolId: { in: schoolIds },
                         isActive: true,
                         user: {
+                            role: {
+                                not: 'INTERNAL_TESTER'
+                            },
                             lastLogin: {
                                 gte: upcomingEvent.createdAt
                             }
@@ -119,11 +135,15 @@ export const load: PageServerLoad = async ({ locals }) => {
             }),
             
             // Get students to calculate grade distribution (active students who logged in since event creation)
+            // Exclude internal testers
             prisma.student.findMany({
                 where: { 
                     schoolId: { in: schoolIds },
                     isActive: true,
                     user: {
+                        role: {
+                            not: 'INTERNAL_TESTER'
+                        },
                         lastLogin: {
                             gte: upcomingEvent.createdAt
                         }
@@ -186,12 +206,16 @@ export const load: PageServerLoad = async ({ locals }) => {
             slotsThisEvent
         ] = await Promise.all([
             // Total companies that have logged in since event creation
+            // Exclude internal testers
             prisma.company.count({
                 where: { 
                     schoolId: { in: schoolIds },
                     hosts: {
                         some: {
                             user: {
+                                role: {
+                                    not: 'INTERNAL_TESTER'
+                                },
                                 lastLogin: {
                                     gte: upcomingEvent.createdAt
                                 }
@@ -202,12 +226,16 @@ export const load: PageServerLoad = async ({ locals }) => {
             }),
             
             // Companies logged in since event activation
+            // Exclude internal testers
             prisma.company.count({
                 where: { 
                     schoolId: { in: schoolIds },
                     hosts: {
                         some: {
                             user: {
+                                role: {
+                                    not: 'INTERNAL_TESTER'
+                                },
                                 lastLogin: {
                                     gte: eventStartDate
                                 }
@@ -218,18 +246,34 @@ export const load: PageServerLoad = async ({ locals }) => {
             }),
             
             // Positions for active event (only published positions)
+            // Exclude internal testers
             prisma.position.count({
                 where: {
                     eventId: upcomingEvent.id,
-                    isPublished: true
+                    isPublished: true,
+                    host: {
+                        user: {
+                            role: {
+                                not: 'INTERNAL_TESTER'
+                            }
+                        }
+                    }
                 }
             }),
             
             // Slots for active event (only published positions)
+            // Exclude internal testers
             prisma.position.aggregate({
                 where: {
                     eventId: upcomingEvent.id,
-                    isPublished: true
+                    isPublished: true,
+                    host: {
+                        user: {
+                            role: {
+                                not: 'INTERNAL_TESTER'
+                            }
+                        }
+                    }
                 },
                 _sum: { slots: true }
             }).then(res => res._sum.slots || 0)

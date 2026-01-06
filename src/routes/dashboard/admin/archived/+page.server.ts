@@ -66,8 +66,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         if (selectedEvent) {
             try {
                 // Get statistics for the selected archived event
+                // Exclude internal testers
                 selectedEventStats = await prisma.student.aggregate({
-                where: { schoolId: selectedEvent.schoolId },
+                where: { 
+                    schoolId: selectedEvent.schoolId,
+                    user: {
+                        role: {
+                            not: 'INTERNAL_TESTER'
+                        }
+                    }
+                },
                 _count: { id: true }
             }).then(async (studentCount) => {
                 const [
@@ -80,19 +88,31 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                     slotsCount
                 ] = await Promise.all([
                     // Permission slips signed for this specific event
+                    // Exclude internal testers
                     prisma.permissionSlipSubmission.count({
                         where: {
                             eventId: selectedEvent.id,
                             student: {
-                                schoolId: selectedEvent.schoolId
+                                schoolId: selectedEvent.schoolId,
+                                user: {
+                                    role: {
+                                        not: 'INTERNAL_TESTER'
+                                    }
+                                }
                             }
                         }
                     }),
                     
                     // Students without choices for this specific event
+                    // Exclude internal testers
                     prisma.student.count({
                         where: { 
                             schoolId: selectedEvent.schoolId,
+                            user: {
+                                role: {
+                                    not: 'INTERNAL_TESTER'
+                                }
+                            },
                             positionsSignedUpFor: { 
                                 none: {
                                     position: {
@@ -104,26 +124,48 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                     }),
                     
                     // Total student choices for this specific event
+                    // Exclude internal testers
                     prisma.positionsOnStudents.count({
                         where: {
-                            student: { schoolId: selectedEvent.schoolId },
+                            student: { 
+                                schoolId: selectedEvent.schoolId,
+                                user: {
+                                    role: {
+                                        not: 'INTERNAL_TESTER'
+                                    }
+                                }
+                            },
                             position: { eventId: selectedEvent.id }
                         }
                     }),
                     
                     // Grade distribution
+                    // Exclude internal testers
                     prisma.student.groupBy({
                         by: ['grade'],
-                        where: { schoolId: selectedEvent.schoolId },
+                        where: { 
+                            schoolId: selectedEvent.schoolId,
+                            user: {
+                                role: {
+                                    not: 'INTERNAL_TESTER'
+                                }
+                            }
+                        },
                         _count: { grade: true }
                     }),
                     
                     // Total companies that participated in this specific event
+                    // Exclude internal testers
                     prisma.company.count({
                         where: { 
                             schoolId: selectedEvent.schoolId,
                             hosts: {
                                 some: {
+                                    user: {
+                                        role: {
+                                            not: 'INTERNAL_TESTER'
+                                        }
+                                    },
                                     positions: {
                                         some: {
                                             eventId: selectedEvent.id
@@ -135,18 +177,34 @@ export const load: PageServerLoad = async ({ locals, url }) => {
                     }),
                     
                     // Positions for this event (only published positions)
+                    // Exclude internal testers
                     prisma.position.count({
                         where: { 
                             eventId: selectedEvent.id,
-                            isPublished: true
+                            isPublished: true,
+                            host: {
+                                user: {
+                                    role: {
+                                        not: 'INTERNAL_TESTER'
+                                    }
+                                }
+                            }
                         }
                     }),
                     
                     // Slots for this event (only published positions)
+                    // Exclude internal testers
                     prisma.position.aggregate({
                         where: { 
                             eventId: selectedEvent.id,
-                            isPublished: true
+                            isPublished: true,
+                            host: {
+                                user: {
+                                    role: {
+                                        not: 'INTERNAL_TESTER'
+                                    }
+                                }
+                            }
                         },
                         _sum: { slots: true }
                     }).then(res => res._sum.slots || 0)

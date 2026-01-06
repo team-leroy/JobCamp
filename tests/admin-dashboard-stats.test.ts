@@ -96,6 +96,9 @@ describe('Admin Dashboard Statistics', () => {
                     hosts: {
                         some: {
                             user: {
+                                role: {
+                                    not: 'INTERNAL_TESTER'
+                                },
                                 lastLogin: {
                                     gte: mockActiveEvent.activatedAt // Should use activatedAt (Jan 15)
                                 }
@@ -108,7 +111,14 @@ describe('Admin Dashboard Statistics', () => {
             expect(prisma.position.count).toHaveBeenCalledWith({
                 where: {
                     eventId: mockActiveEvent.id,
-                    isPublished: true
+                    isPublished: true,
+                    host: {
+                        user: {
+                            role: {
+                                not: 'INTERNAL_TESTER'
+                            }
+                        }
+                    }
                 }
             });
 
@@ -171,6 +181,9 @@ describe('Admin Dashboard Statistics', () => {
                     hosts: {
                         some: {
                             user: {
+                                role: {
+                                    not: 'INTERNAL_TESTER'
+                                },
                                 lastLogin: {
                                     gte: mockActiveEvent.createdAt // Should use createdAt (Jan 1)
                                 }
