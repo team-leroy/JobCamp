@@ -21,6 +21,33 @@ export const load: PageServerLoad = async (event) => {
         if (event.locals.user.emailVerified) {
             redirect(302, "/dashboard");
         }
+
+        // Automatically trigger a verification email if one hasn't been sent recently
+        // This handles cases like manual DB resets or failed emails during signup
+        const userId = event.locals.user.id;
+        const email = event.locals.user.email;
+        
+        const existingCode = await prisma.emailVerificationCodes.findFirst({
+            where: { user_id: userId }
+        });
+
+        // If no code exists, or if it's about to expire (within 5 mins of the 15 min lifetime), 
+        // send a new one automatically on first landing
+        const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+        if (!existingCode || existingCode.expires_at < fiveMinutesFromNow) {
+            // Try to find school name for user
+            const userInfo = await prisma.user.findFirst({
+                where: { id: userId },
+                include: { 
+                    student: { include: { school: true } },
+                    host: { include: { company: { include: { school: true } } } }
+                }
+            });
+
+            const schoolName = userInfo?.student?.school?.name || userInfo?.host?.company?.school?.name;
+            const code = await generateEmailVerificationCode(userId, email);
+            await sendEmailVerificationEmail(userId, email, code, schoolName);
+        }
     }
 
     const props = event.url.searchParams;
