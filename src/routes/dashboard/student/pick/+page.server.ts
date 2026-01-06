@@ -145,14 +145,44 @@ export const actions: Actions = {
             redirect(302, "/login");
         }
 
-        const user = await prisma.user.findFirst({ where: { id }, include: { student: true }})
+        const user = await prisma.user.findFirst({ 
+            where: { id }, 
+            include: { 
+                student: {
+                    include: {
+                        school: true
+                    }
+                } 
+            }
+        });
+
         const firstName = user?.student?.firstName;
-        if (!firstName) {
+        const school = user?.student?.school;
+        if (!firstName || !school) {
             redirect(302, "/login");
         }
+
+        // Get active event for email templating
+        const activeEvent = await prisma.event.findFirst({
+            where: {
+                schoolId: school.id,
+                isActive: true
+            }
+        });
+
+        if (!activeEvent) {
+            return { sent: false, err: true };
+        }
+
+        const eventData = {
+            eventName: activeEvent.name || 'JobCamp',
+            eventDate: new Date(activeEvent.date).toLocaleDateString(),
+            schoolName: school.name,
+            schoolId: school.id
+        };
         
         generatePermissionSlipCode(id).then(
-            (code) => sendPermissionSlipEmail(parentEmail.toString(), code, firstName)
+            (code) => sendPermissionSlipEmail(parentEmail.toString(), code, firstName, eventData)
         );
 
         return { sent: true, err: false };

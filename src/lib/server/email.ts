@@ -6,7 +6,10 @@ import positionUpdateEmail from "$lib/emails/positionUpdate.html?raw";
 import lotteryResults from "$lib/emails/lotteryResults.html?raw";
 import { prisma } from './prisma';
 
-export const SENDER = { name: "JobCamp", email: "admin@jobcamp.org" };
+export const SENDER = { 
+    name: env.SENDGRID_FROM_NAME || "JobCamp Administration", 
+    email: env.SENDGRID_FROM_EMAIL || "admin@jobcamp.org" 
+};
 
 /**
  * Send email using SendGrid
@@ -26,15 +29,15 @@ async function sendEmailViaSendGrid(to: string, subject: string, html: string): 
             subject: subject
         }],
         from: {
-            email: env.SENDGRID_FROM_EMAIL || 'admin@jobcamp.org',
-            name: env.SENDGRID_FROM_NAME || 'JobCamp'
+            email: SENDER.email,
+            name: SENDER.name
         },
         // Add robust headers to reduce spaminess
         headers: {
-            "List-Unsubscribe": `<mailto:admin@jobcamp.org?subject=unsubscribe-${to}>`,
+            "List-Unsubscribe": `<mailto:${SENDER.email}?subject=unsubscribe-${to}>`,
             "X-Mailer": "JobCamp Custom Mailer",
             "X-Priority": "3"
-        },
+        } as Record<string, string>,
         content: [
             {
                 type: 'text/plain',
@@ -189,8 +192,8 @@ export function formatImportantDatesHtml(dates: ImportantDateData[]): string {
 
 export async function sendEmailLotteryEmail(email: string, schoolName?: string) {
     const subject = schoolName 
-        ? `JobCamp Alert: Your job shadow assignment for ${schoolName} is ready!` 
-        : "JobCamp Alert: Your job shadow assignment is ready!";
+        ? `Action Required: Your JobCamp placement for ${schoolName} is ready!` 
+        : "Action Required: Your JobCamp placement is ready!";
     await sendEmailViaSendGrid(
         email,
         subject,
@@ -201,7 +204,7 @@ export async function sendEmailLotteryEmail(email: string, schoolName?: string) 
 export async function sendEmailVerificationEmail(uid: string, email: string, code: string, schoolName?: string) {
     const subject = schoolName 
         ? `Action Required: Verify your JobCamp account for ${schoolName}` 
-        : "Action Required: Verify your JobCamp Email";
+        : "Action Required: Verify your JobCamp account";
     try {
         await sendEmailViaSendGrid(
             email,
@@ -216,7 +219,7 @@ export async function sendEmailVerificationEmail(uid: string, email: string, cod
 export async function sendPasswordResetEmail(uid: string, email: string, code: string, schoolName?: string) {
     const subject = schoolName 
         ? `Action Required: Reset your JobCamp password for ${schoolName}` 
-        : "Action Required: Reset your JobCamp Password";
+        : "Action Required: Reset your JobCamp password";
     try {
         await sendEmailViaSendGrid(
             email,
@@ -238,7 +241,7 @@ export async function sendPermissionSlipEmail(
     
     await sendEmailViaSendGrid(
         parentEmail,
-        `Action Required: Permission Slip for ${name} (${eventData.schoolName})`,
+        `Action Required: Permission Slip for ${name} (${eventData.schoolName} JobCamp)`,
         renderEmailTemplate(permissionSlipEmail, {
             link: "https://jobcamp.org/permission-slip/"+code,
             name: name,

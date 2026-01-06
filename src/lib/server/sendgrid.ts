@@ -79,20 +79,30 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
       ],
       from: {
         email: env.SENDGRID_FROM_EMAIL || 'admin@jobcamp.org',
-        name: env.SENDGRID_FROM_NAME || 'JobCamp'
+        name: env.SENDGRID_FROM_NAME || 'JobCamp Administration'
       },
+      // Add robust headers to reduce spaminess
+      headers: {
+        "X-Mailer": "JobCamp Custom Mailer",
+        "X-Priority": "3"
+      } as Record<string, string>,
       content: [
         {
           type: 'text/html',
           value: options.html
         }
-      ],
+      ] as Array<{ type: string; value: string }>,
       mail_settings: isSandbox ? {
         sandbox_mode: {
           enable: true
         }
       } : undefined
     };
+
+    // For single recipient emails, we can add a List-Unsubscribe header
+    if (recipients.length === 1) {
+      payload.headers["List-Unsubscribe"] = `<mailto:admin@jobcamp.org?subject=unsubscribe-${recipients[0].email}>`;
+    }
 
     // If plain text version provided, add it
     if (options.text) {
