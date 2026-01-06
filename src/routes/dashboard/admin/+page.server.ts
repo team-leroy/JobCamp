@@ -53,12 +53,18 @@ export const load: PageServerLoad = async ({ locals }) => {
             totalStudentChoices,
             gradeDistribution
         ] = await Promise.all([
-            // Total active students who have logged in since event creation
-            // Exclude internal testers
+            // Total active students who are registered for this event
+            // Exclude internal testers and ensure they haven't graduated
             prisma.student.count({
                 where: { 
                     schoolId: { in: schoolIds },
                     isActive: true,
+                    graduatedAt: null,
+                    eventParticipation: {
+                        some: {
+                            eventId: upcomingEvent.id
+                        }
+                    },
                     user: {
                         OR: [
                             { role: null },
@@ -68,14 +74,15 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Permission slips signed for active event (from active students who logged in since event creation)
-            // Exclude internal testers
+            // Permission slips signed for active event
+            // Exclude internal testers and graduated students
             prisma.permissionSlipSubmission.count({
                 where: {
                     eventId: upcomingEvent.id,
                     student: {
                         schoolId: { in: schoolIds },
                         isActive: true,
+                        graduatedAt: null,
                         user: {
                             OR: [
                                 { role: null },
@@ -86,12 +93,18 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Active students without choices for active event (who logged in since event creation)
-            // Exclude internal testers
+            // Active students registered for this event without choices
+            // Exclude internal testers and graduated students
             prisma.student.count({
                 where: { 
                     schoolId: { in: schoolIds },
                     isActive: true,
+                    graduatedAt: null,
+                    eventParticipation: {
+                        some: {
+                            eventId: upcomingEvent.id
+                        }
+                    },
                     user: {
                         OR: [
                             { role: null },
@@ -108,13 +121,19 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Total student choices for active event (from active students who logged in since event creation)
-            // Exclude internal testers
+            // Total student choices for active event
+            // Exclude internal testers and graduated students
             prisma.positionsOnStudents.count({
                 where: {
                     student: { 
                         schoolId: { in: schoolIds },
                         isActive: true,
+                        graduatedAt: null,
+                        eventParticipation: {
+                            some: {
+                                eventId: upcomingEvent.id
+                            }
+                        },
                         user: {
                             OR: [
                                 { role: null },
@@ -126,12 +145,18 @@ export const load: PageServerLoad = async ({ locals }) => {
                 }
             }),
             
-            // Get students to calculate grade distribution (active students who logged in since event creation)
-            // Exclude internal testers
+            // Get students to calculate grade distribution for this event
+            // Exclude internal testers and graduated students
             prisma.student.findMany({
                 where: { 
                     schoolId: { in: schoolIds },
                     isActive: true,
+                    graduatedAt: null,
+                    eventParticipation: {
+                        some: {
+                            eventId: upcomingEvent.id
+                        }
+                    },
                     user: {
                         OR: [
                             { role: null },
@@ -192,7 +217,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             positionsThisEvent,
             slotsThisEvent
         ] = await Promise.all([
-            // Total companies that have ever signed up for this school
+            // Total companies that have logged in since event creation
             // Exclude internal testers
             prisma.company.count({
                 where: { 
@@ -203,14 +228,17 @@ export const load: PageServerLoad = async ({ locals }) => {
                                 OR: [
                                     { role: null },
                                     { role: { not: 'INTERNAL_TESTER' } }
-                                ]
+                                ],
+                                lastLogin: {
+                                    gte: upcomingEvent.createdAt
+                                }
                             }
                         }
                     }
                 }
             }),
             
-            // Companies with published positions in this event
+            // Companies logged in since event creation (matches total companies for this event)
             // Exclude internal testers
             prisma.company.count({
                 where: { 
@@ -221,12 +249,9 @@ export const load: PageServerLoad = async ({ locals }) => {
                                 OR: [
                                     { role: null },
                                     { role: { not: 'INTERNAL_TESTER' } }
-                                ]
-                            },
-                            positions: {
-                                some: {
-                                    eventId: upcomingEvent.id,
-                                    isPublished: true
+                                ],
+                                lastLogin: {
+                                    gte: upcomingEvent.createdAt
                                 }
                             }
                         }

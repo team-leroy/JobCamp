@@ -187,6 +187,12 @@ describe('Admin Dashboard Statistics', () => {
           student: { 
             schoolId: { in: ['school-1'] },
             isActive: true,
+            graduatedAt: null,
+            eventParticipation: {
+              some: {
+                eventId: 'active-event-1'
+              }
+            },
             user: {
               OR: [
                 { role: null },
@@ -207,6 +213,12 @@ describe('Admin Dashboard Statistics', () => {
         where: { 
           schoolId: { in: ['school-1'] },
           isActive: true,
+          graduatedAt: null,
+          eventParticipation: {
+            some: {
+              eventId: 'active-event-1'
+            }
+          },
           user: {
             OR: [
               { role: null },

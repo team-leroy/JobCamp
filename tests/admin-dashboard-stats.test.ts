@@ -99,7 +99,10 @@ describe('Admin Dashboard Statistics', () => {
                                 OR: [
                                     { role: null },
                                     { role: { not: 'INTERNAL_TESTER' } }
-                                ]
+                                ],
+                                lastLogin: {
+                                    gte: mockActiveEvent.createdAt
+                                }
                             }
                         }
                     }
@@ -115,12 +118,9 @@ describe('Admin Dashboard Statistics', () => {
                                 OR: [
                                     { role: null },
                                     { role: { not: 'INTERNAL_TESTER' } }
-                                ]
-                            },
-                            positions: {
-                                some: {
-                                    eventId: mockActiveEvent.id,
-                                    isPublished: true
+                                ],
+                                lastLogin: {
+                                    gte: mockActiveEvent.createdAt
                                 }
                             }
                         }
@@ -205,7 +205,10 @@ describe('Admin Dashboard Statistics', () => {
                                 OR: [
                                     { role: null },
                                     { role: { not: 'INTERNAL_TESTER' } }
-                                ]
+                                ],
+                                lastLogin: {
+                                    gte: mockActiveEvent.createdAt
+                                }
                             }
                         }
                     }
@@ -221,12 +224,9 @@ describe('Admin Dashboard Statistics', () => {
                                 OR: [
                                     { role: null },
                                     { role: { not: 'INTERNAL_TESTER' } }
-                                ]
-                            },
-                            positions: {
-                                some: {
-                                    eventId: mockActiveEvent.id,
-                                    isPublished: true
+                                ],
+                                lastLogin: {
+                                    gte: mockActiveEvent.createdAt
                                 }
                             }
                         }
