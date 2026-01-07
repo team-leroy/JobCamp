@@ -996,11 +996,17 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 hosts: {
                     include: {
                         user: true,
-                        positions: true
+                        positions: {
+                            where: {
+                                eventId: activeEventId
+                            }
+                        }
                     }
                 }
             }
         });
+
+        const hosts = companies.flatMap(c => c.hosts);
 
         // Get all positions from the active event
         const positionWhereClause = {
@@ -1055,9 +1061,6 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         const choiceStats: TimelineStats[] = [];
         const companyStats: TimelineStats[] = [];
         const positionStats: TimelineStats[] = [];
-
-        // Generate timeline data based on real engagement activity
-        const hostUsers = companies.flatMap(c => c.hosts).filter(h => h.user);
 
         // Registration timeline (prefer eventParticipation dates, fallback to user createdAt)
         const registrationDates = students
@@ -1173,34 +1176,49 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             });
         }
 
-        // Company engagement timeline (based on host createdAt dates)
-        const hostActivityDates = hostUsers
-            .map(h => h.createdAt)
-            .filter(date => date && date >= timelineStart && date <= eventDate)
-            .sort((a, b) => a!.getTime() - b!.getTime());
+        // Company engagement timeline (prefer lastLogin for active event, fallback to host createdAt)
+        const hostActivityDates = hosts
+            .flatMap(h => {
+                const dates = [];
+                // If they logged in during this event, that's their engagement date
+                if (h.user?.lastLogin && h.user.lastLogin >= timelineStart && h.user.lastLogin <= eventDate) {
+                    dates.push(h.user.lastLogin);
+                } else if (h.createdAt && h.createdAt >= timelineStart && h.createdAt <= eventDate) {
+                    // Otherwise use their creation date if it's within the window
+                    dates.push(h.createdAt);
+                }
+                return dates;
+            })
+            .sort((a, b) => a.getTime() - b.getTime());
 
         // For archived events, if no company activity in timeline window, try to find any activity
         if (hostActivityDates.length === 0 && !eventData?.isActive) {
             // For archived events, try to find any company activity and use a broader window
-            const allHostActivityDates = hostUsers
-                .map(h => h.createdAt)
-                .filter(date => date)
-                .sort((a, b) => a!.getTime() - b!.getTime());
+            const allHostActivityDates = hosts
+                .flatMap(h => [h.user?.lastLogin, h.createdAt].filter((d): d is Date => !!d))
+                .sort((a, b) => a.getTime() - b.getTime());
             
             if (allHostActivityDates.length > 0) {
                 // Use the earliest activity as the start of our timeline
-                const earliestActivity = allHostActivityDates[0]!;
+                const earliestActivity = allHostActivityDates[0];
                 const broaderTimelineStart = new Date(Math.min(earliestActivity.getTime(), timelineStart.getTime()));
                 
-                const broaderHostActivityDates = hostUsers
-                    .map(h => h.createdAt)
-                    .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
-                    .sort((a, b) => a!.getTime() - b!.getTime());
+                const broaderHostActivityDates = hosts
+                    .flatMap(h => {
+                        const dates = [];
+                        if (h.user?.lastLogin && h.user.lastLogin >= broaderTimelineStart && h.user.lastLogin <= eventDate) {
+                            dates.push(h.user.lastLogin);
+                        } else if (h.createdAt && h.createdAt >= broaderTimelineStart && h.createdAt <= eventDate) {
+                            dates.push(h.createdAt);
+                        }
+                        return dates;
+                    })
+                    .sort((a, b) => a.getTime() - b.getTime());
                 
                 if (broaderHostActivityDates.length > 0) {
                     const companyByDate = new Map();
                     broaderHostActivityDates.forEach(date => {
-                        const dateStr = date!.toISOString().split('T')[0];
+                        const dateStr = date.toISOString().split('T')[0];
                         companyByDate.set(dateStr, (companyByDate.get(dateStr) || 0) + 1);
                     });
 
@@ -1212,7 +1230,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         } else if (hostActivityDates.length > 0) {
             const companyByDate = new Map();
             hostActivityDates.forEach(date => {
-                const dateStr = date!.toISOString().split('T')[0];
+                const dateStr = date.toISOString().split('T')[0];
                 companyByDate.set(dateStr, (companyByDate.get(dateStr) || 0) + 1);
             });
 
