@@ -1072,7 +1072,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         // and use a broader window to show the data
         if (registrationDates.length === 0 && !eventData?.isActive) {
             // For archived events, try to find any registrations and use a broader window
-            const allRegistrationDates = studentUsers
+            const allRegistrationDates = students
                 .map(s => s.user?.createdAt)
                 .filter(date => date)
                 .sort((a, b) => a!.getTime() - b!.getTime());
@@ -1082,7 +1082,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 const earliestRegistration = allRegistrationDates[0]!;
                 const broaderTimelineStart = new Date(Math.min(earliestRegistration.getTime(), timelineStart.getTime()));
                 
-                const broaderRegistrationDates = studentUsers
+                const broaderRegistrationDates = students
                     .map(s => s.user?.createdAt)
                     .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
                     .sort((a, b) => a!.getTime() - b!.getTime());
@@ -1185,12 +1185,14 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 if (h.createdAt && h.createdAt >= timelineStart && h.createdAt <= eventDate) {
                     allDates.push(h.createdAt);
                 }
-                // 3. Check for published positions created during this event (brought forward or new)
+                // 3. Check for published positions created or published during this event (brought forward or new)
                 h.positions
                     .filter(p => p.eventId === activeEventId && p.isPublished)
                     .forEach(p => {
-                        if (p.createdAt && p.createdAt >= timelineStart && p.createdAt <= eventDate) {
-                            allDates.push(p.createdAt);
+                        // Favor publishedAt if available, fallback to createdAt
+                        const engagementDate = p.publishedAt || p.createdAt;
+                        if (engagementDate && engagementDate >= timelineStart && engagementDate <= eventDate) {
+                            allDates.push(engagementDate);
                         }
                     });
             });
@@ -1200,19 +1202,19 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         }).filter((d): d is Date => d !== null);
 
         // Group companies by date
-        const companyByDate = new Map<string, number>();
+        const companyByDate: Record<string, number> = {};
         companyEngagementDates.forEach(date => {
             const dateStr = date.toISOString().split('T')[0];
-            companyByDate.set(dateStr, (companyByDate.get(dateStr) || 0) + 1);
+            companyByDate[dateStr] = (companyByDate[dateStr] || 0) + 1;
         });
 
-        companyByDate.forEach((count, date) => {
+        Object.entries(companyByDate).forEach(([date, count]) => {
             companyStats.push({ date, count });
         });
 
-        // Position creation timeline (based on position createdAt dates)
+        // Position timeline (based on position publishedAt dates, fallback to createdAt)
         const positionDates = positions
-            .map(p => p.createdAt)
+            .map(p => p.publishedAt || p.createdAt)
             .filter(date => date && date >= timelineStart && date <= eventDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
@@ -1221,7 +1223,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         if (positionDates.length === 0 && positions.length > 0) {
             // For archived events, try to find any positions and use a broader window
             const allPositionDates = positions
-                .map(p => p.createdAt)
+                .map(p => p.publishedAt || p.createdAt)
                 .filter(date => date)
                 .sort((a, b) => a!.getTime() - b!.getTime());
             
@@ -1231,7 +1233,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 const broaderTimelineStart = new Date(Math.min(earliestPosition.getTime(), timelineStart.getTime()));
                 
                 const broaderPositionDates = positions
-                    .map(p => p.createdAt)
+                    .map(p => p.publishedAt || p.createdAt)
                     .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
                     .sort((a, b) => a!.getTime() - b!.getTime());
                 

@@ -462,7 +462,8 @@ describe('Event Management Functions', () => {
             end: '3:00 PM',
             eventId: testEventId,
             hostId: 'host1',
-            isPublished: false
+            isPublished: false,
+            publishedAt: null
           }
         ]
       });

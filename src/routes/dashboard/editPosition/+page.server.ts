@@ -152,6 +152,7 @@ export const actions: Actions = {
                 start: form.data.start,
                 end:form.data.release,
                 isPublished: true, // Mark as published when form is submitted
+                publishedAt: new Date(),
                 attachments: { create: attachments }
             }
         });

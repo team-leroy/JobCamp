@@ -173,6 +173,7 @@ export const actions: Actions = {
                             end:form.data.release,
                             event: { connect: { id: activeEvent.id } },
                             isPublished: true, // Mark as published when form is submitted via Publish button
+                            publishedAt: new Date(),
                             attachments: { create: attachments }
                         }
                     ]
