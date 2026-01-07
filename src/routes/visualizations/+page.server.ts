@@ -1006,9 +1006,6 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             }
         });
 
-        const hosts = companies.flatMap(c => c.hosts);
-
-        // Get all positions from the active event
         const positionWhereClause = {
             eventId: activeEventId,
             isPublished: true,
@@ -1047,9 +1044,9 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         // Create timeline data - use different windows for active vs archived events
         let timelineStart: Date;
         if (eventData?.isActive) {
-            // For active events, timeline starts from when the event was activated/created
-            // This shows all engagement activity since the event became active
-            const eventStartDate = eventData?.activatedAt || eventData?.createdAt || event.createdAt;
+            // For active events, timeline starts from when the event was created
+            // We use createdAt instead of activatedAt because cloning/setup happens right after creation
+            const eventStartDate = eventData?.createdAt || event.createdAt;
             timelineStart = new Date(eventStartDate);
         } else {
             // For archived events, use 6 months leading up to the event to capture more activity
@@ -1176,68 +1173,42 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             });
         }
 
-        // Company engagement timeline (prefer lastLogin for active event, fallback to host createdAt)
-        const hostActivityDates = hosts
-            .flatMap(h => {
-                const dates = [];
-                // If they logged in during this event, that's their engagement date
+        // Company engagement timeline (count each company once at their earliest engagement in this event)
+        const companyEngagementDates = companies.map(c => {
+            const allDates: Date[] = [];
+            c.hosts.forEach(h => {
+                // 1. Check for login during this event
                 if (h.user?.lastLogin && h.user.lastLogin >= timelineStart && h.user.lastLogin <= eventDate) {
-                    dates.push(h.user.lastLogin);
-                } else if (h.createdAt && h.createdAt >= timelineStart && h.createdAt <= eventDate) {
-                    // Otherwise use their creation date if it's within the window
-                    dates.push(h.createdAt);
+                    allDates.push(h.user.lastLogin);
                 }
-                return dates;
-            })
-            .sort((a, b) => a.getTime() - b.getTime());
-
-        // For archived events, if no company activity in timeline window, try to find any activity
-        if (hostActivityDates.length === 0 && !eventData?.isActive) {
-            // For archived events, try to find any company activity and use a broader window
-            const allHostActivityDates = hosts
-                .flatMap(h => [h.user?.lastLogin, h.createdAt].filter((d): d is Date => !!d))
-                .sort((a, b) => a.getTime() - b.getTime());
-            
-            if (allHostActivityDates.length > 0) {
-                // Use the earliest activity as the start of our timeline
-                const earliestActivity = allHostActivityDates[0];
-                const broaderTimelineStart = new Date(Math.min(earliestActivity.getTime(), timelineStart.getTime()));
-                
-                const broaderHostActivityDates = hosts
-                    .flatMap(h => {
-                        const dates = [];
-                        if (h.user?.lastLogin && h.user.lastLogin >= broaderTimelineStart && h.user.lastLogin <= eventDate) {
-                            dates.push(h.user.lastLogin);
-                        } else if (h.createdAt && h.createdAt >= broaderTimelineStart && h.createdAt <= eventDate) {
-                            dates.push(h.createdAt);
+                // 2. Check for host creation during this event
+                if (h.createdAt && h.createdAt >= timelineStart && h.createdAt <= eventDate) {
+                    allDates.push(h.createdAt);
+                }
+                // 3. Check for published positions created during this event (brought forward or new)
+                h.positions
+                    .filter(p => p.eventId === activeEventId && p.isPublished)
+                    .forEach(p => {
+                        if (p.createdAt && p.createdAt >= timelineStart && p.createdAt <= eventDate) {
+                            allDates.push(p.createdAt);
                         }
-                        return dates;
-                    })
-                    .sort((a, b) => a.getTime() - b.getTime());
-                
-                if (broaderHostActivityDates.length > 0) {
-                    const companyByDate = new Map();
-                    broaderHostActivityDates.forEach(date => {
-                        const dateStr = date.toISOString().split('T')[0];
-                        companyByDate.set(dateStr, (companyByDate.get(dateStr) || 0) + 1);
                     });
-
-                    companyByDate.forEach((count, date) => {
-                        companyStats.push({ date, count });
-                    });
-                }
-            }
-        } else if (hostActivityDates.length > 0) {
-            const companyByDate = new Map();
-            hostActivityDates.forEach(date => {
-                const dateStr = date.toISOString().split('T')[0];
-                companyByDate.set(dateStr, (companyByDate.get(dateStr) || 0) + 1);
             });
+            
+            if (allDates.length === 0) return null;
+            return new Date(Math.min(...allDates.map(d => d.getTime())));
+        }).filter((d): d is Date => d !== null);
 
-            companyByDate.forEach((count, date) => {
-                companyStats.push({ date, count });
-            });
-        }
+        // Group companies by date
+        const companyByDate = new Map<string, number>();
+        companyEngagementDates.forEach(date => {
+            const dateStr = date.toISOString().split('T')[0];
+            companyByDate.set(dateStr, (companyByDate.get(dateStr) || 0) + 1);
+        });
+
+        companyByDate.forEach((count, date) => {
+            companyStats.push({ date, count });
+        });
 
         // Position creation timeline (based on position createdAt dates)
         const positionDates = positions
