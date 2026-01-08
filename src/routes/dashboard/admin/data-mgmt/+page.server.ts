@@ -314,11 +314,9 @@ export const load: PageServerLoad = async ({ locals }) => {
         const participatedEventIds = new Set<string>();
 
         company.hosts.forEach(host => {
-            // 1. Add events where they have a published position
+            // 1. Add ALL events where they have any position (published or draft)
             host.positions.forEach(pos => {
-                if (pos.isPublished) {
-                    participatedEventIds.add(pos.eventId);
-                }
+                participatedEventIds.add(pos.eventId);
             });
 
             // 2. Add the active event if they have logged in since it was created
@@ -401,11 +399,9 @@ export const load: PageServerLoad = async ({ locals }) => {
     const transformedHosts = hosts.map(host => {
         const participatedEventIds = new Set<string>();
         
-        // 1. Add events where they have a published position
+        // 1. Add ALL events where they have any position (published or draft)
         host.positions.forEach(pos => {
-            if (pos.isPublished) {
-                participatedEventIds.add(pos.eventId);
-            }
+            participatedEventIds.add(pos.eventId);
         });
 
         // 2. Add the active event if they have logged in since it was created
