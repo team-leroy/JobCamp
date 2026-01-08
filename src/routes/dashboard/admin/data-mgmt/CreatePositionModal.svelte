@@ -118,7 +118,6 @@
           }
         };
       }}
-      onsubmit={resetForm}
     >
       {#if message}
         <div

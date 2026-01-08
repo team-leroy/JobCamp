@@ -155,7 +155,6 @@
           }
         };
       }}
-      onsubmit={resetForm}
     >
       <input type="hidden" name="positionId" value={position.id} />
 
