@@ -210,9 +210,11 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
 async function calculateLotteryStats(results: { studentId: string; positionId: string }[], activeEventId: string) {
     try {
         // Get all students who participated in this event
-        // Exclude internal testers
+        // Exclude internal testers, inactive, and graduated students
         let allStudentsWithChoices = await prisma.student.findMany({
             where: {
+                isActive: true,
+                graduatedAt: null,
                 eventParticipation: {
                     some: {
                         eventId: activeEventId
@@ -232,6 +234,8 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
         if (allStudentsWithChoices.length === 0) {
             allStudentsWithChoices = await prisma.student.findMany({
                 where: {
+                    isActive: true,
+                    graduatedAt: null,
                     positionsSignedUpFor: {
                         some: {
                             position: {
@@ -240,9 +244,10 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                         }
                     },
                     user: {
-                        NOT: {
-                            role: 'INTERNAL_TESTER'
-                        }
+                        OR: [
+                            { role: null },
+                            { role: { not: 'INTERNAL_TESTER' } }
+                        ]
                     }
                 },
                 select: { id: true }
@@ -450,7 +455,13 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
             const companyName = position.host.company?.companyName || 'Unknown Company';
             
             // Count only top 3 choices (rank <= 3)
-            const top3Choices = position.students.filter(student => student.rank <= 3).length;
+            // Filter by active, non-graduated, non-tester students
+            const validStudents = position.students.filter(choice => 
+                choice.student.isActive && 
+                choice.student.graduatedAt === null &&
+                (choice.student.user?.role === null || choice.student.user?.role !== 'INTERNAL_TESTER')
+            );
+            const top3Choices = validStudents.filter(choice => choice.rank <= 3).length;
             
             // Track positions by career
             if (!positionsByCareer[careerField]) {
@@ -608,9 +619,10 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
                 isPublished: true,
                 host: {
                     user: {
-                        NOT: {
-                            role: 'INTERNAL_TESTER'
-                        }
+                        OR: [
+                            { role: null },
+                            { role: { not: 'INTERNAL_TESTER' } }
+                        ]
                     }
                 }
             },
@@ -660,10 +672,16 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
         let studentsWithChoices: Awaited<ReturnType<typeof prisma.student.findMany>> = [];
 
         if (eventData?.isActive) {
-            // For active events, include students who are active
+            // For active events, include students who are active and not graduated
             const activeStudentWhere: Prisma.StudentWhereInput = {
                 ...baseStudentWhere,
                 isActive: true,
+                graduatedAt: null,
+                eventParticipation: {
+                    some: {
+                        eventId: activeEventId
+                    }
+                },
                 user: {
                     OR: [
                         { role: null },
@@ -940,9 +958,16 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         });
         
         // Get all students with their choice data (for active event only)
-        // Exclude internal testers
+        // Exclude internal testers, inactive, and graduated students
         const studentWhereClause = {
             schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
+            isActive: true,
+            graduatedAt: null,
+            eventParticipation: {
+                some: {
+                    eventId: activeEventId
+                }
+            },
             user: {
                 OR: [
                     { role: null },
@@ -975,7 +1000,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         });
 
         // Get all companies with their activity data
-        // Exclude internal testers
+        // Exclude internal testers and filter by those active in this event
         const companyWhereClause = {
             schoolId: { in: userInfo.adminOfSchools.map((s: { id: string }) => s.id) },
             hosts: {
@@ -984,7 +1009,10 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                         OR: [
                             { role: null },
                             { role: { not: 'INTERNAL_TESTER' } }
-                        ]
+                        ],
+                        lastLogin: {
+                            gte: eventData?.createdAt || event.createdAt
+                        }
                     }
                 }
             }
