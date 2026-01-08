@@ -356,26 +356,40 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex justify-end space-x-3 pt-4 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          onclick={() => {
-            isOpen = false;
-            resetForm();
-          }}
-        >
-          <X class="h-4 w-4 mr-2" />
-          Cancel
-        </Button>
+      <div class="flex justify-between items-center pt-4 border-t">
+        <div>
+          {#if !position.isPublished}
+            <button
+              type="submit"
+              formaction="?/publishPositionAsAdmin"
+              class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-green-600 bg-white text-green-600 hover:bg-green-50 h-9 px-4 py-2"
+            >
+              <Save class="h-4 w-4 mr-2" />
+              Publish as Admin
+            </button>
+          {/if}
+        </div>
+        <div class="flex space-x-3">
+          <Button
+            type="button"
+            variant="outline"
+            onclick={() => {
+              isOpen = false;
+              resetForm();
+            }}
+          >
+            <X class="h-4 w-4 mr-2" />
+            Cancel
+          </Button>
 
-        <button
-          type="submit"
-          class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
-        >
-          <Save class="h-4 w-4 mr-2" />
-          Save Changes
-        </button>
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
+          >
+            <Save class="h-4 w-4 mr-2" />
+            Save Changes
+          </button>
+        </div>
       </div>
     </form>
   </DialogContent>

@@ -9,6 +9,7 @@ import { getCurrentGrade, getGraduatingClassYear } from '$lib/server/gradeUtils'
 import { canWriteAdminData, canAccessFullAdminFeatures } from '$lib/server/roleUtils';
 import { sendBulkEmail } from '$lib/server/sendgrid';
 import { sendBulkSMS } from '$lib/server/twilio';
+import { sendPositionUpdateEmail, formatEmailDate } from '$lib/server/email';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -1020,6 +1021,137 @@ export const actions: Actions = {
         } catch (error) {
             console.error('[UpdatePosition] Error:', error);
             return { success: false, message: "Failed to update position" };
+        }
+    },
+
+    publishPositionAsAdmin: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canWriteAdminData(userInfo!)) {
+            return { success: false, message: "You do not have permission to edit data" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const positionId = formData.get('positionId')?.toString();
+            const title = formData.get('title')?.toString();
+            const career = formData.get('career')?.toString();
+            const slotsStr = formData.get('slots')?.toString();
+            const summary = formData.get('summary')?.toString();
+            const contactName = formData.get('contactName')?.toString();
+            const contactEmail = formData.get('contactEmail')?.toString();
+            const address = formData.get('address')?.toString();
+            const instructions = formData.get('instructions')?.toString();
+            const attire = formData.get('attire')?.toString();
+            const arrival = formData.get('arrival')?.toString();
+            const start = formData.get('start')?.toString();
+            const end = formData.get('end')?.toString();
+
+            if (!positionId || !title || !career || !slotsStr) {
+                return { success: false, message: "Missing required fields" };
+            }
+
+            const slots = parseInt(slotsStr);
+            if (isNaN(slots)) {
+                return { success: false, message: "Invalid number of slots" };
+            }
+
+            // 1. Fetch current position info to get host and event details
+            const position = await prisma.position.findUnique({
+                where: { id: positionId },
+                include: {
+                    host: {
+                        include: {
+                            user: true
+                        }
+                    },
+                    event: {
+                        include: {
+                            school: true
+                        }
+                    },
+                    attachments: true
+                }
+            });
+
+            if (!position) {
+                return { success: false, message: "Position not found" };
+            }
+
+            const now = new Date();
+
+            // 2. Perform updates in a transaction
+            await prisma.$transaction([
+                // Update position
+                prisma.position.update({
+                    where: { id: positionId },
+                    data: {
+                        title,
+                        career,
+                        slots,
+                        summary: summary || '',
+                        contact_name: contactName || '',
+                        contact_email: contactEmail || '',
+                        address: address || '',
+                        instructions: instructions || '',
+                        attire: attire || '',
+                        arrival: arrival || '',
+                        start: start || '',
+                        end: end || '',
+                        isPublished: true,
+                        publishedAt: now
+                    }
+                }),
+                // Update host's user record to simulate participation
+                prisma.user.update({
+                    where: { id: position.host.userId },
+                    data: {
+                        lastLogin: now,
+                        emailVerified: true
+                    }
+                })
+            ]);
+
+            // 3. Send confirmation emails
+            const eventData = {
+                eventName: position.event.name || 'JobCamp',
+                eventDate: formatEmailDate(position.event.date),
+                schoolName: position.event.school.name,
+                schoolId: position.event.school.id
+            };
+
+            try {
+                await sendPositionUpdateEmail(position.host.user.email, {
+                    title,
+                    career,
+                    slots: slots.toString(),
+                    summary: summary || '',
+                    contact_name: contactName || '',
+                    contact_email: contactEmail || '',
+                    address: address || 'Not provided',
+                    instructions: instructions || 'Not provided',
+                    attire: attire || 'Not provided',
+                    arrival: arrival || 'Not provided',
+                    start: start || 'Not provided',
+                    end: end || 'Not provided',
+                    attachmentCount: position.attachments.length.toString(),
+                }, eventData, position.event.date);
+            } catch (emailError) {
+                console.error('[PublishAsAdmin] Email error:', emailError);
+                // Don't fail the whole action if email fails
+            }
+
+            return { success: true, message: "Position published successfully as admin" };
+        } catch (error) {
+            console.error('[PublishAsAdmin] Error:', error);
+            return { success: false, message: "Failed to publish position" };
         }
     },
 
