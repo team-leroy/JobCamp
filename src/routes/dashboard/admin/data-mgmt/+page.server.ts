@@ -593,14 +593,14 @@ export const actions: Actions = {
                     phone,
                     parentEmail
                 },
-                select: { userId: true }
-            });
+                    select: { userId: true }
+                });
 
             // Update user info (email and role)
             if (updatedStudent.userId) {
                 const finalRole = isInternalTester ? 'INTERNAL_TESTER' : null;
                 
-                await prisma.user.update({
+                    await prisma.user.update({
                     where: { id: updatedStudent.userId },
                     data: { 
                         email: email || undefined,
@@ -951,10 +951,12 @@ export const actions: Actions = {
 
         try {
             const formData = await request.formData();
+            console.log("[UpdatePosition] Form data keys:", Array.from(formData.keys()));
+            
             const positionId = formData.get('positionId')?.toString();
             const title = formData.get('title')?.toString();
             const career = formData.get('career')?.toString();
-            const slots = formData.get('slots')?.toString();
+            const slotsStr = formData.get('slots')?.toString();
             const summary = formData.get('summary')?.toString();
             const contactName = formData.get('contactName')?.toString();
             const contactEmail = formData.get('contactEmail')?.toString();
@@ -965,17 +967,28 @@ export const actions: Actions = {
             const start = formData.get('start')?.toString();
             const end = formData.get('end')?.toString();
 
-            if (!positionId || !title || !career || !slots) {
+            console.log("[UpdatePosition] Values:", { 
+                positionId, title, career, slotsStr, contactName 
+            });
+
+            if (!positionId || !title || !career || !slotsStr) {
+                console.log("[UpdatePosition] Validation failed - missing fields");
                 return { success: false, message: "Missing required fields" };
             }
 
+            const slots = parseInt(slotsStr);
+            if (isNaN(slots)) {
+                console.log("[UpdatePosition] Validation failed - invalid slots:", slotsStr);
+                return { success: false, message: "Invalid number of slots" };
+            }
+
             // Update position record
-            await prisma.position.update({
+            const updated = await prisma.position.update({
                 where: { id: positionId },
                 data: {
                     title,
                     career,
-                    slots: parseInt(slots),
+                    slots,
                     summary: summary || '',
                     contact_name: contactName || '',
                     contact_email: contactEmail || '',
@@ -984,13 +997,32 @@ export const actions: Actions = {
                     attire: attire || '',
                     arrival: arrival || '',
                     start: start || '',
-                    end: end || ''
+                    end: end || '',
+                    // If it was already published but didn't have a publishedAt, set it now
+                    publishedAt: {
+                        set: undefined // Default behavior
+                    }
                 }
             });
 
+            // If already published but missing publishedAt, backfill it
+            const currentPos = await prisma.position.findUnique({
+                where: { id: positionId },
+                select: { isPublished: true, publishedAt: true }
+            });
+            
+            if (currentPos?.isPublished && !currentPos.publishedAt) {
+                await prisma.position.update({
+                    where: { id: positionId },
+                    data: { publishedAt: new Date() }
+                });
+            }
+
+            console.log("[UpdatePosition] Update successful for:", updated.id);
+
             return { success: true, message: "Position updated successfully" };
         } catch (error) {
-            console.error('Error updating position:', error);
+            console.error('[UpdatePosition] Error:', error);
             return { success: false, message: "Failed to update position" };
         }
     },

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
   import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import {
     Dialog,
@@ -61,8 +60,6 @@
     message = "Position created successfully";
     error = null;
     setTimeout(() => {
-      isOpen = false;
-      resetForm();
       window.location.reload();
     }, 1000);
   }
@@ -109,11 +106,10 @@
       action="?/createPosition"
       use:enhance={() => {
         handleSubmit();
-        return async ({ update }) => {
-          try {
-            await update();
+        return async ({ result }) => {
+          if (result.type === "success") {
             handleSuccess();
-          } catch {
+          } else {
             handleError();
           }
         };
@@ -138,11 +134,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label for="title">Title *</Label>
-            <Input
+            <input
               id="title"
               name="title"
               bind:value={formData.title}
               required
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
@@ -160,23 +157,25 @@
 
           <div>
             <Label for="slots">Slots *</Label>
-            <Input
+            <input
               id="slots"
               name="slots"
               type="number"
               bind:value={formData.slots}
               required
               min="1"
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
           <div>
             <Label for="contactName">Contact Name *</Label>
-            <Input
+            <input
               id="contactName"
               name="contactName"
               bind:value={formData.contactName}
               required
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
         </div>
@@ -200,12 +199,13 @@
 
           <div>
             <Label for="contactEmail">Contact Email *</Label>
-            <Input
+            <input
               id="contactEmail"
               name="contactEmail"
               type="email"
               bind:value={formData.contactEmail}
               required
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
@@ -246,27 +246,35 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label for="arrival">Arrival Time *</Label>
-              <Input
+              <input
                 id="arrival"
                 name="arrival"
                 bind:value={formData.arrival}
                 required
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
             <div>
               <Label for="start">Start Time *</Label>
-              <Input
+              <input
                 id="start"
                 name="start"
                 bind:value={formData.start}
                 required
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
             <div>
               <Label for="end">End Time *</Label>
-              <Input id="end" name="end" bind:value={formData.end} required />
+              <input
+                id="end"
+                name="end"
+                bind:value={formData.end}
+                required
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
             </div>
           </div>
         </div>
@@ -286,10 +294,13 @@
           Cancel
         </Button>
 
-        <Button type="submit">
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
+        >
           <Save class="h-4 w-4 mr-2" />
           Create Position
-        </Button>
+        </button>
       </div>
     </form>
   </DialogContent>
