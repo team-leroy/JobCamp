@@ -61,11 +61,11 @@ export const load: PageServerLoad = async (event) => {
         });
 
         if (!correctCode || correctCode.code != code) {
-            return { msg: "Incorrect Link. Please Resend and Try again."}
+            return { msg: "Incorrect Link. Please Resend and Try again.", email: event.locals.user?.email };
         }
 
         if (correctCode.expires_at < new Date()) {
-            return { msg: "Expired Link. Please Resend and Try again."}
+            return { msg: "Expired Link. Please Resend and Try again.", email: event.locals.user?.email };
         }
 
         await prisma.user.update({
@@ -137,7 +137,7 @@ export const load: PageServerLoad = async (event) => {
         redirect(302, "/dashboard")
     }
 
-    return { msg: "" };
+    return { msg: "", email: event.locals.user?.email };
 };
 
 
