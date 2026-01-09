@@ -288,6 +288,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                 include: {
                     user: {
                         select: {
+                            email: true,
                             lastLogin: true,
                             role: true,
                             emailVerified: true
@@ -295,7 +296,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                     },
                     positions: {
                         select: {
-                            id: true, // Added id
+                            id: true,
                             eventId: true,
                             isPublished: true,
                             slots: true
@@ -314,7 +315,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         // Get all unique event IDs this company has positions in
         const participatedEventIds = new Set<string>();
 
-        company.hosts.forEach(host => {
+        const companyHosts = company.hosts.map(host => {
             // 1. Add ALL events where they have any position (published or draft)
             host.positions.forEach(pos => {
                 participatedEventIds.add(pos.eventId);
@@ -329,9 +330,26 @@ export const load: PageServerLoad = async ({ locals }) => {
                     participatedEventIds.add(activeEvent.id);
                 }
             }
+
+            // Get positions for this host in the active event
+            const hostPositions = transformedPositions.filter(p => 
+                p.companyId === company.id && 
+                p.eventId === activeEvent.id &&
+                allPositions.find(ap => ap.id === p.id)?.hostId === host.id
+            );
+
+            return {
+                id: host.id,
+                name: host.name,
+                email: host.user?.email || 'No Email',
+                emailVerified: host.user?.emailVerified || false,
+                lastLogin: host.user?.lastLogin ? new Date(host.user.lastLogin).toISOString() : null,
+                isInternalTester: host.user?.role === 'INTERNAL_TESTER',
+                positions: hostPositions
+            };
         });
 
-        // Get this company's positions for the active event
+        // Get this company's positions for the active event (all hosts)
         const activePositions = transformedPositions.filter(p => 
             p.companyId === company.id && 
             p.eventId === activeEvent.id
@@ -357,6 +375,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             activePositionCount,
             activeSlotsCount,
             activePositions,
+            hosts: companyHosts,
             isInternalTester,
             emailVerified,
             eventIds: Array.from(participatedEventIds)
@@ -1195,6 +1214,7 @@ export const actions: Actions = {
             }
 
             const formData = await request.formData();
+            const hostId = formData.get('hostId')?.toString();
             const title = formData.get('title')?.toString();
             const career = formData.get('career')?.toString();
             const slots = formData.get('slots')?.toString();
@@ -1212,8 +1232,12 @@ export const actions: Actions = {
                 return { success: false, message: "Missing required fields" };
             }
 
-            // Get or create admin host
-            const adminHost = await getOrCreateAdminHost(activeEvent.schoolId);
+            // Use provided hostId or fallback to admin host
+            let finalHostId = hostId;
+            if (!finalHostId) {
+                const adminHost = await getOrCreateAdminHost(activeEvent.schoolId);
+                finalHostId = adminHost.id;
+            }
 
             // Create the position
             await prisma.position.create({
@@ -1231,7 +1255,7 @@ export const actions: Actions = {
                     start: start || '',
                     end: end || '',
                     eventId: activeEvent.id,
-                    hostId: adminHost.id,
+                    hostId: finalHostId,
                     isPublished: false
                 }
             });

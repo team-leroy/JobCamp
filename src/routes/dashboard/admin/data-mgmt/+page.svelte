@@ -26,7 +26,6 @@
   } from "lucide-svelte";
   import StudentEditModal from "./StudentEditModal.svelte";
   import CompanyEditModal from "./CompanyEditModal.svelte";
-  import HostEditModal from "./HostEditModal.svelte";
   import PositionEditModal from "./PositionEditModal.svelte";
   import CreatePositionModal from "./CreatePositionModal.svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
@@ -73,6 +72,15 @@
     activePositionCount: number;
     activeSlotsCount: number;
     activePositions: Position[];
+    hosts: {
+      id: string;
+      name: string;
+      email: string;
+      emailVerified: boolean;
+      lastLogin: string | null;
+      isInternalTester: boolean;
+      positions: Position[];
+    }[];
     isInternalTester: boolean;
     emailVerified: boolean;
     eventIds: string[];
@@ -156,8 +164,7 @@
     { value: "All", label: "All Events" },
     ...data.allEvents.map((event) => ({
       value: event.id,
-      label:
-        event.name || `Event ${new Date(event.date).toLocaleDateString()}`,
+      label: event.name || `Event ${new Date(event.date).toLocaleDateString()}`,
     })),
   ]);
 
@@ -169,37 +176,26 @@
   let emailVerifiedFilter = $state("All");
   let studentEventFilter = $state(data.activeEvent?.id || "All");
 
-  // Filter states for Company
+  // Filter states for Company (Consolidated)
   let companyNameFilter = $state("");
-  let companyEmailVerifiedFilter = $state("All");
-  let companyEventFilter = $state(data.activeEvent?.id || "All");
-
-  // Filter states for Host
   let hostNameFilter = $state("");
-  let hostEmailVerifiedFilter = $state("All");
-  let hostEventFilter = $state(data.activeEvent?.id || "All");
-
-  // Filter states for Position
   let positionTitleFilter = $state("");
-  let positionCareerFilter = $state("All");
-  let positionEventFilter = $state(data.activeEvent?.id || "All");
+  let companyEmailVerifiedFilter = $state("All");
   let positionStatusFilter = $state("All");
+  let companyEventFilter = $state(data.activeEvent?.id || "All");
 
   // Global Filter for Internal Testers
   let showInternalTesters = $state(false);
 
   // UI states
   let expandedStudents = $state(new Set<string>());
-  let expandedCompanies = $state(new Set<string>());
-  let expandedPositions = $state(new Set<string>());
+  let expandedCompanies = $state(new Set<string>()); // This will now track expanded positions within companies
   let selectedTab = $state("Student");
   let showMessengerDialog = $state(false);
 
   // Pagination states
   let studentPage = $state(1);
   let companyPage = $state(1);
-  let hostPage = $state(1);
-  let positionPage = $state(1);
   const pageSize = 50;
 
   // Computed filtered students
@@ -247,27 +243,62 @@
     filteredStudents.slice(0, studentPage * pageSize)
   );
 
-  // Computed filtered companies
+  // Computed filtered companies (Consolidated)
   let filteredCompanies = $derived(
     data.companies.filter((company) => {
+      // 1. Company Name Search
       const matchesCompanyName =
         !companyNameFilter ||
         company.companyName
           .toLowerCase()
           .includes(companyNameFilter.toLowerCase());
 
+      // 2. Host Name Search
+      const matchesHostName =
+        !hostNameFilter ||
+        company.hosts.some((host) =>
+          host.name.toLowerCase().includes(hostNameFilter.toLowerCase())
+        );
+
+      // 3. Position Title Search
+      const matchesPositionTitle =
+        !positionTitleFilter ||
+        company.activePositions.some((pos) =>
+          pos.title.toLowerCase().includes(positionTitleFilter.toLowerCase())
+        );
+
+      // 4. Email Verified Filter
       const matchesEmailVerified =
         companyEmailVerifiedFilter === "All" ||
         (companyEmailVerifiedFilter === "Verified" && company.emailVerified) ||
         (companyEmailVerifiedFilter === "Unverified" && !company.emailVerified);
 
+      // 5. Status Filter (Published/Draft)
+      const matchesStatus =
+        positionStatusFilter === "All" ||
+        company.activePositions.some(
+          (pos) =>
+            (positionStatusFilter === "Published" && pos.isPublished) ||
+            (positionStatusFilter === "Draft" && !pos.isPublished)
+        );
+
+      // 6. Event Filter
       const matchesEvent =
         companyEventFilter === "All" ||
         company.eventIds.includes(companyEventFilter);
 
+      // 7. Tester Filter
       const matchesTester = showInternalTesters || !company.isInternalTester;
 
-      return matchesCompanyName && matchesEmailVerified && matchesEvent && matchesTester;
+      return (
+        matchesCompanyName &&
+        matchesHostName &&
+        matchesPositionTitle &&
+        matchesEmailVerified &&
+        matchesStatus &&
+        matchesEvent &&
+        matchesTester
+      );
     })
   );
 
@@ -275,75 +306,11 @@
     filteredCompanies.slice(0, companyPage * pageSize)
   );
 
-  // Computed filtered hosts
-  let filteredHosts = $derived(
-    data.hosts.filter((host) => {
-      const matchesHostName =
-        !hostNameFilter ||
-        host.name.toLowerCase().includes(hostNameFilter.toLowerCase());
-
-      const matchesEmailVerified =
-        hostEmailVerifiedFilter === "All" ||
-        (hostEmailVerifiedFilter === "Verified" && host.emailVerified) ||
-        (hostEmailVerifiedFilter === "Unverified" && !host.emailVerified);
-
-      const matchesEvent =
-        hostEventFilter === "All" ||
-        host.eventIds.includes(hostEventFilter);
-
-      const matchesTester = showInternalTesters || !host.isInternalTester;
-
-      return matchesHostName && matchesEmailVerified && matchesEvent && matchesTester;
-    })
-  );
-
-  let paginatedHosts = $derived(filteredHosts.slice(0, hostPage * pageSize));
-
-  // Computed filtered positions
-  let filteredPositions = $derived(
-    data.positions.filter((position) => {
-      const matchesTitle =
-        !positionTitleFilter ||
-        position.title
-          .toLowerCase()
-          .includes(positionTitleFilter.toLowerCase());
-
-      const matchesCareer =
-        positionCareerFilter === "All" ||
-        position.career === positionCareerFilter;
-
-      const matchesEvent =
-        positionEventFilter === "All" ||
-        position.eventId === positionEventFilter;
-
-      const matchesStatus =
-        positionStatusFilter === "All" ||
-        (positionStatusFilter === "Published" && position.isPublished) ||
-        (positionStatusFilter === "Draft" && !position.isPublished);
-
-      const matchesTester = showInternalTesters || !position.isInternalTester;
-
-      return (
-        matchesTitle &&
-        matchesCareer &&
-        matchesEvent &&
-        matchesStatus &&
-        matchesTester
-      );
-    })
-  );
-
-  let paginatedPositions = $derived(
-    filteredPositions.slice(0, positionPage * pageSize)
-  );
-
   // Reset pagination when filters change
   $effect(() => {
     void selectedTab;
     studentPage = 1;
     companyPage = 1;
-    hostPage = 1;
-    positionPage = 1;
   });
 
   $effect(() => {
@@ -357,23 +324,15 @@
 
   $effect(() => {
     void companyNameFilter;
+    void hostNameFilter;
+    void positionTitleFilter;
+    void companyEmailVerifiedFilter;
+    void positionStatusFilter;
     void companyEventFilter;
     companyPage = 1;
   });
 
-  $effect(() => {
-    void hostNameFilter;
-    void hostEventFilter;
-    hostPage = 1;
-  });
-
-  $effect(() => {
-    void positionTitleFilter;
-    void positionCareerFilter;
-    void positionEventFilter;
-    void positionStatusFilter;
-    positionPage = 1;
-  });
+  // Removed Host/Position specific effects as they are now merged with Company
 
   function toggleStudentExpansion(studentId: string) {
     if (expandedStudents.has(studentId)) {
@@ -384,22 +343,14 @@
     expandedStudents = new Set(expandedStudents);
   }
 
-  function toggleCompanyExpansion(companyId: string) {
-    if (expandedCompanies.has(companyId)) {
-      expandedCompanies.delete(companyId);
+  // Expanded companies will now track expanded positions within them
+  function togglePositionExpansion(positionId: string) {
+    if (expandedCompanies.has(positionId)) {
+      expandedCompanies.delete(positionId);
     } else {
-      expandedCompanies.add(companyId);
+      expandedCompanies.add(positionId);
     }
     expandedCompanies = new Set(expandedCompanies);
-  }
-
-  function togglePositionExpansion(positionId: string) {
-    if (expandedPositions.has(positionId)) {
-      expandedPositions.delete(positionId);
-    } else {
-      expandedPositions.add(positionId);
-    }
-    expandedPositions = new Set(expandedPositions);
   }
 
   function clearFilters() {
@@ -413,17 +364,11 @@
       studentEventFilter = data.activeEvent?.id || "All";
     } else if (selectedTab === "Company") {
       companyNameFilter = "";
-      companyEmailVerifiedFilter = "All";
-      companyEventFilter = data.activeEvent?.id || "All";
-    } else if (selectedTab === "Host") {
       hostNameFilter = "";
-      hostEmailVerifiedFilter = "All";
-      hostEventFilter = data.activeEvent?.id || "All";
-    } else if (selectedTab === "Position") {
       positionTitleFilter = "";
-      positionCareerFilter = "All";
-      positionEventFilter = data.activeEvent?.id || "All";
+      companyEmailVerifiedFilter = "All";
       positionStatusFilter = "All";
+      companyEventFilter = data.activeEvent?.id || "All";
     }
   }
 
@@ -516,24 +461,6 @@
             >
               Company
             </button>
-            <button
-              class="py-2 px-1 border-b-2 font-medium text-sm {selectedTab ===
-              'Host'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
-              onclick={() => (selectedTab = "Host")}
-            >
-              Host
-            </button>
-            <button
-              class="py-2 px-1 border-b-2 font-medium text-sm {selectedTab ===
-              'Position'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
-              onclick={() => (selectedTab = "Position")}
-            >
-              Position
-            </button>
           </nav>
         </div>
       </div>
@@ -622,7 +549,10 @@
                   bind:checked={showInternalTesters}
                   class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <Label for="showTestersStudent" class="text-sm font-medium text-gray-700">
+                <Label
+                  for="showTestersStudent"
+                  class="text-sm font-medium text-gray-700"
+                >
                   Show Internal Tester Accounts
                 </Label>
               </div>
@@ -645,8 +575,7 @@
                       params.set("emailVerified", emailVerifiedFilter);
                     if (studentEventFilter !== "All")
                       params.set("eventId", studentEventFilter);
-                    if (showInternalTesters)
-                      params.set("showTesters", "true");
+                    if (showInternalTesters) params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
                   }}
@@ -708,7 +637,11 @@
                         </span>
                         <Badge variant="outline">Grade {student.grade}</Badge>
                         {#if student.isInternalTester}
-                          <Badge variant="secondary" class="bg-purple-100 text-purple-700 border-purple-200">INTERNAL TESTER</Badge>
+                          <Badge
+                            variant="secondary"
+                            class="bg-purple-100 text-purple-700 border-purple-200"
+                            >INTERNAL TESTER</Badge
+                          >
                         {/if}
                       </div>
                     </div>
@@ -771,10 +704,14 @@
                     <div class="flex items-center space-x-2">
                       {#if student.emailVerified}
                         <CheckCircle class="h-4 w-4 text-green-600" />
-                        <span class="text-sm text-green-600">Email Verified</span>
+                        <span class="text-sm text-green-600"
+                          >Email Verified</span
+                        >
                       {:else}
                         <XCircle class="h-4 w-4 text-red-600" />
-                        <span class="text-sm text-red-600">Email Unverified</span>
+                        <span class="text-sm text-red-600"
+                          >Email Unverified</span
+                        >
                       {/if}
                     </div>
 
@@ -857,9 +794,11 @@
       {/if}
 
       {#if selectedTab === "Company"}
-        <!-- Company Management Section -->
+        <!-- Consolidated Company Management Section -->
         <div class="mb-6">
-          <h2 class="text-2xl font-semibold mb-4">Company Management</h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-semibold">Company Management</h2>
+          </div>
 
           <!-- Filters -->
           <Card class="mb-4">
@@ -873,7 +812,25 @@
                   <Input
                     id="companyName"
                     bind:value={companyNameFilter}
-                    placeholder="Search by company name..."
+                    placeholder="Search by company..."
+                  />
+                </div>
+
+                <div>
+                  <Label for="hostName">Host Name</Label>
+                  <Input
+                    id="hostName"
+                    bind:value={hostNameFilter}
+                    placeholder="Search by host..."
+                  />
+                </div>
+
+                <div>
+                  <Label for="positionTitle">Position Title</Label>
+                  <Input
+                    id="positionTitle"
+                    bind:value={positionTitleFilter}
+                    placeholder="Search by title..."
                   />
                 </div>
 
@@ -889,23 +846,46 @@
                 />
 
                 <FilterSelect
-                  label="Event Participation"
-                  bind:value={companyEventFilter}
-                  placeholder="All Events"
-                  options={eventOptions}
+                  label="Status"
+                  bind:value={positionStatusFilter}
+                  placeholder="All Status"
+                  options={[
+                    { value: "All", label: "All Status" },
+                    { value: "Published", label: "Published" },
+                    { value: "Draft", label: "Draft" },
+                  ]}
                 />
               </div>
 
-              <div class="flex items-center space-x-2 mb-4">
-                <input
-                  type="checkbox"
-                  id="showTestersCompany"
-                  bind:checked={showInternalTesters}
-                  class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <Label for="showTestersCompany" class="text-sm font-medium text-gray-700">
-                  Show Internal Tester Accounts
-                </Label>
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="showTestersCompany"
+                    bind:checked={showInternalTesters}
+                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Label
+                    for="showTestersCompany"
+                    class="text-sm font-medium text-gray-700"
+                  >
+                    Show Internal Tester Accounts
+                  </Label>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                  <Label for="companyEventFilter" class="mr-2"
+                    >Event Participation:</Label
+                  >
+                  <div class="w-64">
+                    <FilterSelect
+                      label=""
+                      bind:value={companyEventFilter}
+                      placeholder="All Events"
+                      options={eventOptions}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div class="flex gap-2">
@@ -917,9 +897,12 @@
                   onclick={() => {
                     const params = new URLSearchParams();
                     params.set("type", "companies");
-                    if (companyNameFilter) params.set("companyName", companyNameFilter);
-                    if (companyEmailVerifiedFilter !== "All") params.set("emailVerified", companyEmailVerifiedFilter);
-                    if (companyEventFilter !== "All") params.set("eventId", companyEventFilter);
+                    if (companyNameFilter)
+                      params.set("companyName", companyNameFilter);
+                    if (companyEmailVerifiedFilter !== "All")
+                      params.set("emailVerified", companyEmailVerifiedFilter);
+                    if (companyEventFilter !== "All")
+                      params.set("eventId", companyEventFilter);
                     if (showInternalTesters) params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
@@ -945,134 +928,276 @@
           </div>
 
           <!-- Company List -->
-          <div class="space-y-4">
+          <div class="space-y-6">
             {#each paginatedCompanies as company (company.id)}
-              <Card class="hover:shadow-md transition-shadow">
-                <CardContent class="p-6">
-                  <!-- Company Header -->
-                  <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-4">
-                      <div class="flex items-center space-x-2">
-                        <User class="h-5 w-5 text-gray-500" />
-                        <span class="font-semibold text-lg">
-                          {company.companyName}
-                        </span>
-                        {#if company.isInternalTester}
-                          <Badge variant="secondary" class="bg-purple-100 text-purple-700 border-purple-200">INTERNAL TESTER</Badge>
-                        {/if}
-                        <Badge variant="outline">
-                          {company.activePositionCount} Position{company.activePositionCount !==
-                          1
-                            ? "s"
-                            : ""}
-                        </Badge>
-                        {#if company.emailVerified}
-                          <Badge variant="default" class="bg-green-100 text-green-700 border-green-200">VERIFIED</Badge>
-                        {:else}
-                          <Badge variant="default" class="bg-red-100 text-red-700 border-red-200">UNVERIFIED</Badge>
-                        {/if}
-                      </div>
-                    </div>
-
-                    <div class="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onclick={() => toggleCompanyExpansion(company.id)}
-                      >
-                        {#if expandedCompanies.has(company.id)}
-                          <ChevronUp class="h-4 w-4 mr-2" />
-                          Hide Details
-                        {:else}
-                          <ChevronDown class="h-4 w-4 mr-2" />
-                          View Details
-                        {/if}
-                      </Button>
-
-                      {#if canEdit}
-                        <CompanyEditModal {company} />
-                      {/if}
-                    </div>
-                  </div>
-
-                  <!-- Company Information -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div class="flex items-start space-x-2">
-                      <User class="h-4 w-4 text-gray-500 mt-1" />
-                      <div>
-                        <span class="text-sm font-medium">Description:</span>
-                        <p class="text-sm text-gray-600">
-                          {company.companyDescription}
-                        </p>
-                      </div>
-                    </div>
-
-                    {#if company.companyUrl}
-                      <div class="flex items-center space-x-2">
-                        <Mail class="h-4 w-4 text-gray-500" />
-                        <a
-                          href={company.companyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="text-sm text-blue-600 hover:underline"
-                        >
-                          {company.companyUrl}
-                        </a>
-                      </div>
-                    {/if}
-                  </div>
-
-                  <!-- Expanded Details -->
-                  {#if expandedCompanies.has(company.id)}
-                    <div class="border-t pt-4 space-y-4">
-                      <div>
-                        <h4 class="font-semibold mb-2">
-                          Additional Information
-                        </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <span class="text-sm font-medium"
-                              >Active Positions:</span
+              <Card class="hover:shadow-lg transition-shadow border-2">
+                <CardContent class="p-0">
+                  <!-- TOP SECTION: Company & Account Owner Info -->
+                  <div class="p-6 bg-gray-50/50">
+                    <div class="flex items-start justify-between mb-4">
+                      <div class="flex flex-col space-y-2">
+                        <div class="flex items-center space-x-3">
+                          <h3 class="text-2xl font-bold text-gray-900">
+                            {company.companyName}
+                          </h3>
+                          <Badge
+                            variant="secondary"
+                            class="bg-blue-100 text-blue-800 border-blue-200"
+                          >
+                            {company.activePositionCount} Published Position{company.activePositionCount !==
+                            1
+                              ? "s"
+                              : ""}
+                          </Badge>
+                          {#if company.isInternalTester}
+                            <Badge
+                              variant="secondary"
+                              class="bg-purple-100 text-purple-700 border-purple-200"
+                              >INTERNAL TESTER</Badge
                             >
-                            <p class="text-sm text-gray-600">
-                              {company.activePositionCount} position{company.activePositionCount !== 1 ? "s" : ""}
-                              ({company.activeSlotsCount} slot{company.activeSlotsCount !== 1 ? "s" : ""})
-                              in the current event
-                            </p>
-                          </div>
+                          {/if}
                         </div>
 
-                        {#if company.activePositions && company.activePositions.length > 0}
-                          <div class="mt-4">
-                            <h5 class="text-sm font-semibold mb-2">Positions in Current Event:</h5>
-                            <div class="space-y-2">
-                              {#each company.activePositions as position}
-                                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-md border text-sm">
-                                  <div class="flex flex-col">
-                                    <span class="font-medium">{position.title}</span>
-                                    <span class="text-xs text-gray-500">{position.career} • {position.slots} slots</span>
+                        <!-- Account Owner Info -->
+                        <div class="flex flex-col space-y-1">
+                          {#each company.hosts as host}
+                            <div class="flex items-center space-x-3">
+                              <span class="text-gray-700 font-medium"
+                                >{host.name}</span
+                              >
+                              <span class="text-gray-500 text-sm"
+                                >({host.email})</span
+                              >
+                              {#if host.emailVerified}
+                                <Badge
+                                  variant="default"
+                                  class="bg-green-100 text-green-700 border-green-200 h-5 px-2 text-[10px]"
+                                  >VERIFIED</Badge
+                                >
+                              {:else}
+                                <Badge
+                                  variant="default"
+                                  class="bg-red-100 text-red-700 border-red-200 h-5 px-2 text-[10px]"
+                                  >UNVERIFIED</Badge
+                                >
+                              {/if}
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+
+                      {#if canEdit}
+                        <div class="flex gap-2">
+                          <CreatePositionModal
+                            careers={data.careers}
+                            targetHostId={company.hosts[0]?.id}
+                            targetCompanyName={company.companyName}
+                          />
+                          <CompanyEditModal {company} />
+                        </div>
+                      {/if}
+                    </div>
+
+                    <!-- Company Details -->
+                    <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+                      <div class="flex flex-col space-y-2">
+                        <p class="text-gray-600 italic">
+                          {company.companyDescription}
+                        </p>
+                        {#if company.companyUrl}
+                          <a
+                            href={company.companyUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-sm text-blue-600 hover:underline flex items-center"
+                          >
+                            <Target class="h-4 w-4 mr-1" />
+                            {company.companyUrl}
+                          </a>
+                        {/if}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- BOTTOM SECTION: Positions -->
+                  <div class="border-t">
+                    <div class="p-4 bg-gray-100/30">
+                      <h4
+                        class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4"
+                      >
+                        Positions for this Event
+                      </h4>
+
+                      {#if company.activePositions && company.activePositions.length > 0}
+                        <div class="space-y-3">
+                          {#each company.activePositions as position}
+                            <Card class="bg-white border shadow-sm">
+                              <CardContent class="p-4">
+                                <div class="flex items-center justify-between">
+                                  <div class="flex items-center space-x-4">
+                                    <div class="flex flex-col">
+                                      <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-gray-900"
+                                          >{position.title}</span
+                                        >
+                                        <Badge
+                                          variant="outline"
+                                          class="bg-gray-50 font-bold"
+                                        >
+                                          {position.slots} Slot{position.slots !==
+                                          1
+                                            ? "s"
+                                            : ""}
+                                        </Badge>
+                                      </div>
+                                      <div
+                                        class="flex items-center space-x-2 mt-1"
+                                      >
+                                        <span
+                                          class="text-xs text-gray-500 font-medium"
+                                          >{position.career}</span
+                                        >
+                                        <span class="text-gray-300">•</span>
+                                        {#if position.isPublished}
+                                          <Badge
+                                            variant="default"
+                                            class="bg-green-600 h-5 px-2 text-[10px]"
+                                            >Published</Badge
+                                          >
+                                        {:else}
+                                          <Badge
+                                            variant="secondary"
+                                            class="h-5 px-2 text-[10px]"
+                                            >Draft</Badge
+                                          >
+                                        {/if}
+                                        {#if position.isInternalTester}
+                                          <Badge
+                                            variant="secondary"
+                                            class="text-[10px] px-1 h-4 bg-purple-100 text-purple-700"
+                                            >TESTER</Badge
+                                          >
+                                        {/if}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div class="flex items-center gap-2">
-                                    {#if position.isInternalTester}
-                                      <Badge variant="secondary" class="text-[10px] px-1 h-4 bg-purple-100 text-purple-700">TESTER</Badge>
-                                    {/if}
-                                    {#if position.isPublished}
-                                      <Badge variant="default" class="text-[10px] px-1 h-4">Published</Badge>
-                                    {:else}
-                                      <Badge variant="secondary" class="text-[10px] px-1 h-4">Draft</Badge>
-                                    {/if}
+
+                                  <div class="flex items-center space-x-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onclick={() =>
+                                        togglePositionExpansion(position.id)}
+                                      class="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    >
+                                      {#if expandedCompanies.has(position.id)}
+                                        <ChevronUp class="h-4 w-4 mr-2" />
+                                        Hide Details
+                                      {:else}
+                                        <ChevronDown class="h-4 w-4 mr-2" />
+                                        View Details
+                                      {/if}
+                                    </Button>
+
                                     {#if canEdit}
-                                      <PositionEditModal {position} careers={data.careers} />
+                                      <PositionEditModal
+                                        {position}
+                                        careers={data.careers}
+                                      />
                                     {/if}
                                   </div>
                                 </div>
-                              {/each}
-                            </div>
-                          </div>
-                        {/if}
-                      </div>
+
+                                <!-- Position Expansion Details -->
+                                {#if expandedCompanies.has(position.id)}
+                                  <div
+                                    class="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8"
+                                  >
+                                    <div class="space-y-1">
+                                      <span
+                                        class="text-xs font-bold text-gray-400 uppercase tracking-tight"
+                                        >Summary</span
+                                      >
+                                      <p class="text-sm text-gray-700">
+                                        {position.summary}
+                                      </p>
+                                    </div>
+                                    <div class="space-y-1">
+                                      <span
+                                        class="text-xs font-bold text-gray-400 uppercase tracking-tight"
+                                        >Contact Information</span
+                                      >
+                                      <p class="text-sm text-gray-700">
+                                        {position.contactName}
+                                      </p>
+                                      <p class="text-sm text-gray-500">
+                                        {position.contactEmail}
+                                      </p>
+                                    </div>
+                                    <div class="space-y-1">
+                                      <span
+                                        class="text-xs font-bold text-gray-400 uppercase tracking-tight"
+                                        >Logistics</span
+                                      >
+                                      <div
+                                        class="flex items-center space-x-2 text-sm text-gray-700"
+                                      >
+                                        <Clock class="h-3 w-3" />
+                                        <span
+                                          >{position.arrival} arrival • {position.start}
+                                          - {position.end}</span
+                                        >
+                                      </div>
+                                      <div
+                                        class="flex items-start space-x-2 text-sm text-gray-700 mt-1"
+                                      >
+                                        <Target class="h-3 w-3 mt-1" />
+                                        <span>{position.address}</span>
+                                      </div>
+                                    </div>
+                                    <div class="space-y-1">
+                                      <span
+                                        class="text-xs font-bold text-gray-400 uppercase tracking-tight"
+                                        >Requirements</span
+                                      >
+                                      <p class="text-sm text-gray-700">
+                                        <span class="font-medium">Attire:</span>
+                                        {position.attire || "None specified"}
+                                      </p>
+                                      <p class="text-sm text-gray-700 mt-1">
+                                        <span class="font-medium"
+                                          >Instructions:</span
+                                        >
+                                        {position.instructions || "None"}
+                                      </p>
+                                    </div>
+                                    <div class="md:col-span-2 pt-2">
+                                      <span class="text-[10px] text-gray-400"
+                                        >Created: {formatDate(
+                                          position.createdAt
+                                        )}</span
+                                      >
+                                    </div>
+                                  </div>
+                                {/if}
+                              </CardContent>
+                            </Card>
+                          {/each}
+                        </div>
+                      {:else}
+                        <div
+                          class="text-center py-6 bg-white border rounded-md"
+                        >
+                          <Briefcase
+                            class="h-8 w-8 text-gray-300 mx-auto mb-2"
+                          />
+                          <p class="text-sm text-gray-500 font-medium">
+                            No positions listed for the current event
+                          </p>
+                        </div>
+                      {/if}
                     </div>
-                  {/if}
+                  </div>
                 </CardContent>
               </Card>
             {/each}
@@ -1107,445 +1232,6 @@
           {/if}
         </div>
       {/if}
-
-      {#if selectedTab === "Host"}
-        <!-- Host Management Section -->
-        <div class="mb-6">
-          <h2 class="text-2xl font-semibold mb-4">Host Management</h2>
-
-          <!-- Filters -->
-          <Card class="mb-4">
-            <CardHeader>
-              <CardTitle class="text-lg">Filters</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-                <div>
-                  <Label for="hostName">Host Name</Label>
-                  <Input
-                    id="hostName"
-                    bind:value={hostNameFilter}
-                    placeholder="Search by host name..."
-                  />
-                </div>
-
-                <FilterSelect
-                  label="Email Verified"
-                  bind:value={hostEmailVerifiedFilter}
-                  placeholder="All"
-                  options={[
-                    { value: "All", label: "All" },
-                    { value: "Verified", label: "Verified" },
-                    { value: "Unverified", label: "Unverified" },
-                  ]}
-                />
-
-                <FilterSelect
-                  label="Event Participation"
-                  bind:value={hostEventFilter}
-                  placeholder="All Events"
-                  options={eventOptions}
-                />
-              </div>
-
-              <div class="flex items-center space-x-2 mb-4">
-                <input
-                  type="checkbox"
-                  id="showTestersHost"
-                  bind:checked={showInternalTesters}
-                  class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <Label for="showTestersHost" class="text-sm font-medium text-gray-700">
-                  Show Internal Tester Accounts
-                </Label>
-              </div>
-
-              <div class="flex gap-2">
-                <Button variant="outline" onclick={clearFilters}>
-                  Clear Filters
-                </Button>
-                <Button
-                  variant="outline"
-                  onclick={() => {
-                    const params = new URLSearchParams();
-                    params.set("type", "hosts");
-                    if (hostNameFilter) params.set("hostName", hostNameFilter);
-                    if (hostEmailVerifiedFilter !== "All") params.set("emailVerified", hostEmailVerifiedFilter);
-                    if (hostEventFilter !== "All") params.set("eventId", hostEventFilter);
-                    if (showInternalTesters) params.set("showTesters", "true");
-
-                    window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
-                  }}
-                >
-                  Export CSV
-                </Button>
-                <Button
-                  variant="outline"
-                  onclick={() => window.location.reload()}
-                >
-                  Refresh
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <!-- Results Summary -->
-          <div class="mb-4">
-            <p class="text-sm text-gray-600">
-              Results: {filteredHosts.length} hosts found
-            </p>
-          </div>
-
-          <!-- Host List -->
-          <div class="space-y-4">
-            {#each paginatedHosts as host (host.id)}
-              <Card class="hover:shadow-md transition-shadow">
-                <CardContent class="p-6">
-                  <!-- Host Header -->
-                  <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-4">
-                      <div class="flex items-center space-x-2">
-                        <User class="h-5 w-5 text-gray-500" />
-                        <span class="font-semibold text-lg">
-                          {host.name}
-                        </span>
-                        <Badge variant="outline">{host.companyName}</Badge>
-                        {#if host.isInternalTester}
-                          <Badge variant="secondary" class="bg-purple-100 text-purple-700 border-purple-200">INTERNAL TESTER</Badge>
-                        {/if}
-                      </div>
-                    </div>
-
-                    <div class="flex items-center space-x-2">
-                      {#if canEdit}
-                        <HostEditModal {host} />
-                      {/if}
-                    </div>
-                  </div>
-
-                  <!-- Host Information -->
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div class="flex items-center space-x-2">
-                      <Mail class="h-4 w-4 text-gray-500" />
-                      <span class="text-sm">{host.email}</span>
-                    </div>
-
-                    <div class="flex items-center space-x-2">
-                      {#if host.emailVerified}
-                        <CheckCircle class="h-4 w-4 text-green-600" />
-                        <span class="text-sm text-green-600">Email Verified</span>
-                      {:else}
-                        <XCircle class="h-4 w-4 text-red-600" />
-                        <span class="text-sm text-red-600">Email Unverified</span>
-                      {/if}
-                    </div>
-
-                    <div class="flex items-center space-x-2">
-                      <Calendar class="h-4 w-4 text-gray-500" />
-                      <span class="text-sm text-gray-600">
-                        Last Login: {formatDate(host.lastLogin)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            {/each}
-
-            {#if filteredHosts.length > paginatedHosts.length}
-              <div class="flex justify-center pt-4 pb-8">
-                <Button
-                  variant="outline"
-                  onclick={() => hostPage++}
-                  class="w-full max-w-xs"
-                >
-                  Load More Hosts ({filteredHosts.length -
-                    paginatedHosts.length} remaining)
-                </Button>
-              </div>
-            {/if}
-          </div>
-
-          {#if filteredHosts.length === 0}
-            <Card>
-              <CardContent class="p-6 text-center">
-                <User class="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 class="text-lg font-semibold mb-2">No Hosts Found</h3>
-                <p class="text-gray-600 mb-4">
-                  No hosts match your current filters.
-                </p>
-                <Button variant="outline" onclick={clearFilters}>
-                  Clear All Filters
-                </Button>
-              </CardContent>
-            </Card>
-          {/if}
-        </div>
-      {/if}
-
-      {#if selectedTab === "Position"}
-        <!-- Position Management Section -->
-        <div class="mb-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-semibold">Position Management</h2>
-            {#if canEdit}
-              <CreatePositionModal careers={data.careers} />
-            {/if}
-          </div>
-
-          <!-- Filters -->
-          <Card class="mb-4">
-            <CardHeader>
-              <CardTitle class="text-lg">Filters</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <Label for="positionTitle">Position Title</Label>
-                  <Input
-                    id="positionTitle"
-                    bind:value={positionTitleFilter}
-                    placeholder="Search by title..."
-                  />
-                </div>
-
-                <FilterSelect
-                  label="Career"
-                  bind:value={positionCareerFilter}
-                  placeholder="All Careers"
-                  options={[
-                    { value: "All", label: "All Careers" },
-                    ...data.careers.map((career) => ({
-                      value: career,
-                      label: career,
-                    })),
-                  ]}
-                />
-
-                <FilterSelect
-                  label="Event Participation"
-                  bind:value={positionEventFilter}
-                  placeholder="All Events"
-                  options={eventOptions}
-                />
-
-                <FilterSelect
-                  label="Status"
-                  bind:value={positionStatusFilter}
-                  placeholder="All Status"
-                  options={[
-                    { value: "All", label: "All Status" },
-                    { value: "Published", label: "Published" },
-                    { value: "Draft", label: "Draft" },
-                  ]}
-                />
-              </div>
-
-              <div class="flex items-center space-x-2 mb-4">
-                <input
-                  type="checkbox"
-                  id="showTestersPosition"
-                  bind:checked={showInternalTesters}
-                  class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <Label for="showTestersPosition" class="text-sm font-medium text-gray-700">
-                  Show Internal Tester Accounts
-                </Label>
-              </div>
-              
-              <div class="flex gap-2">
-                <Button variant="outline" onclick={clearFilters}>
-                  Clear All Filters
-                </Button>
-                <Button
-                  variant="outline"
-                  onclick={() => {
-                    const params = new URLSearchParams();
-                    params.set("type", "positions");
-                    if (positionTitleFilter) params.set("positionTitle", positionTitleFilter);
-                    if (positionCareerFilter !== "All") params.set("positionCareer", positionCareerFilter);
-                    if (positionEventFilter !== "All") params.set("eventId", positionEventFilter);
-                    if (positionStatusFilter !== "All") params.set("positionStatus", positionStatusFilter);
-                    if (showInternalTesters) params.set("showTesters", "true");
-
-                    window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;
-                  }}
-                >
-                  Export CSV
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <!-- Position List -->
-          <div class="space-y-4">
-            {#each paginatedPositions as position (position.id)}
-              <Card>
-                <CardContent class="p-4">
-                  <div class="flex justify-between items-start mb-4">
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-2 mb-2">
-                        <h3 class="text-lg font-semibold">{position.title}</h3>
-                        <Badge variant="outline">{position.career}</Badge>
-                        {#if position.isInternalTester}
-                          <Badge variant="secondary" class="bg-purple-100 text-purple-700 border-purple-200">INTERNAL TESTER</Badge>
-                        {/if}
-                        {#if position.isPublished}
-                          <Badge variant="default">Published</Badge>
-                        {:else}
-                          <Badge variant="secondary">Draft</Badge>
-                        {/if}
-                      </div>
-                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="flex items-center space-x-2">
-                          <User class="h-4 w-4 text-gray-500" />
-                          <span class="text-sm">{position.contactName}</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                          <Badge variant="outline"
-                            >{position.slots} slot{position.slots !== 1
-                              ? "s"
-                              : ""}</Badge
-                          >
-                        </div>
-                        <div class="flex items-center space-x-2">
-                          <span class="text-sm text-gray-600"
-                            >{position.companyName}</span
-                          >
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onclick={() => togglePositionExpansion(position.id)}
-                      >
-                        {#if expandedPositions.has(position.id)}
-                          <ChevronUp class="h-4 w-4 mr-2" />
-                          Hide Details
-                        {:else}
-                          <ChevronDown class="h-4 w-4 mr-2" />
-                          View Details
-                        {/if}
-                      </Button>
-
-                      {#if canEdit}
-                        <PositionEditModal {position} careers={data.careers} />
-                      {/if}
-                    </div>
-                  </div>
-
-                  <!-- Expanded Details -->
-                  {#if expandedPositions.has(position.id)}
-                    <div class="border-t pt-4 space-y-4">
-                      <div>
-                        <h4 class="font-semibold mb-2">
-                          Additional Information
-                        </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <span class="text-sm font-medium">Summary:</span>
-                            <p class="text-sm text-gray-600">
-                              {position.summary}
-                            </p>
-                          </div>
-                          <div>
-                            <span class="text-sm font-medium"
-                              >Contact Email:</span
-                            >
-                            <p class="text-sm text-gray-600">
-                              {position.contactEmail}
-                            </p>
-                          </div>
-                          <div>
-                            <span class="text-sm font-medium">Address:</span>
-                            <p class="text-sm text-gray-600">
-                              {position.address}
-                            </p>
-                          </div>
-                          <div>
-                            <span class="text-sm font-medium"
-                              >Instructions:</span
-                            >
-                            <p class="text-sm text-gray-600">
-                              {position.instructions || "None"}
-                            </p>
-                          </div>
-                          <div>
-                            <span class="text-sm font-medium">Attire:</span>
-                            <p class="text-sm text-gray-600">
-                              {position.attire || "None"}
-                            </p>
-                          </div>
-                          <div>
-                            <span class="text-sm font-medium">Host Name:</span>
-                            <p class="text-sm text-gray-600">
-                              {position.hostName}
-                            </p>
-                          </div>
-                          <div>
-                            <span class="text-sm font-medium"
-                              >Arrival Time:</span
-                            >
-                            <p class="text-sm text-gray-600">
-                              {position.arrival}
-                            </p>
-                          </div>
-                          <div>
-                            <span class="text-sm font-medium">Start Time:</span>
-                            <p class="text-sm text-gray-600">
-                              {position.start}
-                            </p>
-                          </div>
-                          <div>
-                            <span class="text-sm font-medium">End Time:</span>
-                            <p class="text-sm text-gray-600">{position.end}</p>
-                          </div>
-                          <div>
-                            <span class="text-sm font-medium">Created At:</span>
-                            <p class="text-sm text-gray-600">
-                              {formatDate(position.createdAt)}
-                            </p>
-                          </div>
-                          </div>
-                        </div>
-                      </div>
-                    {/if}
-                  </CardContent>
-                </Card>
-              {/each}
-
-              {#if filteredPositions.length > paginatedPositions.length}
-                <div class="flex justify-center pt-4 pb-8">
-                  <Button
-                    variant="outline"
-                    onclick={() => positionPage++}
-                    class="w-full max-w-xs"
-                  >
-                    Load More Positions ({filteredPositions.length -
-                      paginatedPositions.length} remaining)
-                  </Button>
-                </div>
-              {/if}
-            </div>
-
-          {#if filteredPositions.length === 0}
-            <Card>
-              <CardContent class="p-6 text-center">
-                <Briefcase class="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 class="text-lg font-semibold mb-2">No Positions Found</h3>
-                <p class="text-gray-600 mb-4">
-                  No positions match your current filters.
-                </p>
-                <Button variant="outline" onclick={clearFilters}>
-                  Clear All Filters
-                </Button>
-              </CardContent>
-            </Card>
-          {/if}
-        </div>
-      {/if}
     {/if}
 
     <!-- Message Students Dialog -->
@@ -1557,7 +1243,10 @@
             Message Filtered Students
           </Dialog.Title>
           <Dialog.Description>
-            Send emails or SMS messages to the {filteredStudents.length} student{filteredStudents.length !== 1 ? "s" : ""} in your current search results.
+            Send emails or SMS messages to the {filteredStudents.length} student{filteredStudents.length !==
+            1
+              ? "s"
+              : ""} in your current search results.
           </Dialog.Description>
         </Dialog.Header>
         <div class="py-4">

@@ -13,9 +13,11 @@
 
   interface Props {
     careers: string[];
+    targetHostId?: string;
+    targetCompanyName?: string;
   }
 
-  let { careers }: Props = $props();
+  let { careers, targetHostId, targetCompanyName }: Props = $props();
 
   let isOpen = $state(false);
 
@@ -32,6 +34,7 @@
     arrival: "",
     start: "",
     end: "",
+    hostId: targetHostId || "",
   });
 
   let message: string | null = $state(null);
@@ -51,6 +54,7 @@
       arrival: "",
       start: "",
       end: "",
+      hostId: targetHostId || "",
     };
     message = null;
     error = null;
@@ -84,7 +88,7 @@
 
 <Button variant="default" size="sm" onclick={() => (isOpen = true)}>
   <Plus class="h-4 w-4 mr-2" />
-  Create Position as Admin
+  {targetCompanyName ? "Create Position" : "Create Position as Admin"}
 </Button>
 
 <Dialog
@@ -98,7 +102,12 @@
 >
   <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
     <DialogHeader>
-      <DialogTitle>Create New Position</DialogTitle>
+      <DialogTitle>
+        Create New Position
+        {#if targetCompanyName}
+          for {targetCompanyName}
+        {/if}
+      </DialogTitle>
     </DialogHeader>
 
     <form
@@ -115,6 +124,7 @@
         };
       }}
     >
+      <input type="hidden" name="hostId" value={formData.hostId} />
       {#if message}
         <div
           class="p-3 rounded bg-green-50 text-green-700 border border-green-200"
