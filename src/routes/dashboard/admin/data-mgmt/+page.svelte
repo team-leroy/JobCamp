@@ -30,6 +30,7 @@
   import CreatePositionModal from "./CreatePositionModal.svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
   import FilteredStudentMessenger from "$lib/components/admin/FilteredStudentMessenger.svelte";
+  import FilteredCompanyMessenger from "$lib/components/admin/FilteredCompanyMessenger.svelte";
   import { MessageSquare } from "lucide-svelte";
   import * as Dialog from "$lib/components/ui/dialog";
 
@@ -192,6 +193,7 @@
   let expandedCompanies = $state(new Set<string>()); // This will now track expanded positions within companies
   let selectedTab = $state("Student");
   let showMessengerDialog = $state(false);
+  let showCompanyMessengerDialog = $state(false);
 
   // Pagination states
   let studentPage = $state(1);
@@ -916,6 +918,15 @@
                 >
                   Refresh
                 </Button>
+                {#if filteredCompanies.length > 0 && canEdit}
+                  <Button
+                    onclick={() => (showCompanyMessengerDialog = true)}
+                    class="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <MessageSquare class="h-4 w-4 mr-2" />
+                    Message Companies ({filteredCompanies.length})
+                  </Button>
+                {/if}
               </div>
             </CardContent>
           </Card>
@@ -1253,6 +1264,29 @@
           <FilteredStudentMessenger
             studentIds={filteredStudents.map((s) => s.id)}
             studentCount={filteredStudents.length}
+          />
+        </div>
+      </Dialog.Content>
+    </Dialog.Root>
+
+    <!-- Message Companies Dialog -->
+    <Dialog.Root bind:open={showCompanyMessengerDialog}>
+      <Dialog.Content class="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <Dialog.Header>
+          <Dialog.Title class="flex items-center gap-2">
+            <MessageSquare class="h-5 w-5" />
+            Message Filtered Companies
+          </Dialog.Title>
+          <Dialog.Description>
+            Send emails to all host and position contacts for the {filteredCompanies.length}
+            company{filteredCompanies.length !== 1 ? "ies" : ""} in your current
+            search results.
+          </Dialog.Description>
+        </Dialog.Header>
+        <div class="py-4">
+          <FilteredCompanyMessenger
+            companyIds={filteredCompanies.map((c) => c.id)}
+            companyCount={filteredCompanies.length}
           />
         </div>
       </Dialog.Content>

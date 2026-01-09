@@ -1499,5 +1499,228 @@ export const actions: Actions = {
             console.error('Error sending messages:', error);
             return { success: false, message: "Failed to send messages" };
         }
+    },
+
+    previewFilteredCompanies: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canAccessFullAdminFeatures(userInfo!)) {
+            return { success: false, message: "You do not have permission to send messages" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const companyIdsJson = formData.get('companyIds')?.toString();
+
+            if (!companyIdsJson) {
+                return { success: false, message: "No companies selected" };
+            }
+
+            const companyIds = JSON.parse(companyIdsJson);
+
+            if (!Array.isArray(companyIds) || companyIds.length === 0) {
+                return { success: false, message: "No companies selected" };
+            }
+
+            const schoolIds = userInfo!.adminOfSchools.map(s => s.id);
+            const activeEvent = await prisma.event.findFirst({
+                where: { schoolId: { in: schoolIds }, isActive: true }
+            });
+
+            if (!activeEvent) {
+                return { success: false, message: "No active event found" };
+            }
+
+            // Fetch hosts and positions for these companies
+            const companies = await prisma.company.findMany({
+                where: { id: { in: companyIds } },
+                include: {
+                    hosts: {
+                        include: { user: { select: { email: true } } }
+                    },
+                    prefillSettings: {
+                        where: { position: { eventId: activeEvent.id } },
+                        include: { position: true }
+                    }
+                }
+            });
+
+            // We also need to get positions directly because some might not have prefill settings
+            const positions = await prisma.position.findMany({
+                where: {
+                    eventId: activeEvent.id,
+                    host: { companyId: { in: companyIds } }
+                },
+                include: { host: true }
+            });
+
+            const recipientsMap = new Map<string, { name: string, email: string, role: string }>();
+
+            for (const company of companies) {
+                for (const host of company.hosts) {
+                    if (host.user?.email) {
+                        recipientsMap.set(host.user.email.toLowerCase(), {
+                            name: host.name,
+                            email: host.user.email,
+                            role: 'Host'
+                        });
+                    }
+                }
+            }
+
+            for (const pos of positions) {
+                if (pos.contact_email) {
+                    const email = pos.contact_email.toLowerCase();
+                    if (!recipientsMap.has(email)) {
+                        recipientsMap.set(email, {
+                            name: pos.contact_name || 'Contact',
+                            email: pos.contact_email,
+                            role: 'Contact'
+                        });
+                    }
+                }
+            }
+
+            const recipients = Array.from(recipientsMap.values());
+
+            return {
+                success: true,
+                count: recipients.length,
+                preview: recipients.slice(0, 50)
+            };
+        } catch (error) {
+            console.error('Error previewing company recipients:', error);
+            return { success: false, message: "Failed to preview recipients" };
+        }
+    },
+
+    sendToFilteredCompanies: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canAccessFullAdminFeatures(userInfo!)) {
+            return { success: false, message: "You do not have permission to send messages" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const companyIdsJson = formData.get('companyIds')?.toString();
+            const subject = formData.get('subject')?.toString();
+            const message = formData.get('message')?.toString();
+
+            if (!companyIdsJson || !subject || !message) {
+                return { success: false, message: "Missing required fields" };
+            }
+
+            const companyIds = JSON.parse(companyIdsJson);
+
+            if (!Array.isArray(companyIds) || companyIds.length === 0) {
+                return { success: false, message: "No companies selected" };
+            }
+
+            const schoolIds = userInfo!.adminOfSchools.map(s => s.id);
+            const activeEvent = await prisma.event.findFirst({
+                where: { schoolId: { in: schoolIds }, isActive: true }
+            });
+
+            if (!activeEvent) {
+                return { success: false, message: "No active event found" };
+            }
+
+            // Fetch hosts and positions for these companies
+            const companies = await prisma.company.findMany({
+                where: { id: { in: companyIds } },
+                include: {
+                    hosts: {
+                        include: { user: { select: { email: true } } }
+                    }
+                }
+            });
+
+            const positions = await prisma.position.findMany({
+                where: {
+                    eventId: activeEvent.id,
+                    host: { companyId: { in: companyIds } }
+                }
+            });
+
+            const emailRecipientsMap = new Map<string, { name: string, email: string }>();
+
+            for (const company of companies) {
+                for (const host of company.hosts) {
+                    if (host.user?.email) {
+                        emailRecipientsMap.set(host.user.email.toLowerCase(), {
+                            email: host.user.email,
+                            name: host.name
+                        });
+                    }
+                }
+            }
+
+            for (const pos of positions) {
+                if (pos.contact_email) {
+                    const email = pos.contact_email.toLowerCase();
+                    if (!emailRecipientsMap.has(email)) {
+                        emailRecipientsMap.set(email, {
+                            email: pos.contact_email,
+                            name: pos.contact_name || 'Contact'
+                        });
+                    }
+                }
+            }
+
+            const emailRecipients = Array.from(emailRecipientsMap.values());
+
+            if (emailRecipients.length === 0) {
+                return { success: false, message: 'No valid email addresses found' };
+            }
+
+            const result = await sendBulkEmail({
+                to: emailRecipients,
+                subject: subject!,
+                html: message.replace(/\n/g, '<br>')
+            });
+
+            if (result.success) {
+                // Log the message
+                await prisma.message.create({
+                    data: {
+                        senderId: locals.user.id,
+                        senderEmail: userInfo!.email,
+                        schoolId: schoolIds[0],
+                        eventId: activeEvent.id,
+                        messageType: 'EMAIL',
+                        recipientType: 'COMPANIES_ALL', // Or INDIVIDUAL_COMPANY if appropriate
+                        recipientCount: emailRecipients.length,
+                        subject: subject,
+                        status: 'sent'
+                    }
+                });
+
+                return {
+                    success: true,
+                    message: "Emails sent successfully",
+                    count: emailRecipients.length
+                };
+            } else {
+                return { success: false, message: result.error || 'Failed to send emails' };
+            }
+        } catch (error) {
+            console.error('Error sending messages to companies:', error);
+            return { success: false, message: "Failed to send messages" };
+        }
     }
 };
