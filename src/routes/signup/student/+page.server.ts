@@ -10,6 +10,7 @@ import { sendEmailVerificationEmail } from '$lib/server/email';
 import { getNavbarData } from '$lib/server/navbarData';
 import { getGraduatingClassYear } from '$lib/server/gradeUtils';
 import { formatPhoneNumber } from '$lib/server/twilio';
+import { env } from "$env/dynamic/private";
 
 
 export const load: PageServerLoad = async (event) => {
@@ -50,7 +51,7 @@ export const load: PageServerLoad = async (event) => {
     };
 };
 
-const enforceSchoolEmailDomain = false;
+const enforceSchoolEmailDomain = env.ENFORCE_STUDENT_EMAIL_DOMAIN !== "false";
 
 export const actions: Actions = {
     default: async (event) => {
