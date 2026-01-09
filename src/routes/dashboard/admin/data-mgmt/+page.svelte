@@ -121,6 +121,7 @@
     end: string;
     eventId: string;
     createdAt: Date;
+    publishedAt: Date | null;
     hostName: string;
     companyName: string;
     isPublished: boolean;
@@ -1184,8 +1185,11 @@
                                     </div>
                                     <div class="md:col-span-2 pt-2">
                                       <span class="text-[10px] text-gray-400"
-                                        >Created: {formatDate(
-                                          position.createdAt
+                                        >{position.isPublished
+                                          ? "Published"
+                                          : "Created"}: {formatDate(
+                                          position.publishedAt ||
+                                            position.createdAt
                                         )}</span
                                       >
                                     </div>

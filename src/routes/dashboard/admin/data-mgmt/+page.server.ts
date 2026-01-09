@@ -270,6 +270,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             end: position.end,
             eventId: position.eventId, // Added eventId
             createdAt: position.createdAt ? new Date(position.createdAt).toISOString() : null,
+            publishedAt: position.publishedAt ? new Date(position.publishedAt).toISOString() : null,
             hostName: position.host?.name || 'No Host',
             companyId: position.host?.company?.id, // Added companyId
             companyName: position.host?.company?.companyName || 'No Company',

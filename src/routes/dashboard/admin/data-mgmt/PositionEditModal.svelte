@@ -27,6 +27,7 @@
     start: string;
     end: string;
     createdAt: Date;
+    publishedAt: Date | null;
     hostName: string;
     companyName: string;
     isPublished: boolean;
@@ -338,9 +339,12 @@
           </div>
 
           <div>
-            <Label>Created At</Label>
+            <Label>{position.isPublished ? "Published At" : "Created At"}</Label
+            >
             <div class="p-3 bg-gray-50 rounded border">
-              <span class="text-sm">{formatDate(position.createdAt)}</span>
+              <span class="text-sm"
+                >{formatDate(position.publishedAt || position.createdAt)}</span
+              >
             </div>
           </div>
 

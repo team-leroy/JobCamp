@@ -106,7 +106,8 @@
     <div class="p-3 bg-blue-50 rounded-md text-xs mb-4">
       <p class="font-medium text-blue-800">Recipients:</p>
       <p class="text-blue-700 mt-1">
-        Messages will be sent to all <strong>account owners (hosts)</strong> and <strong>position contacts</strong> for the selected companies.
+        Messages will be sent to all <strong>account owners (hosts)</strong> and
+        <strong>position contacts</strong> for the selected companies.
       </p>
       <p class="text-blue-600 mt-1 italic">
         (Automatically deduplicated if the same email appears multiple times)
@@ -185,7 +186,9 @@
             {#each previewData.preview as recipient}
               <div class="text-sm text-blue-800">
                 <span class="font-medium">{recipient.name}</span>
-                <span class="text-gray-500 text-xs ml-1">({recipient.role})</span>
+                <span class="text-gray-500 text-xs ml-1"
+                  >({recipient.role})</span
+                >
                 <span class="text-blue-600"> - {recipient.email}</span>
               </div>
             {/each}
@@ -204,7 +207,10 @@
     >
       {#if sendResult.success}
         <p class="text-sm text-green-700 font-medium">
-          ✓ Successfully sent emails to {sendResult.count} deduplicated recipient{sendResult.count !== 1 ? "s" : ""}.
+          ✓ Successfully sent emails to {sendResult.count} deduplicated recipient{sendResult.count !==
+          1
+            ? "s"
+            : ""}.
         </p>
       {:else}
         <p class="text-sm text-red-700 font-medium">
@@ -214,4 +220,3 @@
     </div>
   {/if}
 </div>
-
