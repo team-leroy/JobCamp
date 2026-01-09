@@ -3,7 +3,7 @@
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea";
-  import { enhance } from "$app/forms";
+  import { enhance, deserialize } from "$app/forms";
   import { Mail, MessageSquare, Eye, Users, Send } from "lucide-svelte";
 
   interface Props {
@@ -59,14 +59,15 @@
         body: formData,
       });
 
-      const result = await response.json();
+      const result = deserialize(await response.text());
 
       if (result.type === "success" && result.data) {
-        previewData = result.data;
+        previewData = result.data as FormResult;
       } else if (result.type === "failure") {
+        const failureData = result.data as { message?: string };
         previewData = {
           success: false,
-          message: result.data?.message || "Preview failed",
+          message: failureData?.message || "Preview failed",
         };
       }
     } catch (error) {
