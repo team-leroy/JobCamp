@@ -32,8 +32,8 @@
     arrival: string;
     start: string;
     end: string;
-    createdAt: Date;
-    publishedAt: Date | null;
+    createdAt: Date | string;
+    publishedAt: Date | string | null;
     hostName: string;
     companyName: string;
     isPublished: boolean;
@@ -190,7 +190,7 @@
     error = null;
   }
 
-  function formatDate(date: Date | null): string {
+  function formatDate(date: Date | string | null): string {
     if (!date) return "Never";
     return new Date(date).toLocaleDateString("en-US", {
       month: "short",

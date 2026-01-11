@@ -99,10 +99,16 @@
     name: string;
     email: string;
     emailVerified: boolean;
-    lastLogin: Date | null;
+    lastLogin: Date | string | null;
     isInternalTester: boolean;
     companyName: string;
     eventIds: string[];
+  }
+
+  interface Attachment {
+    id: string;
+    fileName: string;
+    storagePath: string;
   }
 
   interface Position {
@@ -120,12 +126,13 @@
     start: string;
     end: string;
     eventId: string;
-    createdAt: Date;
-    publishedAt: Date | null;
+    createdAt: Date | string;
+    publishedAt: Date | string | null;
     hostName: string;
     companyName: string;
     isPublished: boolean;
     isInternalTester: boolean;
+    attachments: Attachment[];
   }
 
   interface Props {
@@ -375,7 +382,7 @@
     }
   }
 
-  function formatDate(date: Date | null): string {
+  function formatDate(date: Date | string | null): string {
     if (!date) return "Never";
     return new Date(date).toLocaleDateString("en-US", {
       month: "short",
@@ -973,26 +980,31 @@
                         <!-- Account Owner Info -->
                         <div class="flex flex-col space-y-1">
                           {#each company.hosts as host}
-                            <div class="flex items-center space-x-3">
-                              <span class="text-gray-700 font-medium"
-                                >{host.name}</span
-                              >
-                              <span class="text-gray-500 text-sm"
-                                >({host.email})</span
-                              >
-                              {#if host.emailVerified}
-                                <Badge
-                                  variant="default"
-                                  class="bg-green-100 text-green-700 border-green-200 h-5 px-2 text-[10px]"
-                                  >VERIFIED</Badge
+                            <div class="flex flex-col">
+                              <div class="flex items-center space-x-3">
+                                <span class="text-gray-700 font-medium"
+                                  >{host.name}</span
                                 >
-                              {:else}
-                                <Badge
-                                  variant="default"
-                                  class="bg-red-100 text-red-700 border-red-200 h-5 px-2 text-[10px]"
-                                  >UNVERIFIED</Badge
+                                <span class="text-gray-500 text-sm"
+                                  >({host.email})</span
                                 >
-                              {/if}
+                                {#if host.emailVerified}
+                                  <Badge
+                                    variant="default"
+                                    class="bg-green-100 text-green-700 border-green-200 h-5 px-2 text-[10px]"
+                                    >VERIFIED</Badge
+                                  >
+                                {:else}
+                                  <Badge
+                                    variant="default"
+                                    class="bg-red-100 text-red-700 border-red-200 h-5 px-2 text-[10px]"
+                                    >UNVERIFIED</Badge
+                                  >
+                                {/if}
+                              </div>
+                              <div class="text-xs text-gray-400 mt-0.5">
+                                Last Login: {formatDate(host.lastLogin)}
+                              </div>
                             </div>
                           {/each}
                         </div>

@@ -317,6 +317,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     // Transform company data for the UI
     const transformedCompanies = companies.map(company => {
+        // Find the most recent last login for any host in this company
+        const maxLastLoginDate = company.hosts.reduce((max, host) => {
+            if (!host.user?.lastLogin) return max;
+            const loginTime = new Date(host.user.lastLogin).getTime();
+            return loginTime > max ? loginTime : max;
+        }, 0);
+
         // Get all unique event IDs this company has positions in
         const participatedEventIds = new Set<string>();
 
@@ -383,8 +390,17 @@ export const load: PageServerLoad = async ({ locals }) => {
             hosts: companyHosts,
             isInternalTester,
             emailVerified,
-            eventIds: Array.from(participatedEventIds)
+            eventIds: Array.from(participatedEventIds),
+            maxLastLogin: maxLastLoginDate > 0 ? new Date(maxLastLoginDate).toISOString() : null
         };
+    }).sort((a, b) => {
+        // Sort by maxLastLogin descending (most recent first)
+        if (a.maxLastLogin && b.maxLastLogin) {
+            return new Date(b.maxLastLogin).getTime() - new Date(a.maxLastLogin).getTime();
+        }
+        if (a.maxLastLogin) return -1;
+        if (b.maxLastLogin) return 1;
+        return a.companyName.localeCompare(b.companyName);
     });
 
     // Get hosts from companies in the active event's school
@@ -1399,7 +1415,7 @@ export const actions: Actions = {
             // Use provided hostId or fallback to admin host
             let finalHostId = hostId;
             if (!finalHostId) {
-                const adminHost = await getOrCreateAdminHost(activeEvent.schoolId);
+            const adminHost = await getOrCreateAdminHost(activeEvent.schoolId);
                 finalHostId = adminHost.id;
             }
 
