@@ -8,7 +8,7 @@
     DialogHeader,
     DialogTitle,
   } from "$lib/components/ui/dialog";
-  import { Plus, Save, X } from "lucide-svelte";
+  import { Plus, Save, X, Trash2 } from "lucide-svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
 
   interface Props {
@@ -40,6 +40,12 @@
   let message: string | null = $state(null);
   let error: string | null = $state(null);
 
+  // Attachment state
+  let file1Input: HTMLInputElement | null = $state(null);
+  let file2Input: HTMLInputElement | null = $state(null);
+  let selectedFile1Name = $state("");
+  let selectedFile2Name = $state("");
+
   function resetForm() {
     formData = {
       title: "",
@@ -56,8 +62,45 @@
       end: "",
       hostId: targetHostId || "",
     };
+    selectedFile1Name = "";
+    selectedFile2Name = "";
+    if (file1Input) file1Input.value = "";
+    if (file2Input) file2Input.value = "";
     message = null;
     error = null;
+  }
+
+  function handleFileChange(index: number, e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
+        input.value = "";
+        return;
+      }
+      if (index === 1) selectedFile1Name = file.name;
+      if (index === 2) selectedFile2Name = file.name;
+    } else {
+      if (index === 1) selectedFile1Name = "";
+      if (index === 2) selectedFile2Name = "";
+    }
+  }
+
+  function clearFile(index: number) {
+    if (index === 1 && file1Input) {
+      file1Input.value = "";
+      selectedFile1Name = "";
+    }
+    if (index === 2 && file2Input) {
+      file2Input.value = "";
+      selectedFile2Name = "";
+    }
+  }
+
+  function triggerFileInput(index: number) {
+    if (index === 1) file1Input?.click();
+    if (index === 2) file2Input?.click();
   }
 
   function handleSuccess() {
@@ -113,6 +156,7 @@
     <form
       method="POST"
       action="?/createPosition"
+      enctype="multipart/form-data"
       use:enhance={() => {
         handleSubmit();
         return async ({ result }) => {
@@ -154,9 +198,8 @@
           </div>
 
           <div>
-            <Label for="career">Career *</Label>
             <FilterSelect
-              label="Career"
+              label="Career *"
               options={careerOptions}
               placeholder="Select a career"
               bind:value={formData.career}
@@ -188,6 +231,18 @@
               class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
+
+          <div>
+            <Label for="contactEmail">Contact Email *</Label>
+            <input
+              id="contactEmail"
+              name="contactEmail"
+              type="email"
+              bind:value={formData.contactEmail}
+              required
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
         </div>
       </div>
 
@@ -205,18 +260,6 @@
               rows="4"
               class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             ></textarea>
-          </div>
-
-          <div>
-            <Label for="contactEmail">Contact Email *</Label>
-            <input
-              id="contactEmail"
-              name="contactEmail"
-              type="email"
-              bind:value={formData.contactEmail}
-              required
-              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
           </div>
 
           <div>
@@ -286,6 +329,93 @@
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
+          </div>
+
+          <!-- Attachments Section -->
+          <div class="mt-4">
+            <h3 class="text-lg font-semibold mb-4">Attachments</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Attachment 1 -->
+              <div class="flex flex-col gap-2">
+                <Label for="attachment1">Attachment 1</Label>
+                <div class="flex items-center gap-2">
+                  <input
+                    bind:this={file1Input}
+                    onchange={(e) => handleFileChange(1, e)}
+                    class="hidden"
+                    name="attachment1"
+                    id="attachment1"
+                    type="file"
+                  />
+                  <div
+                    class="flex items-center gap-2 border border-input bg-background ring-offset-background h-10 w-full rounded-md px-3 py-2 text-sm"
+                  >
+                    <button
+                      type="button"
+                      class="bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-xs border whitespace-nowrap"
+                      onclick={() => triggerFileInput(1)}
+                    >
+                      Choose File
+                    </button>
+                    <span class="truncate flex-1 text-slate-500">
+                      {selectedFile1Name || "No file chosen"}
+                    </span>
+                  </div>
+                  {#if selectedFile1Name}
+                    <button
+                      type="button"
+                      class="text-red-600 p-1 hover:bg-red-50 rounded-md"
+                      onclick={() => clearFile(1)}
+                      title="Clear selection"
+                    >
+                      <Trash2 class="h-4 w-4" />
+                    </button>
+                  {/if}
+                </div>
+              </div>
+
+              <!-- Attachment 2 -->
+              <div class="flex flex-col gap-2">
+                <Label for="attachment2">Attachment 2</Label>
+                <div class="flex items-center gap-2">
+                  <input
+                    bind:this={file2Input}
+                    onchange={(e) => handleFileChange(2, e)}
+                    class="hidden"
+                    name="attachment2"
+                    id="attachment2"
+                    type="file"
+                  />
+                  <div
+                    class="flex items-center gap-2 border border-input bg-background ring-offset-background h-10 w-full rounded-md px-3 py-2 text-sm"
+                  >
+                    <button
+                      type="button"
+                      class="bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-xs border whitespace-nowrap"
+                      onclick={() => triggerFileInput(2)}
+                    >
+                      Choose File
+                    </button>
+                    <span class="truncate flex-1 text-slate-500">
+                      {selectedFile2Name || "No file chosen"}
+                    </span>
+                  </div>
+                  {#if selectedFile2Name}
+                    <button
+                      type="button"
+                      class="text-red-600 p-1 hover:bg-red-50 rounded-md"
+                      onclick={() => clearFile(2)}
+                      title="Clear selection"
+                    >
+                      <Trash2 class="h-4 w-4" />
+                    </button>
+                  {/if}
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2 italic">
+              Maximum of 2 attachments allowed. Maximum size is 10MB per file.
+            </p>
           </div>
         </div>
       </div>

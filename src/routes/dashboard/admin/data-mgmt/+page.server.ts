@@ -10,6 +10,7 @@ import { canWriteAdminData, canAccessFullAdminFeatures } from '$lib/server/roleU
 import { sendBulkEmail } from '$lib/server/sendgrid';
 import { sendBulkSMS } from '$lib/server/twilio';
 import { sendPositionUpdateEmail, formatEmailDate } from '$lib/server/email';
+import { addNewFile, deleteFile } from '../../storage';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -245,7 +246,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                     name: true,
                     date: true
                 }
-            }
+            },
+            attachments: true
         },
         orderBy: {
             title: 'asc'
@@ -272,10 +274,12 @@ export const load: PageServerLoad = async ({ locals }) => {
             createdAt: position.createdAt ? new Date(position.createdAt).toISOString() : null,
             publishedAt: position.publishedAt ? new Date(position.publishedAt).toISOString() : null,
             hostName: position.host?.name || 'No Host',
+            hostEmail: position.host?.user?.email || 'No Email', // Added hostEmail
             companyId: position.host?.company?.id, // Added companyId
             companyName: position.host?.company?.companyName || 'No Company',
             isPublished: position.isPublished,
-            isInternalTester: position.host?.user?.role === 'INTERNAL_TESTER'
+            isInternalTester: position.host?.user?.role === 'INTERNAL_TESTER',
+            attachments: position.attachments
         };
     });
 
@@ -983,6 +987,8 @@ export const actions: Actions = {
             const arrival = formData.get('arrival')?.toString();
             const start = formData.get('start')?.toString();
             const end = formData.get('end')?.toString();
+            const attachment1 = formData.get('attachment1') as File | null;
+            const attachment2 = formData.get('attachment2') as File | null;
 
             console.log("[UpdatePosition] Values:", { 
                 positionId, title, career, slotsStr, contactName 
@@ -997,6 +1003,64 @@ export const actions: Actions = {
             if (isNaN(slots)) {
                 console.log("[UpdatePosition] Validation failed - invalid slots:", slotsStr);
                 return { success: false, message: "Invalid number of slots" };
+            }
+
+            // Enforce 2-attachment limit (existing + new)
+            const positionOriginal = await prisma.position.findUnique({
+                where: { id: positionId },
+                include: { attachments: true }
+            });
+
+            if (!positionOriginal) {
+                return { success: false, message: "Position not found" };
+            }
+
+            const existingAttachmentCount = positionOriginal.attachments.length;
+            const newAttachmentCount = (attachment1 && attachment1.size > 0 ? 1 : 0) + (attachment2 && attachment2.size > 0 ? 1 : 0);
+            
+            if (existingAttachmentCount + newAttachmentCount > 2) {
+                return { 
+                    success: false, 
+                    message: `Maximum 2 attachments allowed per position. You have ${existingAttachmentCount} existing attachment(s) and are trying to add ${newAttachmentCount} new one(s).`
+                };
+            }
+
+            const attachments = [];
+
+            if (attachment1 && attachment1.size > 0) {
+                try {
+                    const bytes = await attachment1.arrayBuffer();
+                    const buffer = Buffer.from(bytes);
+                    const originalFileName = attachment1.name;
+                    const sanitizedTitle = title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
+                    const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
+                    
+                    await addNewFile(storagePath, buffer);
+                    attachments.push({ 
+                        fileName: originalFileName,
+                        storagePath: storagePath
+                    });
+                } catch (error) {
+                    console.error('Error uploading attachment1:', error);
+                }
+            }
+
+            if (attachment2 && attachment2.size > 0) {
+                try {
+                    const bytes = await attachment2.arrayBuffer();
+                    const buffer = Buffer.from(bytes);
+                    const originalFileName = attachment2.name;
+                    const sanitizedTitle = title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
+                    const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
+                    
+                    await addNewFile(storagePath, buffer);
+                    attachments.push({ 
+                        fileName: originalFileName,
+                        storagePath: storagePath
+                    });
+                } catch (error) {
+                    console.error('Error uploading attachment2:', error);
+                }
             }
 
             // Update position record
@@ -1015,9 +1079,8 @@ export const actions: Actions = {
                     arrival: arrival || '',
                     start: start || '',
                     end: end || '',
-                    // If it was already published but didn't have a publishedAt, set it now
-                    publishedAt: {
-                        set: undefined // Default behavior
+                    attachments: {
+                        create: attachments
                     }
                 }
             });
@@ -1073,6 +1136,8 @@ export const actions: Actions = {
             const arrival = formData.get('arrival')?.toString();
             const start = formData.get('start')?.toString();
             const end = formData.get('end')?.toString();
+            const attachment1 = formData.get('attachment1') as File | null;
+            const attachment2 = formData.get('attachment2') as File | null;
 
             if (!positionId || !title || !career || !slotsStr) {
                 return { success: false, message: "Missing required fields" };
@@ -1105,6 +1170,55 @@ export const actions: Actions = {
                 return { success: false, message: "Position not found" };
             }
 
+            // Enforce 2-attachment limit (existing + new)
+            const existingAttachmentCount = position.attachments.length;
+            const newAttachmentCount = (attachment1 && attachment1.size > 0 ? 1 : 0) + (attachment2 && attachment2.size > 0 ? 1 : 0);
+            
+            if (existingAttachmentCount + newAttachmentCount > 2) {
+                return { 
+                    success: false, 
+                    message: `Maximum 2 attachments allowed per position. You have ${existingAttachmentCount} existing attachment(s) and are trying to add ${newAttachmentCount} new one(s).`
+                };
+            }
+
+            const attachments = [];
+
+            if (attachment1 && attachment1.size > 0) {
+                try {
+                    const bytes = await attachment1.arrayBuffer();
+                    const buffer = Buffer.from(bytes);
+                    const originalFileName = attachment1.name;
+                    const sanitizedTitle = title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
+                    const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
+                    
+                    await addNewFile(storagePath, buffer);
+                    attachments.push({ 
+                        fileName: originalFileName,
+                        storagePath: storagePath
+                    });
+                } catch (error) {
+                    console.error('Error uploading attachment1:', error);
+                }
+            }
+
+            if (attachment2 && attachment2.size > 0) {
+                try {
+                    const bytes = await attachment2.arrayBuffer();
+                    const buffer = Buffer.from(bytes);
+                    const originalFileName = attachment2.name;
+                    const sanitizedTitle = title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
+                    const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
+                    
+                    await addNewFile(storagePath, buffer);
+                    attachments.push({ 
+                        fileName: originalFileName,
+                        storagePath: storagePath
+                    });
+                } catch (error) {
+                    console.error('Error uploading attachment2:', error);
+                }
+            }
+
             const now = new Date();
 
             // 2. Perform updates in a transaction
@@ -1126,7 +1240,10 @@ export const actions: Actions = {
                         start: start || '',
                         end: end || '',
                         isPublished: true,
-                        publishedAt: now
+                        publishedAt: now,
+                        attachments: {
+                            create: attachments
+                        }
                     }
                 }),
                 // Update host's user record to simulate participation
@@ -1228,9 +1345,55 @@ export const actions: Actions = {
             const arrival = formData.get('arrival')?.toString();
             const start = formData.get('start')?.toString();
             const end = formData.get('end')?.toString();
+            const attachment1 = formData.get('attachment1') as File | null;
+            const attachment2 = formData.get('attachment2') as File | null;
 
             if (!title || !career || !slots) {
                 return { success: false, message: "Missing required fields" };
+            }
+
+            // Enforce 2-attachment limit
+            const attachmentCount = (attachment1 && attachment1.size > 0 ? 1 : 0) + (attachment2 && attachment2.size > 0 ? 1 : 0);
+            if (attachmentCount > 2) {
+                return { success: false, message: "Maximum 2 attachments allowed per position" };
+            }
+
+            const attachments = [];
+
+            if (attachment1 && attachment1.size > 0) {
+                try {
+                    const bytes = await attachment1.arrayBuffer();
+                    const buffer = Buffer.from(bytes);
+                    const originalFileName = attachment1.name;
+                    const sanitizedTitle = title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
+                    const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
+                    
+                    await addNewFile(storagePath, buffer);
+                    attachments.push({ 
+                        fileName: originalFileName,
+                        storagePath: storagePath
+                    });
+                } catch (error) {
+                    console.error('Error uploading attachment1:', error);
+                }
+            }
+
+            if (attachment2 && attachment2.size > 0) {
+                try {
+                    const bytes = await attachment2.arrayBuffer();
+                    const buffer = Buffer.from(bytes);
+                    const originalFileName = attachment2.name;
+                    const sanitizedTitle = title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
+                    const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
+                    
+                    await addNewFile(storagePath, buffer);
+                    attachments.push({ 
+                        fileName: originalFileName,
+                        storagePath: storagePath
+                    });
+                } catch (error) {
+                    console.error('Error uploading attachment2:', error);
+                }
             }
 
             // Use provided hostId or fallback to admin host
@@ -1257,7 +1420,10 @@ export const actions: Actions = {
                     end: end || '',
                     eventId: activeEvent.id,
                     hostId: finalHostId,
-                    isPublished: false
+                    isPublished: false,
+                    attachments: {
+                        create: attachments
+                    }
                 }
             });
 
@@ -1722,6 +1888,56 @@ export const actions: Actions = {
         } catch (error) {
             console.error('Error sending messages to companies:', error);
             return { success: false, message: "Failed to send messages" };
+        }
+    },
+
+    deleteAttachment: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canWriteAdminData(userInfo!)) {
+            return { success: false, message: "You do not have permission to delete attachments" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const attachmentId = formData.get('attachmentId')?.toString();
+            const positionId = formData.get('posId')?.toString();
+
+            if (!attachmentId || !positionId) {
+                return { success: false, message: "Missing required fields" };
+            }
+
+            const attachment = await prisma.attachment.findUnique({
+                where: { id: attachmentId }
+            });
+
+            if (!attachment || attachment.positionId !== positionId) {
+                return { success: false, message: "Attachment not found" };
+            }
+
+            // Delete from storage
+            try {
+                await deleteFile(attachment.storagePath);
+            } catch (error) {
+                console.error('Error deleting file from storage:', error);
+            }
+
+            // Delete from database
+            await prisma.attachment.delete({
+                where: { id: attachmentId }
+            });
+
+            return { success: true, message: "Attachment deleted successfully" };
+        } catch (error) {
+            console.error('Error deleting attachment:', error);
+            return { success: false, message: "Failed to delete attachment" };
         }
     }
 };
