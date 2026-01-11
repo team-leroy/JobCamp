@@ -37,6 +37,7 @@ interface CareerStats {
     totalPositions: number;
     totalSlots: number;
     totalChoices: number;
+    totalFilled: number;
     companies: Set<string>;
 }
 
@@ -44,6 +45,7 @@ interface CompanyPopularity {
     totalPositions: number;
     totalSlots: number;
     totalChoices: number;
+    totalFilled: number;
     careerFields: Set<string>;
 }
 
@@ -67,6 +69,7 @@ interface CareerStatsResult {
     totalPositions: number;
     totalSlots: number;
     totalChoices: number;
+    totalFilled: number;
     averageChoicesPerPosition: number;
     companies: string[];
 }
@@ -76,6 +79,7 @@ interface CompanyStatsResult {
     totalPositions: number;
     totalSlots: number;
     totalChoices: number;
+    totalFilled: number;
     averageChoicesPerPosition: number;
     careerFields: string[];
 }
@@ -440,7 +444,9 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
                     include: {
                         student: true
                     }
-                }
+                },
+                lotteryAssignments: true,
+                manualAssignments: true
             }
         });
 
@@ -463,18 +469,23 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
             );
             const top3Choices = validStudents.filter(choice => choice.rank <= 3).length;
             
+            // Calculate actual slots filled (manual + lottery)
+            const slotsFilled = position.manualAssignments.length + position.lotteryAssignments.length;
+
             // Track positions by career
             if (!positionsByCareer[careerField]) {
                 positionsByCareer[careerField] = {
                     totalPositions: 0,
                     totalSlots: 0,
                     totalChoices: 0,
+                    totalFilled: 0,
                     companies: new Set()
                 };
             }
             positionsByCareer[careerField].totalPositions++;
             positionsByCareer[careerField].totalSlots += position.slots;
             positionsByCareer[careerField].totalChoices += top3Choices;
+            positionsByCareer[careerField].totalFilled += slotsFilled;
             positionsByCareer[careerField].companies.add(companyName);
 
             // Track company popularity
@@ -483,12 +494,14 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
                     totalPositions: 0,
                     totalSlots: 0,
                     totalChoices: 0,
+                    totalFilled: 0,
                     careerFields: new Set()
                 };
             }
             companyPopularity[companyName].totalPositions++;
             companyPopularity[companyName].totalSlots += position.slots;
             companyPopularity[companyName].totalChoices += top3Choices;
+            companyPopularity[companyName].totalFilled += slotsFilled;
             companyPopularity[companyName].careerFields.add(careerField);
 
             // Check for oversubscription (using top 3 choices)
@@ -517,6 +530,7 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
             totalPositions: stats.totalPositions,
             totalSlots: stats.totalSlots,
             totalChoices: stats.totalChoices,
+            totalFilled: stats.totalFilled,
             averageChoicesPerPosition: stats.totalChoices / stats.totalPositions,
             companies: Array.from(stats.companies)
         }));
@@ -526,6 +540,7 @@ async function calculateCompanyStats(userInfo: UserInfo, activeEventId: string) 
             totalPositions: stats.totalPositions,
             totalSlots: stats.totalSlots,
             totalChoices: stats.totalChoices,
+            totalFilled: stats.totalFilled,
             averageChoicesPerPosition: stats.totalChoices / stats.totalPositions,
             careerFields: Array.from(stats.careerFields)
         }));
@@ -618,7 +633,7 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
                 eventId: activeEventId,
                 isPublished: true,
                 host: {
-                    user: {
+                user: {
                         OR: [
                             { role: null },
                             { role: { not: 'INTERNAL_TESTER' } }
@@ -956,7 +971,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             where: { id: activeEventId },
             select: { isActive: true, activatedAt: true, createdAt: true }
         });
-        
+
         // Get all students with their choice data (for active event only)
         // Exclude internal testers, inactive, and graduated students
         const studentWhereClause = {
@@ -1237,7 +1252,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         });
 
         Object.entries(companyByDate).forEach(([date, count]) => {
-            companyStats.push({ date, count });
+                        companyStats.push({ date, count });
         });
 
         // Position timeline (based on position publishedAt dates, fallback to createdAt)

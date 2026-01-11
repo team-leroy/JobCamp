@@ -832,12 +832,7 @@
   });
 </script>
 
-<Navbar
-  {loggedIn}
-  {isHost}
-  {isAdmin}
-  {userRole}
-/>
+<Navbar {loggedIn} {isHost} {isAdmin} {userRole} />
 
 <div class="h-28"></div>
 
@@ -1128,9 +1123,9 @@
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-red-600">
-              {(companyStats.totalChoices / companyStats.totalPositions).toFixed(
-                1
-              )}
+              {(
+                companyStats.totalChoices / companyStats.totalPositions
+              ).toFixed(1)}
             </div>
             <div class="text-sm text-gray-600">
               Avg Top 3 Choices per Position
@@ -1175,9 +1170,9 @@
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-red-600">
-              {(companyStats.totalChoices / companyStats.totalPositions).toFixed(
-                1
-              )}
+              {(
+                companyStats.totalChoices / companyStats.totalPositions
+              ).toFixed(1)}
             </div>
             <div class="text-sm text-gray-600">Avg Choices per Position</div>
           </div>
@@ -1303,7 +1298,7 @@
                     >{career.totalSlots}</td
                   >
                   <td class="py-2 px-4 border-b text-sm text-red-600"
-                    >{career.totalSlots - career.totalChoices}</td
+                    >{career.totalFilled}</td
                   >
                 </tr>
               {/each}
