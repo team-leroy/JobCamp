@@ -283,14 +283,15 @@
         (companyEmailVerifiedFilter === "Verified" && company.emailVerified) ||
         (companyEmailVerifiedFilter === "Unverified" && !company.emailVerified);
 
-      // 5. Status Filter (Published/Draft)
+      // 5. Status Filter (Published/Draft/No Position)
       const matchesStatus =
         positionStatusFilter === "All" ||
-        company.activePositions.some(
-          (pos) =>
-            (positionStatusFilter === "Published" && pos.isPublished) ||
-            (positionStatusFilter === "Draft" && !pos.isPublished)
-        );
+        (positionStatusFilter === "Published" &&
+          company.activePositions.some((pos) => pos.isPublished)) ||
+        (positionStatusFilter === "Draft" &&
+          company.activePositions.some((pos) => !pos.isPublished)) ||
+        (positionStatusFilter === "No Position" &&
+          company.activePositions.length === 0);
 
       // 6. Event Filter
       const matchesEvent =
@@ -863,6 +864,7 @@
                     { value: "All", label: "All Status" },
                     { value: "Published", label: "Published" },
                     { value: "Draft", label: "Draft" },
+                    { value: "No Position", label: "No Position" },
                   ]}
                 />
               </div>
@@ -913,6 +915,8 @@
                       params.set("emailVerified", companyEmailVerifiedFilter);
                     if (companyEventFilter !== "All")
                       params.set("eventId", companyEventFilter);
+                    if (positionStatusFilter !== "All")
+                      params.set("positionStatus", positionStatusFilter);
                     if (showInternalTesters) params.set("showTesters", "true");
 
                     window.location.href = `/dashboard/admin/data-mgmt/export?${params.toString()}`;

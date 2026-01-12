@@ -254,6 +254,7 @@ async function exportCompanies(schoolIds: string[], url: URL) {
     const companyNameFilter = url.searchParams.get('companyName') || '';
     const emailVerifiedFilter = url.searchParams.get('emailVerified') || 'All';
     const eventIdFilter = url.searchParams.get('eventId') || 'All';
+    const positionStatusFilter = url.searchParams.get('positionStatus') || 'All';
     const showTesters = url.searchParams.get('showTesters') === 'true';
 
     // Get active event for position count and login check
@@ -303,16 +304,24 @@ async function exportCompanies(schoolIds: string[], url: URL) {
         const participatedEventIds = new Set<string>();
         let activePositionCount = 0;
         let activeSlotsCount = 0;
+        let hasAnyActivePosition = false;
+        let hasPublishedActivePosition = false;
+        let hasDraftActivePosition = false;
 
         company.hosts.forEach(host => {
-            // 1. Add events where they have a published position
+            // 1. Add events where they have any position (published or draft)
             host.positions.forEach(pos => {
-                if (pos.isPublished) {
-                    participatedEventIds.add(pos.eventId);
-                }
-                if (activeEvent && pos.eventId === activeEvent.id && pos.isPublished) {
-                    activePositionCount++;
-                    activeSlotsCount += pos.slots;
+                participatedEventIds.add(pos.eventId);
+                
+                if (activeEvent && pos.eventId === activeEvent.id) {
+                    hasAnyActivePosition = true;
+                    if (pos.isPublished) {
+                        hasPublishedActivePosition = true;
+                        activePositionCount++;
+                        activeSlotsCount += pos.slots;
+                    } else {
+                        hasDraftActivePosition = true;
+                    }
                 }
             });
 
@@ -341,7 +350,10 @@ async function exportCompanies(schoolIds: string[], url: URL) {
             activeSlotsCount,
             isInternalTester,
             emailVerified,
-            eventIds: Array.from(participatedEventIds)
+            eventIds: Array.from(participatedEventIds),
+            hasAnyActivePosition,
+            hasPublishedActivePosition,
+            hasDraftActivePosition
         };
     }).filter(company => {
         const matchesCompanyName = !companyNameFilter || 
@@ -353,9 +365,14 @@ async function exportCompanies(schoolIds: string[], url: URL) {
         
         const matchesEvent = eventIdFilter === "All" || company.eventIds.includes(eventIdFilter);
 
+        const matchesStatus = positionStatusFilter === "All" || 
+            (positionStatusFilter === "Published" && company.hasPublishedActivePosition) || 
+            (positionStatusFilter === "Draft" && company.hasDraftActivePosition) ||
+            (positionStatusFilter === "No Position" && !company.hasAnyActivePosition);
+
         const matchesTester = showTesters || !company.isInternalTester;
 
-        return matchesCompanyName && matchesEmailVerified && matchesEvent && matchesTester;
+        return matchesCompanyName && matchesEmailVerified && matchesEvent && matchesStatus && matchesTester;
     });
 
     // Generate CSV
