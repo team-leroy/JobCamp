@@ -12,13 +12,14 @@ import {
     getStudentsWithFewSlots,
     getStudentsAssignedInLottery,
     getStudentsUnassignedInLottery,
-    getAllCompanyContactsForEvent,
+    getCompanyRecipientsByGroup,
     getStudentDetailedData,
     getCompanyDetailedData,
     formatStudentDataForEmail,
     formatCompanyDataForEmail,
     type StudentRecipient
 } from '$lib/server/messaging';
+import type { RecipientType } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -143,7 +144,12 @@ export const actions: Actions = {
                     recipients = await getStudentsUnassignedInLottery(schoolId);
                     break;
                 case 'all_company_contacts':
-                    recipients = await getAllCompanyContactsForEvent(schoolId);
+                case 'all_companies':
+                case 'published_positions':
+                case 'draft_positions':
+                case 'no_positions':
+                case 'students_attending':
+                    recipients = await getCompanyRecipientsByGroup(schoolId, recipientType);
                     break;
                 default:
                     return { success: false, message: 'Invalid recipient type' };
@@ -296,6 +302,16 @@ export const actions: Actions = {
                 where: { schoolId, isActive: true }
             });
 
+            const recipientTypeMapping: Record<string, string> = {
+                'all_students': 'STUDENTS',
+                'incomplete_permission_slip': 'STUDENTS_INCOMPLETE_PERMISSION_SLIP',
+                'no_job_picks': 'STUDENTS_NO_PICKS',
+                'few_picks': 'STUDENTS_FEW_PICKS',
+                'few_slots': 'STUDENTS_FEW_SLOTS',
+                'lottery_assigned': 'POST_LOTTERY_ASSIGNED',
+                'lottery_unassigned': 'POST_LOTTERY_UNASSIGNED'
+            };
+
             await prisma.message.create({
                 data: {
                     senderId: locals.user.id,
@@ -303,7 +319,7 @@ export const actions: Actions = {
                     schoolId,
                     eventId: activeEvent?.id,
                     messageType: messageType === 'email' ? 'EMAIL' : 'SMS',
-                    recipientType: recipientType.toUpperCase().replace(/_/g, '_') as 'STUDENTS' | 'STUDENTS_INCOMPLETE_PERMISSION_SLIP' | 'STUDENTS_NO_PICKS' | 'STUDENTS_FEW_PICKS' | 'STUDENTS_FEW_SLOTS',
+                    recipientType: (recipientTypeMapping[recipientType] || 'STUDENTS') as RecipientType,
                     recipientCount: successCount,
                     subject: subject || null,
                     includeParents: includeParents,
@@ -339,6 +355,7 @@ export const actions: Actions = {
             const schoolId = userInfo!.adminOfSchools[0].id;
             const formData = await request.formData();
             
+            const recipientType = formData.get('recipientType')?.toString() || 'all_companies';
             const subject = formData.get('subject')?.toString();
             const message = formData.get('message')?.toString();
 
@@ -346,32 +363,125 @@ export const actions: Actions = {
                 return { success: false, message: 'Subject and message are required' };
             }
 
-            // Get all company contacts for the active event
-            const contacts = await getAllCompanyContactsForEvent(schoolId);
+            // Get recipients based on group
+            const contacts = await getCompanyRecipientsByGroup(schoolId, recipientType);
 
             if (contacts.length === 0) {
-                return { success: false, message: 'No company contacts found for the active event' };
+                return { success: false, message: 'No company contacts found for the selected criteria' };
             }
 
-            const emailRecipients = contacts.map(c => ({
-                email: c.email,
-                name: c.name
-            }));
-
-            const result = await sendBulkEmail({
-                to: emailRecipients,
-                subject,
-                html: message.replace(/\n/g, '<br>')
-            });
-
-            if (!result.success) {
-                return { success: false, message: result.error || 'Failed to send emails' };
-            }
-
-            // Log the message
             const activeEvent = await prisma.event.findFirst({
                 where: { schoolId, isActive: true }
             });
+
+            let successCount = 0;
+
+            if (recipientType === 'students_attending' && message.includes('{student_list}')) {
+                // Personalization required
+                const companies = new Set(contacts.map(c => c.companyId).filter(Boolean));
+                
+                for (const companyId of companies) {
+                    const companyContacts = contacts.filter(c => c.companyId === companyId);
+                    if (companyContacts.length === 0) continue;
+
+                    // Generate personalization data for this company
+                    const personalizationData = await prisma.company.findUnique({
+                        where: { id: companyId! },
+                        include: {
+                            hosts: {
+                                include: {
+                                    positions: {
+                                        where: { eventId: activeEvent?.id },
+                                        include: {
+                                            lotteryAssignments: {
+                                                include: {
+                                                    student: {
+                                                        include: {
+                                                            user: { select: { email: true } }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    if (!personalizationData) continue;
+
+                    const eventDate = activeEvent ? new Date(activeEvent.date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                    }) : '{date}';
+
+                    let studentListHtml = '';
+                    personalizationData.hosts.forEach(h => {
+                        h.positions.forEach(pos => {
+                            if (pos.lotteryAssignments.length > 0) {
+                                studentListHtml += `<strong>Position: ${pos.title} (${pos.start} - ${pos.end})</strong><br>`;
+                                pos.lotteryAssignments.forEach(assignment => {
+                                    const s = assignment.student;
+                                    const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent!.date) : 'N/A';
+                                    studentListHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'})<br>`;
+                                });
+                                studentListHtml += `<br>`;
+                            }
+                        });
+                    });
+
+                    const personalizedMessage = message
+                        .replace(/{host_name}/g, personalizationData.hosts[0]?.name || 'Partner')
+                        .replace(/{event_date}/g, eventDate)
+                        .replace(/{student_list}/g, studentListHtml);
+
+                    const emailRecipients = companyContacts.map(c => ({
+                        email: c.email,
+                        name: c.name
+                    }));
+
+                    const result = await sendBulkEmail({
+                        to: emailRecipients,
+                        subject,
+                        html: personalizedMessage.replace(/\n/g, '<br>')
+                    });
+
+                    if (result.success) {
+                        successCount += emailRecipients.length;
+                    }
+                }
+            } else {
+                // Regular bulk email
+                const emailRecipients = contacts.map(c => ({
+                    email: c.email,
+                    name: c.name
+                }));
+
+                const result = await sendBulkEmail({
+                    to: emailRecipients,
+                    subject,
+                    html: message.replace(/\n/g, '<br>')
+                });
+
+                if (result.success) {
+                    successCount = emailRecipients.length;
+                } else {
+                    return { success: false, message: result.error || 'Failed to send emails' };
+                }
+            }
+
+            // Log the message
+            const recipientTypeMapping: Record<string, string> = {
+                'all_companies': 'COMPANIES_ALL',
+                'published_positions': 'COMPANIES_PUBLISHED',
+                'draft_positions': 'COMPANIES_DRAFT',
+                'no_positions': 'COMPANIES_NO_POSITION',
+                'students_attending': 'COMPANIES_STUDENTS_ATTENDING',
+                'all_company_contacts': 'COMPANIES_ALL'
+            };
 
             await prisma.message.create({
                 data: {
@@ -380,8 +490,8 @@ export const actions: Actions = {
                     schoolId,
                     eventId: activeEvent?.id,
                     messageType: 'EMAIL',
-                    recipientType: 'COMPANIES_ALL',
-                    recipientCount: emailRecipients.length,
+                    recipientType: (recipientTypeMapping[recipientType] || 'COMPANIES_ALL') as RecipientType,
+                    recipientCount: successCount,
                     subject,
                     status: 'sent'
                 }
@@ -389,11 +499,41 @@ export const actions: Actions = {
 
             return {
                 success: true,
-                message: `Successfully sent email to ${emailRecipients.length} company contact(s)`
+                message: `Successfully sent email to ${successCount} company contact(s)`
             };
         } catch (error) {
             console.error('Error sending company message:', error);
             return { success: false, message: 'Failed to send message' };
+        }
+    },
+
+    loadCompanyTemplate: async ({ locals, request }) => {
+        if (!locals.user) {
+            return { success: false, message: 'Not authenticated' };
+        }
+
+        try {
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!canAccessFullAdminFeatures(userInfo!)) {
+                return { success: false, message: 'Not authorized' };
+            }
+
+            const formData = await request.formData();
+            const group = formData.get('group')?.toString();
+
+            if (group === 'students_attending') {
+                const template = `Dear {host_name},\n\n    The following students have been selected to attend your JobCamp Session on {event_date}:\n\n{student_list}`;
+                return { success: true, data: template };
+            }
+
+            return { success: true, data: '' };
+        } catch (error) {
+            console.error('Error loading company template:', error);
+            return { success: false, message: 'Failed to load template' };
         }
     },
 

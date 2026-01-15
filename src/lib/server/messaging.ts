@@ -431,6 +431,357 @@ export async function getStudentsUnassignedInLottery(schoolId: string): Promise<
 }
 
 /**
+ * Get company contacts for a specific group in the active event
+ */
+export async function getCompanyRecipientsByGroup(schoolId: string, group: string): Promise<Array<{
+  email: string;
+  name: string;
+  companyName: string;
+  type: 'account_holder' | 'host_contact';
+  companyId?: string;
+}>> {
+  const activeEvent = await prisma.event.findFirst({
+    where: {
+      schoolId,
+      isActive: true
+    }
+  });
+
+  if (!activeEvent) {
+    return [];
+  }
+
+  const emailSet = new Set<string>();
+  const contacts: Array<{
+    email: string;
+    name: string;
+    companyName: string;
+    type: 'account_holder' | 'host_contact';
+    companyId?: string;
+  }> = [];
+
+  // Helper to add contacts for a company
+  const addCompanyContacts = (
+    company: { id: string; companyName: string; hosts: Array<{ id: string; name: string; user?: { email: string | null } }> },
+    positions: Array<{ contact_name: string; contact_email: string }>
+  ) => {
+    const companyName = company.companyName;
+
+    // Add account holders
+    company.hosts.forEach((host) => {
+      if (host.user?.email && !emailSet.has(host.user.email)) {
+        emailSet.add(host.user.email);
+        contacts.push({
+          email: host.user.email,
+          name: host.name,
+          companyName,
+          type: "account_holder",
+          companyId: company.id,
+        });
+      }
+    });
+
+    // Add position contacts
+    positions.forEach((pos) => {
+      if (pos.contact_email && !emailSet.has(pos.contact_email)) {
+        emailSet.add(pos.contact_email);
+        contacts.push({
+          email: pos.contact_email,
+          name: pos.contact_name,
+          companyName,
+          type: "host_contact",
+          companyId: company.id,
+        });
+      }
+    });
+  };
+
+  switch (group) {
+    case 'all_companies': {
+      // All companies that have any position (draft or published) in the active event
+      const companies = await prisma.company.findMany({
+        where: {
+          schoolId,
+          hosts: {
+            some: {
+              positions: {
+                some: { eventId: activeEvent.id }
+              }
+            }
+          }
+        },
+        include: {
+          hosts: {
+            include: {
+              user: { select: { email: true } },
+              positions: {
+                where: { eventId: activeEvent.id }
+              }
+            }
+          }
+        }
+      });
+
+      companies.forEach(company => {
+        const positions = company.hosts.flatMap(h => h.positions);
+        addCompanyContacts(company, positions);
+      });
+      break;
+    }
+
+    case 'published_positions': {
+      const companies = await prisma.company.findMany({
+        where: {
+          schoolId,
+          hosts: {
+            some: {
+              positions: {
+                some: { 
+                  eventId: activeEvent.id,
+                  isPublished: true
+                }
+              }
+            }
+          }
+        },
+        include: {
+          hosts: {
+            include: {
+              user: { select: { email: true } },
+              positions: {
+                where: { 
+                  eventId: activeEvent.id,
+                  isPublished: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      companies.forEach(company => {
+        const positions = company.hosts.flatMap(h => h.positions);
+        addCompanyContacts(company, positions);
+      });
+      break;
+    }
+
+    case 'draft_positions': {
+      const companies = await prisma.company.findMany({
+        where: {
+          schoolId,
+          hosts: {
+            some: {
+              positions: {
+                some: { 
+                  eventId: activeEvent.id,
+                  isPublished: false
+                }
+              }
+            }
+          }
+        },
+        include: {
+          hosts: {
+            include: {
+              user: { select: { email: true } },
+              positions: {
+                where: { 
+                  eventId: activeEvent.id,
+                  isPublished: false
+                }
+              }
+            }
+          }
+        }
+      });
+
+      companies.forEach(company => {
+        const positions = company.hosts.flatMap(h => h.positions);
+        addCompanyContacts(company, positions);
+      });
+      break;
+    }
+
+    case 'no_positions': {
+      // Companies that logged in but have no positions for this event
+      const companies = await prisma.company.findMany({
+        where: {
+          schoolId,
+          hosts: {
+            some: {
+              user: {
+                lastLogin: { gte: activeEvent.createdAt }
+              }
+            }
+          }
+        },
+        include: {
+          hosts: {
+            include: {
+              user: { select: { email: true } },
+              positions: {
+                where: { eventId: activeEvent.id }
+              }
+            }
+          }
+        }
+      });
+
+      const companiesWithNoPos = companies.filter(c => 
+        c.hosts.every(h => h.positions.length === 0)
+      );
+
+      companiesWithNoPos.forEach(company => {
+        addCompanyContacts(company, []);
+      });
+      break;
+    }
+
+    case 'students_attending': {
+      const companies = await prisma.company.findMany({
+        where: {
+          schoolId,
+          hosts: {
+            some: {
+              positions: {
+                some: {
+                  eventId: activeEvent.id,
+                  lotteryAssignments: { some: {} }
+                }
+              }
+            }
+          }
+        },
+        include: {
+          hosts: {
+            include: {
+              user: { select: { email: true } },
+              positions: {
+                where: { 
+                  eventId: activeEvent.id,
+                  lotteryAssignments: { some: {} }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      companies.forEach(company => {
+        const positions = company.hosts.flatMap(h => h.positions);
+        addCompanyContacts(company, positions);
+      });
+      break;
+    }
+
+    case 'all_company_contacts': {
+      // Legacy - all published contacts
+      const companies = await prisma.company.findMany({
+        where: {
+          schoolId,
+          hosts: {
+            some: {
+              positions: {
+                some: { 
+                  eventId: activeEvent.id,
+                  isPublished: true
+                }
+              }
+            }
+          }
+        },
+        include: {
+          hosts: {
+            include: {
+              user: { select: { email: true } },
+              positions: {
+                where: { 
+                  eventId: activeEvent.id,
+                  isPublished: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      companies.forEach(company => {
+        const positions = company.hosts.flatMap(h => h.positions);
+        addCompanyContacts(company, positions);
+      });
+      break;
+    }
+  }
+
+  return contacts;
+}
+
+/**
+ * Generate a template for a company with its attending students
+ */
+export async function generateCompanyStudentsAttendingTemplate(companyId: string, eventId: string): Promise<string> {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    include: {
+      hosts: {
+        include: {
+          positions: {
+            where: { eventId },
+            include: {
+              lotteryAssignments: {
+                include: {
+                  student: {
+                    include: {
+                      user: { select: { email: true } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const activeEvent = await prisma.event.findUnique({
+    where: { id: eventId }
+  });
+
+  if (!company || !activeEvent) return '';
+
+  const host = company.hosts[0];
+  const hostName = host?.name || 'Partner';
+  
+  const eventDate = new Date(activeEvent.date).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
+  let template = `Dear ${hostName},\n\n`;
+  template += `    The following students have been selected to attend your JobCamp Session on ${eventDate}:\n\n`;
+
+  company.hosts.forEach(h => {
+    h.positions.forEach(pos => {
+      if (pos.lotteryAssignments.length > 0) {
+        template += `Position: ${pos.title} (${pos.start} - ${pos.end})\n`;
+        pos.lotteryAssignments.forEach(assignment => {
+          const s = assignment.student;
+          const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent.date) : 'N/A';
+          template += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'})\n`;
+        });
+        template += `\n`;
+      }
+    });
+  });
+
+  return template;
+}
+
+/**
  * Get all company account holders (users with host accounts)
  */
 export async function getCompanyAccountHolders(schoolId: string): Promise<CompanyRecipient[]> {
@@ -469,80 +820,7 @@ export async function getAllCompanyContactsForEvent(schoolId: string): Promise<A
   companyName: string;
   type: 'account_holder' | 'host_contact';
 }>> {
-  const activeEvent = await prisma.event.findFirst({
-    where: {
-      schoolId,
-      isActive: true
-    }
-  });
-
-  if (!activeEvent) {
-    return [];
-  }
-
-  const contacts: Array<{
-    email: string;
-    name: string;
-    companyName: string;
-    type: 'account_holder' | 'host_contact';
-  }> = [];
-
-  const emailSet = new Set<string>();
-
-  // Get all PUBLISHED positions for the active event
-  // Only companies/hosts with published positions are considered active participants
-  const positions = await prisma.position.findMany({
-    where: {
-      eventId: activeEvent.id,
-      isPublished: true  // Only include published positions
-    },
-    include: {
-      host: {
-        include: {
-          user: {
-            select: {
-              email: true
-            }
-          },
-          company: {
-            select: {
-              companyName: true
-            }
-          }
-        }
-      }
-    }
-  });
-
-  for (const position of positions) {
-    const companyName = position.host.company?.companyName || 'Unknown Company';
-    
-    // Add account holder (host user email)
-    const accountHolderEmail = position.host.user.email;
-    if (accountHolderEmail && !emailSet.has(accountHolderEmail)) {
-      emailSet.add(accountHolderEmail);
-      contacts.push({
-        email: accountHolderEmail,
-        name: position.host.name,
-        companyName,
-        type: 'account_holder'
-      });
-    }
-
-    // Add host contact (if different from account holder)
-    const hostContactEmail = position.contact_email;
-    if (hostContactEmail && !emailSet.has(hostContactEmail)) {
-      emailSet.add(hostContactEmail);
-      contacts.push({
-        email: hostContactEmail,
-        name: position.contact_name,
-        companyName,
-        type: 'host_contact'
-      });
-    }
-  }
-
-  return contacts;
+  return getCompanyRecipientsByGroup(schoolId, 'all_company_contacts');
 }
 
 /**

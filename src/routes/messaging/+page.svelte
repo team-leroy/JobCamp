@@ -66,6 +66,7 @@
   let companySubject = $state("");
   let companyMessage = $state("");
   let companyPreviewData = $state<FormResult | null>(null);
+  let lastLoadedCompanyGroup = $state("");
 
   const studentRecipientOptions = [
     { value: "all_students", label: "All Students with Accounts" },
@@ -77,6 +78,32 @@
     { value: "few_picks", label: "Students - Fewer Than 3 Picks" },
     { value: "few_slots", label: "Students - Total Slots < 5" },
   ];
+
+  const companyRecipientOptions = [
+    { value: "all_companies", label: "All Companies" },
+    { value: "published_positions", label: "Companies with Published Positions" },
+    { value: "draft_positions", label: "Companies with Draft Positions" },
+    { value: "no_positions", label: "Companies with No Position" },
+    { value: "students_attending", label: "Companies with Students Attending" },
+  ];
+
+  let companyRecipientType = $state("all_companies");
+
+  $effect(() => {
+    if (
+      activeTab === "company" &&
+      companyRecipientType === "students_attending" &&
+      lastLoadedCompanyGroup !== "students_attending"
+    ) {
+      handleLoadCompanyTemplate("students_attending");
+      lastLoadedCompanyGroup = "students_attending";
+    } else if (
+      activeTab === "company" &&
+      companyRecipientType !== "students_attending"
+    ) {
+      lastLoadedCompanyGroup = "";
+    }
+  });
 
   function setTab(tab: string) {
     activeTab = tab;
@@ -130,8 +157,7 @@
 
   async function handleCompanyPreview(formElement: HTMLFormElement) {
     const formData = new FormData(formElement);
-    // Add recipientType for company contacts
-    formData.set("recipientType", "all_company_contacts");
+    // recipientType is already bound to companyRecipientType hidden input
 
     try {
       const response = await fetch("?/previewRecipients", {
@@ -170,6 +196,40 @@
     } catch (error) {
       console.error("Error fetching company preview:", error);
       companyPreviewData = null;
+    }
+  }
+
+  async function handleLoadCompanyTemplate(group: string) {
+    if (!group) return;
+
+    const formData = new FormData();
+    formData.append("group", group);
+
+    try {
+      const response = await fetch("?/loadCompanyTemplate", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.type === "success" && result.data) {
+        const { deserialize } = await import("$app/forms");
+        const deserialized = deserialize(JSON.stringify(result));
+
+        if (deserialized.type === "success" && deserialized.data) {
+          const actionResult = deserialized.data;
+          if (actionResult.success && actionResult.data) {
+            // Set subject and message if they are empty or for students_attending
+            if (group === "students_attending") {
+              companySubject = "Important: Students Selected for Your JobCamp Session";
+              companyMessage = actionResult.data;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error loading company template:", error);
     }
   }
 
@@ -481,18 +541,28 @@
               class="space-y-4"
               use:enhance
             >
-              <div class="p-3 bg-blue-50 rounded-md text-sm">
-                <p class="font-medium">Recipients:</p>
-                <p class="text-gray-700">
-                  All account holders AND host contacts for <strong
-                    >published positions</strong
-                  > in the current event
-                </p>
-                <p class="text-xs text-gray-500 mt-1">
-                  (Only includes companies/hosts with published positions.
-                  Automatically deduplicated if same email for both roles)
-                </p>
+              <div>
+                <FilterSelect
+                  label="Recipient Group"
+                  options={companyRecipientOptions}
+                  bind:value={companyRecipientType}
+                  placeholder="Select recipients"
+                />
+                <input
+                  type="hidden"
+                  name="recipientType"
+                  bind:value={companyRecipientType}
+                />
               </div>
+
+              {#if companyRecipientType === "students_attending"}
+                <div class="p-3 bg-purple-50 rounded-md text-xs border border-purple-200">
+                  <p class="font-medium text-purple-800">Mail Merge Template:</p>
+                  <p class="mt-1">
+                    The tags <code>&#123;host_name&#125;</code>, <code>&#123;event_date&#125;</code>, and <code>&#123;student_list&#125;</code> will be automatically replaced for each company.
+                  </p>
+                </div>
+              {/if}
 
               <div>
                 <Label for="company-subject">Subject</Label>
@@ -512,7 +582,7 @@
                   name="message"
                   bind:value={companyMessage}
                   required
-                  rows={8}
+                  rows={10}
                   placeholder="Email message..."
                 />
               </div>
@@ -536,7 +606,7 @@
                 </Button>
                 <Button type="submit">
                   <Mail class="h-4 w-4 mr-2" />
-                  Send Email to All Company Contacts
+                  Send Email to Group
                 </Button>
               </div>
 
