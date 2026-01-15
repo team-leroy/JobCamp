@@ -5,6 +5,7 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { getCurrentGrade } from './gradeUtils';
 
 export interface StudentRecipient {
   id: string;
@@ -500,7 +501,7 @@ export async function getCompanyRecipientsByGroup(schoolId: string, group: strin
     case 'all_companies': {
       // All companies that have any position (draft or published) in the active event
       const companies = await prisma.company.findMany({
-        where: {
+    where: {
           schoolId,
           hosts: {
             some: {
@@ -537,16 +538,16 @@ export async function getCompanyRecipientsByGroup(schoolId: string, group: strin
             some: {
               positions: {
                 some: { 
-                  eventId: activeEvent.id,
+      eventId: activeEvent.id,
                   isPublished: true
                 }
               }
             }
           }
-        },
-        include: {
+    },
+    include: {
           hosts: {
-            include: {
+        include: {
               user: { select: { email: true } },
               positions: {
                 where: { 
@@ -589,12 +590,12 @@ export async function getCompanyRecipientsByGroup(schoolId: string, group: strin
                 where: { 
                   eventId: activeEvent.id,
                   isPublished: false
-                }
-              }
             }
           }
         }
-      });
+      }
+    }
+  });
 
       companies.forEach(company => {
         const positions = company.hosts.flatMap(h => h.positions);
