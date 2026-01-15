@@ -42,7 +42,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
                     schoolId: school.id,
                     isActive: true
                 },
-                isPublished: true // Only show published positions in company directory
+                isPublished: true, // Only show published positions in company directory
+                host: {
+                    user: {
+                        OR: [
+                            { role: null },
+                            { role: { not: 'INTERNAL_TESTER' } }
+                        ]
+                    }
+                }
             },
             include: {
                 host: {
@@ -64,6 +72,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
             },
             include: {
                 positions: {
+                    where: {
+                        host: {
+                            user: {
+                                OR: [
+                                    { role: null },
+                                    { role: { not: 'INTERNAL_TESTER' } }
+                                ]
+                            }
+                        }
+                    },
                     include: {
                         host: {
                             include: {

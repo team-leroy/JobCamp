@@ -40,7 +40,15 @@ export const load: PageServerLoad = async ({ locals }) => {
                 schoolId: school.id,
                 isActive: true
             },
-            isPublished: true // Only show published positions to students
+            isPublished: true, // Only show published positions to students
+            host: {
+                user: {
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
+                }
+            }
         },
         include: {
             host: {

@@ -129,9 +129,18 @@ async function runLotteryInBackground(jobId: string) {
         }
 
         // Get all positions from the specific event
+        // Exclude internal testers
         const positions = await prisma.position.findMany({
             where: {
-                eventId: eventId
+                eventId: eventId,
+                host: {
+                    user: {
+                        OR: [
+                            { role: null },
+                            { role: { not: 'INTERNAL_TESTER' } }
+                        ]
+                    }
+                }
             },
             include: {
                 event: {
@@ -163,8 +172,17 @@ async function runLotteryInBackground(jobId: string) {
         }
 
         // Get all students and their preferences for this specific event
+        // Exclude internal testers
         const studentsRaw = await prisma.student.findMany({
-            where: { schoolId },
+            where: { 
+                schoolId,
+                user: {
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
+                }
+            },
             include: {
                 positionsSignedUpFor: {
                     where: {

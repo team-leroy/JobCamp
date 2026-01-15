@@ -149,9 +149,10 @@ export const load: PageServerLoad = async ({ locals }) => {
         where: { 
             schoolId,
             user: {
-                NOT: {
-                    role: 'INTERNAL_TESTER'
-                }
+                OR: [
+                    { role: null },
+                    { role: { not: 'INTERNAL_TESTER' } }
+                ]
             }
         },
         orderBy: { lastName: 'asc' },
@@ -303,9 +304,10 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                 }
             },
             user: {
-                NOT: {
-                    role: 'INTERNAL_TESTER'
-                }
+                OR: [
+                    { role: null },
+                    { role: { not: 'INTERNAL_TESTER' } }
+                ]
             }
         },
         select: { id: true }
