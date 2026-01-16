@@ -222,7 +222,13 @@
           if (actionResult.success && actionResult.data) {
             // Set subject and message if they are empty or for students_attending
             if (group === "students_attending") {
-              companySubject = "Important: Students Selected for Your JobCamp Session";
+              const eventDate = activeEvent ? new Date(activeEvent.date).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+                timeZone: "UTC"
+              }) : "{Event date}";
+              companySubject = `${eventDate}: Students selected for your JobCamp session`;
               companyMessage = actionResult.data;
             }
           }

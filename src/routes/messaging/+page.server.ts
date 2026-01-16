@@ -423,13 +423,19 @@ export const actions: Actions = {
                     personalizationData.hosts.forEach(h => {
                         h.positions.forEach(pos => {
                             if (pos.lotteryAssignments.length > 0) {
-                                studentListHtml += `<strong>Position: ${pos.title} (${pos.start} - ${pos.end})</strong><br>`;
+                                studentListHtml += `<strong>Position: ${pos.title}</strong><br>`;
+                                studentListHtml += `Address: ${pos.address}<br>`;
+                                studentListHtml += `Arrival: ${pos.arrival}<br>`;
+                                studentListHtml += `Time: ${pos.start} - ${pos.end}<br>`;
+                                if (pos.attire) studentListHtml += `Attire: ${pos.attire}<br>`;
+                                if (pos.instructions) studentListHtml += `Instructions: ${pos.instructions}<br>`;
+                                studentListHtml += `<br>Selected Students:<br>`;
                                 pos.lotteryAssignments.forEach(assignment => {
                                     const s = assignment.student;
                                     const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent!.date) : 'N/A';
-                                    studentListHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'})<br>`;
+                                    studentListHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})<br>`;
                                 });
-                                studentListHtml += `<br>`;
+                                studentListHtml += `<br><hr><br>`;
                             }
                         });
                     });
@@ -456,21 +462,21 @@ export const actions: Actions = {
                 }
             } else {
                 // Regular bulk email
-                const emailRecipients = contacts.map(c => ({
-                    email: c.email,
-                    name: c.name
-                }));
+            const emailRecipients = contacts.map(c => ({
+                email: c.email,
+                name: c.name
+            }));
 
-                const result = await sendBulkEmail({
-                    to: emailRecipients,
-                    subject,
-                    html: message.replace(/\n/g, '<br>')
-                });
+            const result = await sendBulkEmail({
+                to: emailRecipients,
+                subject,
+                html: message.replace(/\n/g, '<br>')
+            });
 
                 if (result.success) {
                     successCount = emailRecipients.length;
                 } else {
-                    return { success: false, message: result.error || 'Failed to send emails' };
+                return { success: false, message: result.error || 'Failed to send emails' };
                 }
             }
 
@@ -527,7 +533,7 @@ export const actions: Actions = {
             const group = formData.get('group')?.toString();
 
             if (group === 'students_attending') {
-                const template = `Dear {host_name},\n\n    The following students have been selected to attend your JobCamp Session on {event_date}:\n\n{student_list}`;
+                const template = `Dear {host_name},\n\n    The following students have been selected to attend your JobCamp session on {event_date}:\n\n{student_list}\n\nJobCamp Team\nadmin@jobcamp.org`;
                 return { success: true, data: template };
             }
 

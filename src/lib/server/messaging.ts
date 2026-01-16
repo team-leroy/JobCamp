@@ -763,21 +763,29 @@ export async function generateCompanyStudentsAttendingTemplate(companyId: string
   });
 
   let template = `Dear ${hostName},\n\n`;
-  template += `    The following students have been selected to attend your JobCamp Session on ${eventDate}:\n\n`;
+  template += `    The following students have been selected to attend your JobCamp session on ${eventDate}:\n\n`;
 
   company.hosts.forEach(h => {
     h.positions.forEach(pos => {
       if (pos.lotteryAssignments.length > 0) {
-        template += `Position: ${pos.title} (${pos.start} - ${pos.end})\n`;
+        template += `Position: ${pos.title}\n`;
+        template += `Address: ${pos.address}\n`;
+        template += `Arrival: ${pos.arrival}\n`;
+        template += `Time: ${pos.start} - ${pos.end}\n`;
+        if (pos.attire) template += `Attire: ${pos.attire}\n`;
+        if (pos.instructions) template += `Instructions: ${pos.instructions}\n`;
+        template += `\nSelected Students:\n`;
         pos.lotteryAssignments.forEach(assignment => {
           const s = assignment.student;
           const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent.date) : 'N/A';
-          template += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'})\n`;
+          template += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})\n`;
         });
-        template += `\n`;
+        template += `\n----------------\n\n`;
       }
     });
   });
+
+  template += `JobCamp Team\nadmin@jobcamp.org`;
 
   return template;
 }
