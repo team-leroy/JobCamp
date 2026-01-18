@@ -1083,6 +1083,8 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
 
         // Create timeline based on real data
         const eventDate = new Date(event.date);
+        const now = new Date();
+        const timelineEndDate = eventData?.isActive ? (now < eventDate ? now : eventDate) : eventDate;
         
         // Create timeline data - use different windows for active vs archived events
         let timelineStart: Date;
@@ -1096,6 +1098,28 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             timelineStart = new Date(eventDate);
             timelineStart.setMonth(timelineStart.getMonth() - 6);
         }
+
+        /**
+         * Fills in missing dates in a timeline with zero counts
+         */
+        const fillGaps = (stats: TimelineStats[], start: Date, end: Date) => {
+            const map = new Map(stats.map(s => [s.date, s.count]));
+            const filled: TimelineStats[] = [];
+            const curr = new Date(start);
+            curr.setHours(0, 0, 0, 0);
+            const stop = new Date(end);
+            stop.setHours(0, 0, 0, 0);
+            
+            while (curr <= stop) {
+                const dateStr = curr.toISOString().split('T')[0];
+                filled.push({
+                    date: dateStr,
+                    count: map.get(dateStr) || 0
+                });
+                curr.setDate(curr.getDate() + 1);
+            }
+            return filled;
+        };
         
         const registrationStats: TimelineStats[] = [];
         const choiceStats: TimelineStats[] = [];
@@ -1108,7 +1132,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 const participation = s.eventParticipation.find(p => p.eventId === activeEventId);
                 return participation?.createdAt || s.user?.createdAt;
             })
-            .filter(date => date && date >= timelineStart && date <= eventDate)
+            .filter(date => date && date >= timelineStart && date <= timelineEndDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
         // For archived events, if no registrations in timeline window, try to find any registrations
@@ -1127,7 +1151,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 
                 const broaderRegistrationDates = students
                     .map(s => s.user?.createdAt)
-                    .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
+                    .filter(date => date && date >= broaderTimelineStart && date <= timelineEndDate)
                     .sort((a, b) => a!.getTime() - b!.getTime());
                 
                 if (broaderRegistrationDates.length > 0) {
@@ -1164,7 +1188,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         const choiceDates = studentsWithChoices
             .flatMap(s => s.positionsSignedUpFor)
             .map(choice => choice.createdAt)
-            .filter(date => date && date >= timelineStart && date <= eventDate)
+            .filter(date => date && date >= timelineStart && date <= timelineEndDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
         // For archived events, if no choices in timeline window, try to find any choices
@@ -1184,7 +1208,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 const broaderChoiceDates = studentsWithChoices
                     .flatMap(s => s.positionsSignedUpFor)
                     .map(choice => choice.createdAt)
-                    .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
+                    .filter(date => date && date >= broaderTimelineStart && date <= timelineEndDate)
                     .sort((a, b) => a!.getTime() - b!.getTime());
                 
                 if (broaderChoiceDates.length > 0) {
@@ -1221,11 +1245,11 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             const allDates: Date[] = [];
             c.hosts.forEach(h => {
                 // 1. Check for login during this event
-                if (h.user?.lastLogin && h.user.lastLogin >= timelineStart && h.user.lastLogin <= eventDate) {
+                if (h.user?.lastLogin && h.user.lastLogin >= timelineStart && h.user.lastLogin <= timelineEndDate) {
                     allDates.push(h.user.lastLogin);
                 }
                 // 2. Check for host creation during this event
-                if (h.createdAt && h.createdAt >= timelineStart && h.createdAt <= eventDate) {
+                if (h.createdAt && h.createdAt >= timelineStart && h.createdAt <= timelineEndDate) {
                     allDates.push(h.createdAt);
                 }
                 // 3. Check for published positions created or published during this event (brought forward or new)
@@ -1234,7 +1258,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                     .forEach(p => {
                         // Favor publishedAt if available, fallback to createdAt
                         const engagementDate = p.publishedAt || p.createdAt;
-                        if (engagementDate && engagementDate >= timelineStart && engagementDate <= eventDate) {
+                        if (engagementDate && engagementDate >= timelineStart && engagementDate <= timelineEndDate) {
                             allDates.push(engagementDate);
                         }
                     });
@@ -1258,7 +1282,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
         // Position timeline (based on position publishedAt dates, fallback to createdAt)
         const positionDates = positions
             .map(p => p.publishedAt || p.createdAt)
-            .filter(date => date && date >= timelineStart && date <= eventDate)
+            .filter(date => date && date >= timelineStart && date <= timelineEndDate)
             .sort((a, b) => a!.getTime() - b!.getTime());
 
         // For archived events, if no positions in timeline window, try to find any positions
@@ -1277,7 +1301,7 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
                 
                 const broaderPositionDates = positions
                     .map(p => p.publishedAt || p.createdAt)
-                    .filter(date => date && date >= broaderTimelineStart && date <= eventDate)
+                    .filter(date => date && date >= broaderTimelineStart && date <= timelineEndDate)
                     .sort((a, b) => a!.getTime() - b!.getTime());
                 
                 if (broaderPositionDates.length > 0) {
@@ -1313,11 +1337,48 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             progress: job.progress
         }));
 
+        // Sort original stats for milestones before filling gaps
+        registrationStats.sort((a, b) => a.date.localeCompare(b.date));
+        choiceStats.sort((a, b) => a.date.localeCompare(b.date));
+        companyStats.sort((a, b) => a.date.localeCompare(b.date));
+        positionStats.sort((a, b) => a.date.localeCompare(b.date));
+
+        // Determine final start date (the earliest across all data or the default timelineStart)
+        let finalTimelineStart = new Date(timelineStart);
+        [...registrationStats, ...choiceStats, ...companyStats, ...positionStats].forEach(s => {
+            const d = new Date(s.date);
+            if (d < finalTimelineStart) finalTimelineStart = d;
+        });
+
+        const milestones = {
+            totalStudents: students.length,
+            studentsWithChoices: studentsWithChoices.length,
+            totalCompanies: companies.length,
+            totalPositions: positions.length,
+            firstRegistration: registrationStats.length > 0 ? registrationStats[0].date : null,
+            lastRegistration: registrationStats.length > 0 ? registrationStats[registrationStats.length - 1].date : null,
+            firstChoice: choiceStats.length > 0 ? choiceStats[0].date : null,
+            lastChoice: choiceStats.length > 0 ? choiceStats[choiceStats.length - 1].date : null
+        };
+
+        const velocity = {
+            totalDays: registrationStats.length > 0 ? 
+                Math.ceil((new Date(registrationStats[registrationStats.length - 1].date).getTime() - 
+                          new Date(registrationStats[0].date).getTime()) / (1000 * 60 * 60 * 24)) : 0,
+            choiceDays: choiceStats.length > 0 ? 
+                Math.ceil((new Date(choiceStats[choiceStats.length - 1].date).getTime() - 
+                          new Date(choiceStats[0].date).getTime()) / (1000 * 60 * 60 * 24)) : 0,
+            avgRegistrationsPerDay: registrationStats.length > 0 ? 
+                registrationStats.reduce((sum, r) => sum + r.count, 0) / registrationStats.length : 0,
+            avgChoicesPerDay: choiceStats.length > 0 ? 
+                choiceStats.reduce((sum, c) => sum + c.count, 0) / choiceStats.length : 0
+        };
+
         return {
-            registrationStats: registrationStats.sort((a, b) => a.date.localeCompare(b.date)),
-            choiceStats: choiceStats.sort((a, b) => a.date.localeCompare(b.date)),
-            companyStats: companyStats.sort((a, b) => a.date.localeCompare(b.date)),
-            positionStats: positionStats.sort((a, b) => a.date.localeCompare(b.date)),
+            registrationStats: fillGaps(registrationStats, finalTimelineStart, timelineEndDate),
+            choiceStats: fillGaps(choiceStats, finalTimelineStart, timelineEndDate),
+            companyStats: fillGaps(companyStats, finalTimelineStart, timelineEndDate),
+            positionStats: fillGaps(positionStats, finalTimelineStart, timelineEndDate),
             lotteryStats,
             eventDate: eventDate.toISOString().split('T')[0],
             totalStudents: students.length,
@@ -1325,28 +1386,8 @@ async function calculateTimelineStats(userInfo: UserInfo, activeEventId: string)
             totalChoices,
             totalCompanies: companies.length,
             totalPositions: positions.length,
-            milestones: {
-                totalStudents: students.length,
-                studentsWithChoices: studentsWithChoices.length,
-                totalCompanies: companies.length,
-                totalPositions: positions.length,
-                firstRegistration: registrationStats.length > 0 ? registrationStats[0].date : null,
-                lastRegistration: registrationStats.length > 0 ? registrationStats[registrationStats.length - 1].date : null,
-                firstChoice: choiceStats.length > 0 ? choiceStats[0].date : null,
-                lastChoice: choiceStats.length > 0 ? choiceStats[choiceStats.length - 1].date : null
-            },
-            velocity: {
-                totalDays: registrationStats.length > 0 ? 
-                    Math.ceil((new Date(registrationStats[registrationStats.length - 1].date).getTime() - 
-                              new Date(registrationStats[0].date).getTime()) / (1000 * 60 * 60 * 24)) : 0,
-                choiceDays: choiceStats.length > 0 ? 
-                    Math.ceil((new Date(choiceStats[choiceStats.length - 1].date).getTime() - 
-                              new Date(choiceStats[0].date).getTime()) / (1000 * 60 * 60 * 24)) : 0,
-                avgRegistrationsPerDay: registrationStats.length > 0 ? 
-                    registrationStats.reduce((sum, r) => sum + r.count, 0) / registrationStats.length : 0,
-                avgChoicesPerDay: choiceStats.length > 0 ? 
-                    choiceStats.reduce((sum, c) => sum + c.count, 0) / choiceStats.length : 0
-            }
+            milestones,
+            velocity
         };
     } catch (error) {
         console.error('Error calculating timeline stats:', error);
