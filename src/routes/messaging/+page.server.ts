@@ -420,7 +420,7 @@ export const actions: Actions = {
                     }) : '{date}';
 
                     let studentListHtml = '';
-                    let positionDetailsHtml = '<br><strong>Position Details:</strong><br>----------------<br><br>';
+                    let positionDetailsHtml = '<br><strong>Position Details:</strong><br>----------------<br>';
                     let numStudents = 0;
                     personalizationData.hosts.forEach(h => {
                         h.positions.forEach(pos => {
@@ -435,13 +435,13 @@ export const actions: Actions = {
                                 });
 
                                 // Build position details
-                                positionDetailsHtml += `<strong>Position: ${pos.title}</strong><br>`;
+                                positionDetailsHtml += `<br><strong>Position: ${pos.title}</strong><br>`;
                                 positionDetailsHtml += `Address: ${pos.address}<br>`;
                                 positionDetailsHtml += `Arrival: ${pos.arrival}<br>`;
                                 positionDetailsHtml += `Time: ${pos.start} - ${pos.end}<br>`;
                                 if (pos.attire) positionDetailsHtml += `Attire: ${pos.attire}<br>`;
                                 if (pos.instructions) positionDetailsHtml += `Instructions: ${pos.instructions}<br>`;
-                                positionDetailsHtml += `<br><hr><br>`;
+                                positionDetailsHtml += `<hr>`;
                             }
                         });
                     });
@@ -540,7 +540,7 @@ export const actions: Actions = {
             const group = formData.get('group')?.toString();
 
             if (group === 'students_attending') {
-                const template = `Dear {host_name},\n\n    The following {num_students} students have been selected to attend your JobCamp session on {event_date}:\n\n{student_list}\n\nJobCamp Team\nadmin@jobcamp.org`;
+                const template = `Dear {host_name},\n\n    The following {num_students} students have been selected to attend your JobCamp session on {event_date}:\n\n{student_list}\nJobCamp Team\nadmin@jobcamp.org`;
                 return { success: true, data: template };
             }
 

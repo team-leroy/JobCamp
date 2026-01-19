@@ -787,24 +787,24 @@ export async function generateCompanyStudentsAttendingTemplate(companyId: string
   });
 
   template += `\nPosition Details:\n`;
-  template += `----------------\n\n`;
+  template += `----------------\n`;
 
   // Then, list the position details
   company.hosts.forEach(h => {
     h.positions.forEach(pos => {
       if (pos.lotteryAssignments.length > 0) {
-        template += `Position: ${pos.title}\n`;
+        template += `\nPosition: ${pos.title}\n`;
         template += `Address: ${pos.address}\n`;
         template += `Arrival: ${pos.arrival}\n`;
         template += `Time: ${pos.start} - ${pos.end}\n`;
         if (pos.attire) template += `Attire: ${pos.attire}\n`;
         if (pos.instructions) template += `Instructions: ${pos.instructions}\n`;
-        template += `\n----------------\n\n`;
+        template += `----------------\n`;
       }
     });
   });
 
-  template += `JobCamp Team\nadmin@jobcamp.org`;
+  template += `\nJobCamp Team\nadmin@jobcamp.org`;
 
   return template;
 }
