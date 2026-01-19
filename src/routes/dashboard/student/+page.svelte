@@ -9,6 +9,8 @@
 
   let { data, form } = $props();
 
+  let parentEmail = $state(data.parentEmail);
+  
   // Format date for display
   function formatDate(date: string | Date | null): string {
     if (!date) return "";
@@ -540,7 +542,7 @@
                 id="parent-email"
                 type="email"
                 name="parent-email"
-                bind:value={data.parentEmail}
+                bind:value={parentEmail}
                 placeholder="parent@example.com"
                 class="bg-white border-amber-300 focus:ring-amber-500"
               />

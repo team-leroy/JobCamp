@@ -1,11 +1,9 @@
 <script lang="ts">
-  import Button from "$lib/components/ui/button/button.svelte";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
   import User from "lucide-svelte/icons/user";
   import LogOut from "lucide-svelte/icons/log-out";
   import AlignJustify from "lucide-svelte/icons/align-justify";
   import { onMount } from "svelte";
-  import { page } from "$app/state";
   import logo from "$lib/assets/favicon.png";
 
   const {
@@ -30,6 +28,7 @@
   const isFullAdmin = $derived(isAdmin && userRole === "FULL_ADMIN");
 
   let collapsed = $state(false);
+  let dropdownOpen = $state(false);
 
   onMount(() => {
     const x = window.matchMedia("(max-width: 768px)");
@@ -40,6 +39,9 @@
     if (x.matches) collapsed = false;
     return () => x.removeEventListener("change", listener);
   });
+
+  const navLinkClass = "text-white text-xl hover:text-blue-200 transition-colors px-3 py-2";
+  const mobileNavLinkClass = "text-white text-xl hover:text-blue-200 transition-colors py-2";
 </script>
 
 <nav
@@ -56,138 +58,73 @@
       <div class="hidden md:flex flex-row gap-4 mr-4 items-center">
         {#if isAdmin}
           {#if isFullAdmin}
-            <Button href="/messaging" variant="link" class="text-white text-xl"
-              >Messaging</Button
-            >
+            <a href="/messaging" class={navLinkClass}>Messaging</a>
           {/if}
-          <Button
-            href="/dashboard/admin/data-mgmt"
-            variant="link"
-            class="text-white text-xl">Edit/Search Data</Button
-          >
+          <a href="/dashboard/admin/data-mgmt" class={navLinkClass}>Edit/Search Data</a>
           {#if isFullAdmin}
-            <Button href="/lottery" variant="link" class="text-white text-xl"
-              >Lottery</Button
-            >
+            <a href="/lottery" class={navLinkClass}>Lottery</a>
           {/if}
-          <Button
-            href="/visualizations"
-            variant="link"
-            class="text-white text-xl">Visualizations</Button
-          >
+          <a href="/visualizations" class={navLinkClass}>Visualizations</a>
           {#if isFullAdmin}
-            <Button
-              href="/dashboard/admin/event-mgmt"
-              variant="link"
-              class="text-white text-xl">Event Mgmt</Button
-            >
+            <a href="/dashboard/admin/event-mgmt" class={navLinkClass}>Event Mgmt</a>
           {/if}
-          <Button href="/dashboard" variant="link" class="text-white text-xl"
-            >Dashboard</Button
-          >
-          {#key page.url.pathname}
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger
-                class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
-              >
-                <User />
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content class="z-[100]" align="end">
-                <DropdownMenu.Item asChild>
-                  <a
-                    href="/settings"
-                    class="flex items-center cursor-pointer px-2 py-1.5 w-full"
-                  >
-                    <User class="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </a>
-                </DropdownMenu.Item>
-                <DropdownMenu.Separator />
-                <DropdownMenu.Item asChild>
-                  <a
-                    href="/logout"
-                    class="flex items-center cursor-pointer px-2 py-1.5 w-full text-red-600"
-                  >
-                    <LogOut class="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </a>
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-          {/key}
+          <a href="/dashboard" class={navLinkClass}>Dashboard</a>
         {:else}
           {#if !loggedIn}
-            <Button
-              href="/lghs/view-companies"
-              variant="link"
-              class="text-white text-xl">View Companies</Button
-            >
+            <a href="/lghs/view-companies" class={navLinkClass}>View Companies</a>
           {/if}
-          <Button href="/about" variant="link" class="text-white text-xl"
-            >About</Button
-          >
+          <a href="/about" class={navLinkClass}>About</a>
           {#if loggedIn && isHost}
-            <Button href="/host-tips" variant="link" class="text-white text-xl"
-              >Host Tips</Button
-            >
+            <a href="/host-tips" class={navLinkClass}>Host Tips</a>
           {/if}
-          <Button href="/faq" variant="link" class="text-white text-xl"
-            >FAQ</Button
-          >
-          {#if !loggedIn}
-            {#if showSignupLogin}
-              <Button
-                href="/signup"
-                variant="link"
-                class="text-white text-xl"
-                disabled={!studentAccountsEnabled && !companyAccountsEnabled}
-              >
-                Sign Up
-              </Button>
-              <Button
-                href="/login"
-                variant="link"
-                class="text-white text-xl"
-                disabled={!studentAccountsEnabled && !companyAccountsEnabled}
-              >
-                Login
-              </Button>
-            {/if}
-          {:else}
-            <Button href="/dashboard" variant="link" class="text-white text-xl"
-              >Dashboard</Button
+          <a href="/faq" class={navLinkClass}>FAQ</a>
+          {#if loggedIn}
+            <a href="/dashboard" class={navLinkClass}>Dashboard</a>
+          {/if}
+          
+          {#if !loggedIn && showSignupLogin}
+            <a href="/signup" 
+               class={navLinkClass + ( (!studentAccountsEnabled && !companyAccountsEnabled) ? " opacity-50 pointer-events-none" : "" )}>
+              Sign Up
+            </a>
+            <a href="/login" 
+               class={navLinkClass + ( (!studentAccountsEnabled && !companyAccountsEnabled) ? " opacity-50 pointer-events-none" : "" )}>
+              Login
+            </a>
+          {/if}
+        {/if}
+
+        {#if loggedIn}
+          <DropdownMenu.Root bind:open={dropdownOpen}>
+            <DropdownMenu.Trigger
+              class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-            {#key page.url.pathname}
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger
-                  class="px-2 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center cursor-pointer h-10 w-10"
+              <User class="text-gray-800" />
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content class="z-[100]" align="end">
+              <DropdownMenu.Item asChild>
+                <a
+                  href="/settings"
+                  class="flex items-center cursor-pointer px-2 py-1.5 w-full"
+                  onclick={() => (dropdownOpen = false)}
                 >
-                  <User />
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content class="z-[100]" align="end">
-                  <DropdownMenu.Item asChild>
-                    <a
-                      href="/settings"
-                      class="flex items-center cursor-pointer px-2 py-1.5 w-full"
-                    >
-                      <User class="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </a>
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Separator />
-                  <DropdownMenu.Item asChild>
-                    <a
-                      href="/logout"
-                      class="flex items-center cursor-pointer px-2 py-1.5 w-full text-red-600"
-                    >
-                      <LogOut class="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </a>
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
-            {/key}
-          {/if}
+                  <User class="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </a>
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator />
+              <DropdownMenu.Item asChild>
+                <a
+                  href="/logout"
+                  class="flex items-center cursor-pointer px-2 py-1.5 w-full text-red-600"
+                  onclick={() => (dropdownOpen = false)}
+                >
+                  <LogOut class="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </a>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
         {/if}
       </div>
       <AlignJustify
@@ -207,90 +144,47 @@
         class="text-white hover:cursor-pointer"
       />
     </div>
-    <div class="flex flex-col gap-4 pb-5 items-center">
+    <div class="flex flex-col gap-2 pb-5 items-center">
       {#if isAdmin}
         {#if isFullAdmin}
-          <Button href="/messaging" variant="link" class="text-white text-xl"
-            >Messaging</Button
-          >
+          <a href="/messaging" class={mobileNavLinkClass}>Messaging</a>
         {/if}
-        <Button
-          href="/dashboard/admin/data-mgmt"
-          variant="link"
-          class="text-white text-xl">Edit/Search Data</Button
-        >
+        <a href="/dashboard/admin/data-mgmt" class={mobileNavLinkClass}>Edit/Search Data</a>
         {#if isFullAdmin}
-          <Button href="/lottery" variant="link" class="text-white text-xl"
-            >Lottery</Button
-          >
+          <a href="/lottery" class={mobileNavLinkClass}>Lottery</a>
         {/if}
-        <Button href="/visualizations" variant="link" class="text-white text-xl"
-          >Visualizations</Button
-        >
+        <a href="/visualizations" class={mobileNavLinkClass}>Visualizations</a>
         {#if isFullAdmin}
-          <Button
-            href="/dashboard/admin/event-mgmt"
-            variant="link"
-            class="text-white text-xl">Event Mgmt</Button
-          >
+          <a href="/dashboard/admin/event-mgmt" class={mobileNavLinkClass}>Event Mgmt</a>
         {/if}
-        <Button href="/dashboard" variant="link" class="text-white text-xl"
-          >Dashboard</Button
-        >
-        <Button href="/settings" variant="link" class="text-white text-xl">Settings</Button>
-        <Button href="/logout" variant="link" class="text-white text-xl text-red-400">
-          <LogOut class="mr-2 h-4 w-4" />Log Out
-        </Button>
+        <a href="/dashboard" class={mobileNavLinkClass}>Dashboard</a>
+        <a href="/settings" class={mobileNavLinkClass}>Settings</a>
+        <a href="/logout" class={mobileNavLinkClass + " text-red-400"}>Log Out</a>
       {:else}
         {#if !loggedIn}
-          <Button
-            href="/lghs/view-companies"
-            variant="link"
-            class="text-white text-xl">View Companies</Button
-          >
+          <a href="/lghs/view-companies" class={mobileNavLinkClass}>View Companies</a>
         {/if}
-
-        <Button href="/about" variant="link" class="text-white text-xl"
-          >About</Button
-        >
-
+        <a href="/about" class={mobileNavLinkClass}>About</a>
         {#if loggedIn && isHost}
-          <Button href="/host-tips" variant="link" class="text-white text-xl"
-            >Host Tips</Button
-          >
+          <a href="/host-tips" class={mobileNavLinkClass}>Host Tips</a>
         {/if}
-
-        <Button href="/faq" variant="link" class="text-white text-xl"
-          >FAQ</Button
-        >
-
+        <a href="/faq" class={mobileNavLinkClass}>FAQ</a>
+        
         {#if !loggedIn}
           {#if showSignupLogin}
-            <Button
-              href="/signup"
-              variant="link"
-              class="text-white text-xl"
-              disabled={!studentAccountsEnabled && !companyAccountsEnabled}
-            >
+            <a href="/signup" 
+               class={mobileNavLinkClass + ( (!studentAccountsEnabled && !companyAccountsEnabled) ? " opacity-50 pointer-events-none" : "" )}>
               Sign Up
-            </Button>
-            <Button
-              href="/login"
-              variant="link"
-              class="text-white text-xl"
-              disabled={!studentAccountsEnabled && !companyAccountsEnabled}
-            >
+            </a>
+            <a href="/login" 
+               class={mobileNavLinkClass + ( (!studentAccountsEnabled && !companyAccountsEnabled) ? " opacity-50 pointer-events-none" : "" )}>
               Login
-            </Button>
+            </a>
           {/if}
         {:else}
-          <Button href="/dashboard" variant="link" class="text-white text-xl"
-            >Dashboard</Button
-          >
-          <Button href="/settings" variant="link" class="text-white text-xl">Settings</Button>
-          <Button href="/logout" variant="link" class="text-white text-xl text-red-400">
-            <LogOut class="mr-2 h-4 w-4" />Log Out
-          </Button>
+          <a href="/dashboard" class={mobileNavLinkClass}>Dashboard</a>
+          <a href="/settings" class={mobileNavLinkClass}>Settings</a>
+          <a href="/logout" class={mobileNavLinkClass + " text-red-400"}>Log Out</a>
         {/if}
       {/if}
     </div>
