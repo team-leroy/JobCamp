@@ -762,49 +762,36 @@ export async function generateCompanyStudentsAttendingTemplate(companyId: string
     year: 'numeric'
   });
 
-  // Calculate total number of students
-  let numStudents = 0;
-  company.hosts.forEach(h => {
-    h.positions.forEach(pos => {
-      numStudents += pos.lotteryAssignments.length;
-    });
-  });
-
   let template = `Dear ${hostName},\n\n`;
-  template += `    The following ${numStudents} students have been selected to attend your JobCamp session on ${eventDate}:\n\n`;
 
-  // First, list all students and their positions
+  // Group information by position
   company.hosts.forEach(h => {
     h.positions.forEach(pos => {
-      if (pos.lotteryAssignments.length > 0) {
+      const numStudentsInPos = pos.lotteryAssignments.length;
+      if (numStudentsInPos > 0) {
+        template += `    The following ${numStudentsInPos} student${numStudentsInPos === 1 ? '' : 's'} have been selected to attend your JobCamp session for "${pos.title}" on ${eventDate}:\n\n`;
+        
+        // List students for this position
         pos.lotteryAssignments.forEach(assignment => {
           const s = assignment.student;
           const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent.date) : 'N/A';
-          template += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''}) - Assigned to: ${pos.title}\n\n`;
+          template += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})\n\n`;
         });
-      }
-    });
-  });
 
-  template += `\nPosition Details:\n`;
-  template += `----------------\n`;
-
-  // Then, list the position details
-  company.hosts.forEach(h => {
-    h.positions.forEach(pos => {
-      if (pos.lotteryAssignments.length > 0) {
-        template += `\nPosition: ${pos.title}\n`;
+        template += `Position Details for "${pos.title}":\n`;
         template += `Address: ${pos.address}\n`;
         template += `Arrival: ${pos.arrival}\n`;
         template += `Time: ${pos.start} - ${pos.end}\n`;
         if (pos.attire) template += `Attire: ${pos.attire}\n`;
         if (pos.instructions) template += `Instructions: ${pos.instructions}\n`;
-        template += `----------------\n`;
+        template += `----------------\n\n`;
       }
     });
   });
 
-  template += `\nJobCamp Team\nadmin@jobcamp.org`;
+  template += `JobCamp Team\nadmin@jobcamp.org`;
+
+  return template;
 
   return template;
 }

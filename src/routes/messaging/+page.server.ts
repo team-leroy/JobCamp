@@ -419,29 +419,30 @@ export const actions: Actions = {
                         year: 'numeric'
                     }) : '{date}';
 
-                    let studentListHtml = '';
-                    let positionDetailsHtml = '<br><strong>Position Details:</strong><br>----------------<br>';
-                    let numStudents = 0;
+                    let groupedContentHtml = '';
+                    let totalNumStudents = 0;
                     personalizationData.hosts.forEach(h => {
                         h.positions.forEach(pos => {
                             if (pos.lotteryAssignments.length > 0) {
-                                numStudents += pos.lotteryAssignments.length;
+                                const numStudentsInPos = pos.lotteryAssignments.length;
+                                totalNumStudents += numStudentsInPos;
+                                groupedContentHtml += `&nbsp;&nbsp;&nbsp;&nbsp;The following ${numStudentsInPos} student${numStudentsInPos === 1 ? '' : 's'} have been selected to attend your JobCamp session for "${pos.title}" on ${eventDate}:<br><br>`;
                                 
-                                // Build student list
+                                // Build student list for this position
                                 pos.lotteryAssignments.forEach(assignment => {
                                     const s = assignment.student;
                                     const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent!.date) : 'N/A';
-                                    studentListHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''}) - Assigned to: ${pos.title}<br><br>`;
+                                    groupedContentHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})<br><br>`;
                                 });
 
-                                // Build position details
-                                positionDetailsHtml += `<br><strong>Position: ${pos.title}</strong><br>`;
-                                positionDetailsHtml += `Address: ${pos.address}<br>`;
-                                positionDetailsHtml += `Arrival: ${pos.arrival}<br>`;
-                                positionDetailsHtml += `Time: ${pos.start} - ${pos.end}<br>`;
-                                if (pos.attire) positionDetailsHtml += `Attire: ${pos.attire}<br>`;
-                                if (pos.instructions) positionDetailsHtml += `Instructions: ${pos.instructions}<br>`;
-                                positionDetailsHtml += `<hr>`;
+                                // Build position details for this position
+                                groupedContentHtml += `<strong>Position Details for "${pos.title}":</strong><br>`;
+                                groupedContentHtml += `Address: ${pos.address}<br>`;
+                                groupedContentHtml += `Arrival: ${pos.arrival}<br>`;
+                                groupedContentHtml += `Time: ${pos.start} - ${pos.end}<br>`;
+                                if (pos.attire) groupedContentHtml += `Attire: ${pos.attire}<br>`;
+                                if (pos.instructions) groupedContentHtml += `Instructions: ${pos.instructions}<br>`;
+                                groupedContentHtml += `<hr>`;
                             }
                         });
                     });
@@ -449,8 +450,8 @@ export const actions: Actions = {
                     const personalizedMessage = message
                         .replace(/{host_name}/g, personalizationData.hosts[0]?.name || 'Partner')
                         .replace(/{event_date}/g, eventDate)
-                        .replace(/{num_students}/g, numStudents.toString())
-                        .replace(/{student_list}/g, studentListHtml + positionDetailsHtml);
+                        .replace(/{num_students}/g, totalNumStudents.toString())
+                        .replace(/{student_list}/g, groupedContentHtml);
 
                     const emailRecipients = companyContacts.map(c => ({
                         email: c.email,
@@ -540,7 +541,7 @@ export const actions: Actions = {
             const group = formData.get('group')?.toString();
 
             if (group === 'students_attending') {
-                const template = `Dear {host_name},\n\n    The following {num_students} students have been selected to attend your JobCamp session on {event_date}:\n\n{student_list}\nJobCamp Team\nadmin@jobcamp.org`;
+                const template = `Dear {host_name},\n\n{student_list}\nJobCamp Team\nadmin@jobcamp.org`;
                 return { success: true, data: template };
             }
 
