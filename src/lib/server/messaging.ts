@@ -773,6 +773,23 @@ export async function generateCompanyStudentsAttendingTemplate(companyId: string
   let template = `Dear ${hostName},\n\n`;
   template += `    The following ${numStudents} students have been selected to attend your JobCamp session on ${eventDate}:\n\n`;
 
+  // First, list all students and their positions
+  company.hosts.forEach(h => {
+    h.positions.forEach(pos => {
+      if (pos.lotteryAssignments.length > 0) {
+        pos.lotteryAssignments.forEach(assignment => {
+          const s = assignment.student;
+          const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent.date) : 'N/A';
+          template += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''}) - Assigned to: ${pos.title}\n\n`;
+        });
+      }
+    });
+  });
+
+  template += `\nPosition Details:\n`;
+  template += `----------------\n\n`;
+
+  // Then, list the position details
   company.hosts.forEach(h => {
     h.positions.forEach(pos => {
       if (pos.lotteryAssignments.length > 0) {
@@ -782,13 +799,7 @@ export async function generateCompanyStudentsAttendingTemplate(companyId: string
         template += `Time: ${pos.start} - ${pos.end}\n`;
         if (pos.attire) template += `Attire: ${pos.attire}\n`;
         if (pos.instructions) template += `Instructions: ${pos.instructions}\n`;
-        template += `\nSelected Students:\n`;
-        pos.lotteryAssignments.forEach(assignment => {
-          const s = assignment.student;
-          const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent.date) : 'N/A';
-          template += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})\n\n`;
-        });
-        template += `----------------\n\n`;
+        template += `\n----------------\n\n`;
       }
     });
   });

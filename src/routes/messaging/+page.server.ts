@@ -420,24 +420,28 @@ export const actions: Actions = {
                     }) : '{date}';
 
                     let studentListHtml = '';
+                    let positionDetailsHtml = '<br><strong>Position Details:</strong><br>----------------<br><br>';
                     let numStudents = 0;
                     personalizationData.hosts.forEach(h => {
                         h.positions.forEach(pos => {
                             if (pos.lotteryAssignments.length > 0) {
                                 numStudents += pos.lotteryAssignments.length;
-                                studentListHtml += `<strong>Position: ${pos.title}</strong><br>`;
-                                studentListHtml += `Address: ${pos.address}<br>`;
-                                studentListHtml += `Arrival: ${pos.arrival}<br>`;
-                                studentListHtml += `Time: ${pos.start} - ${pos.end}<br>`;
-                                if (pos.attire) studentListHtml += `Attire: ${pos.attire}<br>`;
-                                if (pos.instructions) studentListHtml += `Instructions: ${pos.instructions}<br>`;
-                                studentListHtml += `<br>Selected Students:<br>`;
+                                
+                                // Build student list
                                 pos.lotteryAssignments.forEach(assignment => {
                                     const s = assignment.student;
                                     const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent!.date) : 'N/A';
-                                    studentListHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})<br><br>`;
+                                    studentListHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''}) - Assigned to: ${pos.title}<br><br>`;
                                 });
-                                studentListHtml += `<hr><br>`;
+
+                                // Build position details
+                                positionDetailsHtml += `<strong>Position: ${pos.title}</strong><br>`;
+                                positionDetailsHtml += `Address: ${pos.address}<br>`;
+                                positionDetailsHtml += `Arrival: ${pos.arrival}<br>`;
+                                positionDetailsHtml += `Time: ${pos.start} - ${pos.end}<br>`;
+                                if (pos.attire) positionDetailsHtml += `Attire: ${pos.attire}<br>`;
+                                if (pos.instructions) positionDetailsHtml += `Instructions: ${pos.instructions}<br>`;
+                                positionDetailsHtml += `<br><hr><br>`;
                             }
                         });
                     });
@@ -446,7 +450,7 @@ export const actions: Actions = {
                         .replace(/{host_name}/g, personalizationData.hosts[0]?.name || 'Partner')
                         .replace(/{event_date}/g, eventDate)
                         .replace(/{num_students}/g, numStudents.toString())
-                        .replace(/{student_list}/g, studentListHtml);
+                        .replace(/{student_list}/g, studentListHtml + positionDetailsHtml);
 
                     const emailRecipients = companyContacts.map(c => ({
                         email: c.email,
