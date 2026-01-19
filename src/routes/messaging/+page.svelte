@@ -565,7 +565,7 @@
                 <div class="p-3 bg-purple-50 rounded-md text-xs border border-purple-200">
                   <p class="font-medium text-purple-800">Mail Merge Template:</p>
                   <p class="mt-1">
-                    The tags <code>&#123;host_name&#125;</code>, <code>&#123;event_date&#125;</code>, and <code>&#123;student_list&#125;</code> will be automatically replaced for each company.
+                    The tags <code>&#123;host_name&#125;</code>, <code>&#123;event_date&#125;</code>, <code>&#123;num_students&#125;</code>, and <code>&#123;student_list&#125;</code> will be automatically replaced for each company.
                   </p>
                 </div>
               {/if}

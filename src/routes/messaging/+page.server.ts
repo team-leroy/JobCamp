@@ -420,9 +420,11 @@ export const actions: Actions = {
                     }) : '{date}';
 
                     let studentListHtml = '';
+                    let numStudents = 0;
                     personalizationData.hosts.forEach(h => {
                         h.positions.forEach(pos => {
                             if (pos.lotteryAssignments.length > 0) {
+                                numStudents += pos.lotteryAssignments.length;
                                 studentListHtml += `<strong>Position: ${pos.title}</strong><br>`;
                                 studentListHtml += `Address: ${pos.address}<br>`;
                                 studentListHtml += `Arrival: ${pos.arrival}<br>`;
@@ -433,9 +435,9 @@ export const actions: Actions = {
                                 pos.lotteryAssignments.forEach(assignment => {
                                     const s = assignment.student;
                                     const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent!.date) : 'N/A';
-                                    studentListHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})<br>`;
+                                    studentListHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})<br><br>`;
                                 });
-                                studentListHtml += `<br><hr><br>`;
+                                studentListHtml += `<hr><br>`;
                             }
                         });
                     });
@@ -443,6 +445,7 @@ export const actions: Actions = {
                     const personalizedMessage = message
                         .replace(/{host_name}/g, personalizationData.hosts[0]?.name || 'Partner')
                         .replace(/{event_date}/g, eventDate)
+                        .replace(/{num_students}/g, numStudents.toString())
                         .replace(/{student_list}/g, studentListHtml);
 
                     const emailRecipients = companyContacts.map(c => ({
@@ -533,7 +536,7 @@ export const actions: Actions = {
             const group = formData.get('group')?.toString();
 
             if (group === 'students_attending') {
-                const template = `Dear {host_name},\n\n    The following students have been selected to attend your JobCamp session on {event_date}:\n\n{student_list}\n\nJobCamp Team\nadmin@jobcamp.org`;
+                const template = `Dear {host_name},\n\n    The following {num_students} students have been selected to attend your JobCamp session on {event_date}:\n\n{student_list}\n\nJobCamp Team\nadmin@jobcamp.org`;
                 return { success: true, data: template };
             }
 

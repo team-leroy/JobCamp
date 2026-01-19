@@ -762,8 +762,16 @@ export async function generateCompanyStudentsAttendingTemplate(companyId: string
     year: 'numeric'
   });
 
+  // Calculate total number of students
+  let numStudents = 0;
+  company.hosts.forEach(h => {
+    h.positions.forEach(pos => {
+      numStudents += pos.lotteryAssignments.length;
+    });
+  });
+
   let template = `Dear ${hostName},\n\n`;
-  template += `    The following students have been selected to attend your JobCamp session on ${eventDate}:\n\n`;
+  template += `    The following ${numStudents} students have been selected to attend your JobCamp session on ${eventDate}:\n\n`;
 
   company.hosts.forEach(h => {
     h.positions.forEach(pos => {
@@ -778,9 +786,9 @@ export async function generateCompanyStudentsAttendingTemplate(companyId: string
         pos.lotteryAssignments.forEach(assignment => {
           const s = assignment.student;
           const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent.date) : 'N/A';
-          template += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})\n`;
+          template += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})\n\n`;
         });
-        template += `\n----------------\n\n`;
+        template += `----------------\n\n`;
       }
     });
   });
