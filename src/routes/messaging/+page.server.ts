@@ -426,7 +426,7 @@ export const actions: Actions = {
                             if (pos.lotteryAssignments.length > 0) {
                                 const numStudentsInPos = pos.lotteryAssignments.length;
                                 totalNumStudents += numStudentsInPos;
-                                groupedContentHtml += `&nbsp;&nbsp;&nbsp;&nbsp;The following ${numStudentsInPos} student${numStudentsInPos === 1 ? '' : 's'} have been selected to attend your JobCamp session for "${pos.title}" on ${eventDate}:<br><br>`;
+                                groupedContentHtml += `&nbsp;&nbsp;&nbsp;&nbsp;The following ${numStudentsInPos} student${numStudentsInPos === 1 ? '' : 's'} ${numStudentsInPos === 1 ? 'has' : 'have'} been selected to attend your JobCamp session for "${pos.title}" on ${eventDate}:<br><br>`;
                                 
                                 // Build student list for this position
                                 pos.lotteryAssignments.forEach(assignment => {

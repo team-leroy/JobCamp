@@ -769,7 +769,7 @@ export async function generateCompanyStudentsAttendingTemplate(companyId: string
     h.positions.forEach(pos => {
       const numStudentsInPos = pos.lotteryAssignments.length;
       if (numStudentsInPos > 0) {
-        template += `    The following ${numStudentsInPos} student${numStudentsInPos === 1 ? '' : 's'} have been selected to attend your JobCamp session for "${pos.title}" on ${eventDate}:\n\n`;
+        template += `    The following ${numStudentsInPos} student${numStudentsInPos === 1 ? '' : 's'} ${numStudentsInPos === 1 ? 'has' : 'have'} been selected to attend your JobCamp session for "${pos.title}" on ${eventDate}:\n\n`;
         
         // List students for this position
         pos.lotteryAssignments.forEach(assignment => {
