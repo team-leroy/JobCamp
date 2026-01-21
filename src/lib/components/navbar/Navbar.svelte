@@ -72,6 +72,8 @@
         {:else}
           {#if !loggedIn}
             <a href="/lghs/view-companies" class={navLinkClass}>View Companies</a>
+          {:else if !isHost && !isAdmin}
+            <a href="/dashboard/student/pick" class={navLinkClass}>View Companies</a>
           {/if}
           <a href="/about" class={navLinkClass}>About</a>
           {#if loggedIn && isHost}
@@ -163,6 +165,8 @@
       {:else}
         {#if !loggedIn}
           <a href="/lghs/view-companies" class={mobileNavLinkClass}>View Companies</a>
+        {:else if !isHost && !isAdmin}
+          <a href="/dashboard/student/pick" class={mobileNavLinkClass}>View Companies</a>
         {/if}
         <a href="/about" class={mobileNavLinkClass}>About</a>
         {#if loggedIn && isHost}

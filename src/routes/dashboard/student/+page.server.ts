@@ -265,6 +265,12 @@ export const actions: Actions = {
             redirect(302, "/login");
         }
 
+        // Check permission slip status
+        const permissionSlipStatus = await getPermissionSlipStatus(studentId, student.schoolId || "");
+        if (!permissionSlipStatus.hasPermissionSlip) {
+            return { success: false, message: "Permission slip is required to modify your list." };
+        }
+
         // Check if lottery is published - if so, prevent edits
         if (await isLotteryPublished(student.schoolId)) {
             return;
@@ -319,6 +325,12 @@ export const actions: Actions = {
         const studentId = student?.id;
         if (!studentId) {
             redirect(302, "/login");
+        }
+
+        // Check permission slip status
+        const permissionSlipStatus = await getPermissionSlipStatus(studentId, student.schoolId || "");
+        if (!permissionSlipStatus.hasPermissionSlip) {
+            return { success: false, message: "Permission slip is required to modify your list." };
         }
 
         // Check if lottery is published - if so, prevent edits
@@ -399,6 +411,12 @@ export const actions: Actions = {
         const studentId = student?.id;
         if (!studentId) {
             redirect(302, "/login");
+        }
+
+        // Check permission slip status
+        const permissionSlipStatus = await getPermissionSlipStatus(studentId, student.schoolId || "");
+        if (!permissionSlipStatus.hasPermissionSlip) {
+            return { success: false, message: "Permission slip is required to modify your list." };
         }
 
         // Check if lottery is published - if so, prevent edits

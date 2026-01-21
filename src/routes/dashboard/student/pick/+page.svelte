@@ -8,6 +8,7 @@
 
   let { data, form } = $props();
 
+  let parentEmail = $state(data.parentEmail);
   let selected = $state("career");
   let selectedTerm = $state("");
 
@@ -131,6 +132,21 @@
       </div>
     </div>
   </div>
+{:else if !data.permissionSlipCompleted}
+  <div class="mt-24 mx-auto max-w-4xl px-4 mb-[-4rem] relative z-10">
+    <div class="p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg shadow-sm">
+      <div class="flex items-center">
+        <div class="shrink-0 text-orange-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-orange-800">
+            <strong>Browsing Mode:</strong> You can view all available positions, but you must have a signed permission slip on file before you can select favorites.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 {/if}
 
 <div
@@ -139,41 +155,42 @@
   class:opacity-50={!data.canSignUp}
 >
   <div
-    class="flex flex-col px-4 gap-2 h-full justify-start items-start p-4 border-r-2 border-r-slate-950"
+    class="flex flex-col px-4 gap-2 h-full justify-start items-start p-4 border-r-2 border-r-slate-950 min-w-[300px]"
   >
     {#if !data.permissionSlipCompleted}
       <div
-        class="sm:hidden flex flex-col px-10 py-4 border rounded-lg m-3 bg-yellow-100"
+        class="flex flex-col p-4 border rounded-lg mb-4 bg-orange-50 border-orange-200"
       >
-        <span class="text-2xl"
-          >To add Favorite Jobs, your parent permission slip must be completed.
-          To resend the permission slip, enter your parent's email address:</span
+        <span class="text-lg font-bold text-orange-800 mb-2">Permission Slip Needed</span>
+        <span class="text-sm text-orange-700 mb-3"
+          >To select Favorite Jobs, your parent permission slip must be completed.
+          You can view companies below, but cannot add them to your list yet.</span
         >
         <form
-          class="flex items-end gap-6 mt-3"
+          class="flex flex-col gap-2"
           method="post"
           action="?/sendPermissionSlip"
           use:enhance
         >
-          <Label
-            >PARENT Email<Input
+          <Label class="text-xs font-semibold text-orange-900">RESEND TO PARENT EMAIL
+            <Input
               type="email"
               name="parent-email"
-              bind:value={data.parentEmail}
-              class="max-w-72"
-            /></Label
-          >
+              bind:value={parentEmail}
+              class="mt-1 bg-white"
+            />
+          </Label>
           <button
             type="submit"
-            class="px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-md text-white"
-            >Send</button
+            class="mt-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-md text-white text-sm font-medium transition-colors"
+            >Send Email</button
           >
           {#if form && form.sent}
-            <span class="text-green-500 text-lg font-bold pb-1.5">Sent</span>
+            <span class="text-green-600 text-sm font-bold mt-1">✓ Sent successfully</span>
           {/if}
           {#if form && form.err}
-            <span class="text-green-500 text-lg font-bold pb-1.5"
-              >Internal Error</span
+            <span class="text-red-600 text-sm font-bold mt-1"
+              >✕ Error sending email</span
             >
           {/if}
         </form>
@@ -220,32 +237,32 @@
                     >{position.host?.company?.companyName} - {position.title}</span
                   >
                 </Accordion.Trigger>
-                <Accordion.Content class="px-5">
-                  {#if data.permissionSlipCompleted}
-                    <label class="flex gap-2 text-lg my-3 items-center">
-                      {#if count < 10}
-                        <input
-                          type="checkbox"
-                          name="selected"
-                          class="w-4 h-4 rounded"
-                          disabled={count >= 10}
-                          bind:checked={position.selected}
-                          onchange={() => togglePosition(position.id)}
-                        />
-                        Add to My Favorite Jobs
-                      {:else}
-                        <span class="bg-red-200 px-1"
-                          >You have 10 Favorite Jobs selected. If you want to
-                          add this one, you'll need to <a
-                            href="/dashboard/student"
-                            >delete one from your list.</a
-                          ></span
-                        >
-                      {/if}
-                    </label>
+            <Accordion.Content class="px-5">
+              {#if data.permissionSlipCompleted}
+                <label class="flex gap-2 text-lg my-3 items-center">
+                  {#if count < 10}
+                    <input
+                      type="checkbox"
+                      name="selected"
+                      class="w-4 h-4 rounded"
+                      disabled={count >= 10}
+                      bind:checked={position.selected}
+                      onchange={() => togglePosition(position.id)}
+                    />
+                    Add to My Favorite Jobs
+                  {:else}
+                    <span class="bg-red-200 px-1"
+                      >You have 10 Favorite Jobs selected. If you want to
+                      add this one, you'll need to <a
+                        href="/dashboard/student"
+                        >delete one from your list.</a
+                      ></span
+                     >
                   {/if}
+                </label>
+              {/if}
 
-                  <p class="mt-1">Career: {position.career}</p>
+              <p class="mt-1">Career: {position.career}</p>
                   <br />
                   <p class="mt-1">
                     Description: {position.host?.company?.companyDescription}
@@ -283,45 +300,6 @@
     {/each}
   </div>
   <div class="hidden sm:flex flex-col w-full h-full">
-    {#if !data.permissionSlipCompleted}
-      <div
-        class="hidden sm:flex flex-col px-10 py-4 border rounded-lg m-3 bg-yellow-100"
-      >
-        <span class="text-2xl"
-          >To add Favorite Jobs, your parent permission slip must be completed.
-          To resend the permission slip, enter your parent's email address:</span
-        >
-        <form
-          class="flex items-end gap-6 mt-3"
-          method="post"
-          action="?/sendPermissionSlip"
-          use:enhance
-        >
-          <Label
-            >PARENT Email<Input
-              type="email"
-              name="parent-email"
-              bind:value={data.parentEmail}
-              class="max-w-72"
-            /></Label
-          >
-          <button
-            type="submit"
-            class="px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-md text-white"
-            >Send</button
-          >
-          {#if form && form.sent}
-            <span class="text-green-500 text-lg font-bold pb-1.5">Sent</span>
-          {/if}
-          {#if form && form.err}
-            <span class="text-green-500 text-lg font-bold pb-1.5"
-              >Internal Error</span
-            >
-          {/if}
-        </form>
-      </div>
-    {/if}
-
     {#if selectedTerm == ""}
       <h1 class="text-xl text-center mt-5">
         Please select a career or company to view positions.

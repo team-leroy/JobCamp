@@ -411,7 +411,7 @@
       <h2 class="text-2xl font-bold pb-4 w-full px-4">My Favorite Jobs</h2>
       <div class="px-4 mb-4">
         <Button href="/dashboard/student/pick" class="w-full sm:w-auto">
-          Browse All Positions
+          View All Companies
         </Button>
       </div>
       <Accordion.Root type="multiple" class="w-full px-4">
@@ -514,8 +514,8 @@
       <div class="text-center mt-4 md:mt-0 px-4">
         <h1 class="text-2xl pb-4">My Favorite Jobs</h1>
         <p class="text-gray-600 mb-4">No favorite jobs selected yet.</p>
-        {#if data.studentSignupsEnabled && data.permissionSlipCompleted}
-          <Button href="/dashboard/student/pick">Browse Positions</Button>
+        {#if data.studentSignupsEnabled}
+          <Button href="/dashboard/student/pick">View Companies</Button>
         {/if}
       </div>
     {/if}

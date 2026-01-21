@@ -251,6 +251,12 @@ export const actions: Actions = {
             redirect(302, "/login");
         }
 
+        // Check permission slip status before allowing selection
+        const permissionSlipStatus = await getPermissionSlipStatus(studentId, student.schoolId || "");
+        if (!permissionSlipStatus.hasPermissionSlip) {
+            return { success: false, message: "Permission slip is required to select favorite jobs." };
+        }
+
         const activeEventId = await getActiveEventIdForSchool(student.schoolId || "");
         if (!activeEventId) {
             return { success: false, message: "No active event found." };
