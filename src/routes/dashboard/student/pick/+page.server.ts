@@ -55,7 +55,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                 select: {
                     company: true
                 }
-            }
+            },
+            attachments: true
         }
     });
 

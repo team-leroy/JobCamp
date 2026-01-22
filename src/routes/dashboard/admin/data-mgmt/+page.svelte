@@ -1199,6 +1199,24 @@
                                         {position.instructions || "None"}
                                       </p>
                                     </div>
+                                    {#if position.attachments && position.attachments.length > 0}
+                                      <div class="space-y-1">
+                                        <span
+                                          class="text-xs font-bold text-gray-400 uppercase tracking-tight"
+                                          >Attachments</span
+                                        >
+                                        <div class="flex flex-col gap-1">
+                                          {#each position.attachments as attachment}
+                                            <div
+                                              class="text-sm text-gray-700 flex items-center gap-2"
+                                            >
+                                              <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                              {attachment.fileName}
+                                            </div>
+                                          {/each}
+                                        </div>
+                                      </div>
+                                    {/if}
                                     <div class="md:col-span-2 pt-2">
                                       <span class="text-[10px] text-gray-400"
                                         >{position.isPublished

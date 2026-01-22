@@ -32,6 +32,10 @@
       } | null;
     };
     selected?: boolean;
+    attachments: Array<{
+      id: string;
+      fileName: string;
+    }>;
     [key: string]: unknown;
   }
 
@@ -291,6 +295,27 @@
                   <p class="">Arrival: {position.arrival}</p>
                   <p class="">Start: {position.start}</p>
                   <p class="">End: {position.end}</p>
+
+                  {#if position.attachments && position.attachments.length > 0}
+                    <hr class="my-2" />
+                    <div class="mt-2">
+                      <p class="font-semibold mb-2">Attachments:</p>
+                      <ul class="list-disc list-inside space-y-1">
+                        {#each position.attachments as attachment}
+                          <li>
+                            <a
+                              href="/api/attachments/{attachment.id}/download"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              {attachment.fileName}
+                            </a>
+                          </li>
+                        {/each}
+                      </ul>
+                    </div>
+                  {/if}
                 </Accordion.Content>
               </Accordion.Item>
             {/each}
@@ -369,6 +394,27 @@
               <p class="">Arrival: {position.arrival}</p>
               <p class="">Start: {position.start}</p>
               <p class="">End: {position.end}</p>
+
+              {#if position.attachments && position.attachments.length > 0}
+                <hr class="my-2" />
+                <div class="mt-2">
+                  <p class="font-semibold mb-2">Attachments:</p>
+                  <ul class="list-disc list-inside space-y-1">
+                    {#each position.attachments as attachment}
+                      <li>
+                        <a
+                          href="/api/attachments/{attachment.id}/download"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {attachment.fileName}
+                        </a>
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
+              {/if}
             </Accordion.Content>
           </Accordion.Item>
         {/each}

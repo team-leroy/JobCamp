@@ -122,7 +122,8 @@ export const load: PageServerLoad = async (event) => {
                         include: {
                             company: true
                         }
-                    }
+                    },
+                    attachments: true
                 }
             }
         }
