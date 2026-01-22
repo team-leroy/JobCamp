@@ -215,6 +215,15 @@ export const load: PageServerLoad = async ({ locals }) => {
             lotteryStatus: lotteryResult ? 'Assigned' : (student.positionsSignedUpFor.length > 0 ? 'Unassigned' : 'No Picks'),
             eventIds: student.eventParticipation.map(p => p.eventId)
         };
+    }).sort((a, b) => {
+        // Sort by lastLogin descending (most recent first)
+        if (a.lastLogin && b.lastLogin) {
+            return new Date(b.lastLogin).getTime() - new Date(a.lastLogin).getTime();
+        }
+        if (a.lastLogin) return -1;
+        if (b.lastLogin) return 1;
+        // Fallback to last name sorting
+        return a.lastName.localeCompare(b.lastName);
     });
 
     // Get positions for all events in these schools
