@@ -89,9 +89,12 @@
     const fdata = new FormData();
     fdata.append("id", posID);
 
-    await fetch("?/togglePosition", {
-      method: "post",
+    await fetch("/dashboard/student/pick?/togglePosition", {
+      method: "POST",
       body: fdata,
+      headers: {
+        "x-sveltekit-action": "true",
+      },
     });
 
     data.positionData.map((val: PositionData) => {

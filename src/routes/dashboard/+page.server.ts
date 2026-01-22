@@ -198,6 +198,9 @@ export const actions: Actions = {
         
         redirect(302, "/login");
     },
+    logout: async (event) => {
+        return actions.logOut(event);
+    },
     deletePosition: async ({ url }) => {
         const positionId = url.searchParams.get("posId")?.toString();
         console.log(`DELETE POSITION: ${positionId}`)

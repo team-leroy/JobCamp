@@ -116,9 +116,12 @@
     const formData = new FormData(formElement);
 
     try {
-      const response = await fetch("?/previewRecipients", {
+      const response = await fetch("/messaging?/previewRecipients", {
         method: "POST",
         body: formData,
+        headers: {
+          "x-sveltekit-action": "true",
+        },
       });
 
       const result = await response.json();
@@ -160,9 +163,12 @@
     // recipientType is already bound to companyRecipientType hidden input
 
     try {
-      const response = await fetch("?/previewRecipients", {
+      const response = await fetch("/messaging?/previewRecipients", {
         method: "POST",
         body: formData,
+        headers: {
+          "x-sveltekit-action": "true",
+        },
       });
 
       const result = await response.json();
@@ -206,9 +212,12 @@
     formData.append("group", group);
 
     try {
-      const response = await fetch("?/loadCompanyTemplate", {
+      const response = await fetch("/messaging?/loadCompanyTemplate", {
         method: "POST",
         body: formData,
+        headers: {
+          "x-sveltekit-action": "true",
+        },
       });
 
       const result = await response.json();
@@ -253,9 +262,12 @@
     formData.append("recipientId", recipientId);
     formData.append("recipientType", individualRecipientType);
 
-    const response = await fetch("?/loadIndividualData", {
+    const response = await fetch("/messaging?/loadIndividualData", {
       method: "POST",
       body: formData,
+      headers: {
+        "x-sveltekit-action": "true",
+      },
     });
 
     const result = await response.json();

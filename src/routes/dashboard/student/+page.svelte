@@ -119,19 +119,16 @@
     // Optimistically update UI
     positions.posList = positions.posList.filter((val) => val.id != posID);
 
-    // Submit form natively to trigger data invalidation
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "?/deletePosition";
+    const formData = new FormData();
+    formData.append("id", posID);
 
-    const posIdInput = document.createElement("input");
-    posIdInput.type = "hidden";
-    posIdInput.name = "id";
-    posIdInput.value = posID;
-    form.appendChild(posIdInput);
-
-    document.body.appendChild(form);
-    form.submit();
+    await fetch("/dashboard/student?/deletePosition", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "x-sveltekit-action": "true",
+      },
+    });
   };
 
   const moveUp = async (posID: string) => {
@@ -147,25 +144,17 @@
     positions.posList[posRankIndex + 1] = positions.posList[posRankIndex];
     positions.posList[posRankIndex] = temp;
 
-    // Submit form natively to trigger data invalidation
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "?/move";
+    const formData = new FormData();
+    formData.append("id", posID);
+    formData.append("dir", "down");
 
-    const posIdInput = document.createElement("input");
-    posIdInput.type = "hidden";
-    posIdInput.name = "id";
-    posIdInput.value = posID;
-    form.appendChild(posIdInput);
-
-    const dirInput = document.createElement("input");
-    dirInput.type = "hidden";
-    dirInput.name = "dir";
-    dirInput.value = "down";
-    form.appendChild(dirInput);
-
-    document.body.appendChild(form);
-    form.submit();
+    await fetch("/dashboard/student?/move", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "x-sveltekit-action": "true",
+      },
+    });
   };
 
   const moveDown = async (posID: string) => {
@@ -181,25 +170,17 @@
     positions.posList[posRankIndex - 1] = positions.posList[posRankIndex];
     positions.posList[posRankIndex] = temp;
 
-    // Submit form natively to trigger data invalidation
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "?/move";
+    const formData = new FormData();
+    formData.append("id", posID);
+    formData.append("dir", "up");
 
-    const posIdInput = document.createElement("input");
-    posIdInput.type = "hidden";
-    posIdInput.name = "id";
-    posIdInput.value = posID;
-    form.appendChild(posIdInput);
-
-    const dirInput = document.createElement("input");
-    dirInput.type = "hidden";
-    dirInput.name = "dir";
-    dirInput.value = "up";
-    form.appendChild(dirInput);
-
-    document.body.appendChild(form);
-    form.submit();
+    await fetch("/dashboard/student?/move", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "x-sveltekit-action": "true",
+      },
+    });
   };
 
   let leftWidth = $derived(

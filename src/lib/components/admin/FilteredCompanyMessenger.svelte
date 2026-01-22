@@ -45,9 +45,12 @@
     const formData = new FormData(formElement);
 
     try {
-      const response = await fetch("?/previewFilteredCompanies", {
+      const response = await fetch("/dashboard/admin/data-mgmt?/previewFilteredCompanies", {
         method: "POST",
         body: formData,
+        headers: {
+          "x-sveltekit-action": "true",
+        },
       });
 
       const result = deserialize(await response.text());

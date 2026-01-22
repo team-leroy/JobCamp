@@ -144,7 +144,7 @@
       form.append("attachmentId", attachmentId);
       form.append("posId", position.id);
 
-      const response = await fetch(`?/deleteAttachment`, {
+      const response = await fetch("/dashboard/admin/data-mgmt?/deleteAttachment", {
         method: "POST",
         body: form,
         headers: {
