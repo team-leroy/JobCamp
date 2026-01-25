@@ -1964,5 +1964,74 @@ export const actions: Actions = {
             console.error('Error deleting attachment:', error);
             return { success: false, message: "Failed to delete attachment" };
         }
+    },
+
+    deleteUserAccount: async ({ request, locals }) => {
+        if (!locals.user) {
+            return { success: false, message: "Not authenticated" };
+        }
+
+        const userInfo = await prisma.user.findFirst({
+            where: { id: locals.user.id },
+            include: { adminOfSchools: true }
+        });
+
+        if (!canWriteAdminData(userInfo!)) {
+            return { success: false, message: "You do not have permission to delete accounts" };
+        }
+
+        try {
+            const formData = await request.formData();
+            const studentId = formData.get('studentId')?.toString();
+            const hostId = formData.get('hostId')?.toString();
+
+            if (!studentId && !hostId) {
+                return { success: false, message: "Missing student or host ID" };
+            }
+
+            let userIdToDelete: string | null = null;
+
+            if (studentId) {
+                const student = await prisma.student.findUnique({
+                    where: { id: studentId },
+                    select: { userId: true }
+                });
+                userIdToDelete = student?.userId || null;
+            } else if (hostId) {
+                const host = await prisma.host.findUnique({
+                    where: { id: hostId },
+                    select: { userId: true }
+                });
+                userIdToDelete = host?.userId || null;
+            }
+
+            if (!userIdToDelete) {
+                return { success: false, message: "User account not found" };
+            }
+
+            // We only want to allow deleting unverified accounts per user request
+            const user = await prisma.user.findUnique({
+                where: { id: userIdToDelete },
+                select: { emailVerified: true }
+            });
+
+            if (!user) {
+                return { success: false, message: "User not found" };
+            }
+
+            if (user.emailVerified) {
+                return { success: false, message: "Cannot delete verified accounts via this action" };
+            }
+
+            // Cascade delete will handle Student/Host/Session records
+            await prisma.user.delete({
+                where: { id: userIdToDelete }
+            });
+
+            return { success: true, message: "Account deleted successfully" };
+        } catch (error) {
+            console.error('Error deleting user account:', error);
+            return { success: false, message: "Failed to delete account" };
+        }
     }
 };

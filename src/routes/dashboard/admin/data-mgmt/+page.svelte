@@ -26,6 +26,7 @@
   } from "lucide-svelte";
   import StudentEditModal from "./StudentEditModal.svelte";
   import CompanyEditModal from "./CompanyEditModal.svelte";
+  import HostEditModal from "./HostEditModal.svelte";
   import PositionEditModal from "./PositionEditModal.svelte";
   import CreatePositionModal from "./CreatePositionModal.svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
@@ -1004,6 +1005,9 @@
                                     class="bg-red-100 text-red-700 border-red-200 h-5 px-2 text-[10px]"
                                     >UNVERIFIED</Badge
                                   >
+                                {/if}
+                                {#if canEdit}
+                                  <HostEditModal {host} />
                                 {/if}
                               </div>
                               <div class="text-xs text-gray-400 mt-0.5">

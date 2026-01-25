@@ -9,8 +9,9 @@
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
   } from "$lib/components/ui/dialog";
-  import { Edit, Save, X } from "lucide-svelte";
+  import { Edit, Save, X, Trash2, AlertTriangle } from "lucide-svelte";
   import { untrack } from "svelte";
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
 
@@ -21,6 +22,7 @@
     grade: number;
     phone: string;
     email: string;
+    emailVerified: boolean;
     parentEmail: string;
     permissionSlipStatus: string;
     permissionSlipDate: Date | null;
@@ -44,6 +46,7 @@
   let { student }: { student: Student } = $props();
 
   let isOpen = $state(false);
+  let showDeleteConfirm = $state(false);
 
   let formData = $state(
     untrack(() => ({
@@ -76,8 +79,8 @@
     error = null;
   }
 
-  function handleSuccess() {
-    message = "Student updated successfully!";
+  function handleSuccess(msg: string) {
+    message = msg;
     setTimeout(async () => {
       isOpen = false;
       message = null;
@@ -85,8 +88,8 @@
     }, 1000);
   }
 
-  function handleError() {
-    error = "Failed to update student. Please try again.";
+  function handleError(msg: string) {
+    error = msg;
   }
 
   function formatDate(date: Date | null): string {
@@ -134,9 +137,9 @@
         return async ({ result, update }) => {
           console.log('--- ENHANCE RESULT ---', result.type);
           if (result.type === 'success') {
-            handleSuccess();
+            handleSuccess("Student updated successfully!");
           } else if (result.type === 'error' || result.type === 'failure') {
-            handleError();
+            handleError("Failed to update student. Please try again.");
           }
           await update({ reset: false });
         };
@@ -353,26 +356,81 @@
         {/if}
 
         <!-- Action Buttons -->
-        <div class="flex justify-end space-x-3 pt-4 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onclick={() => {
-              isOpen = false;
-              resetForm();
-            }}
-          >
-            <X class="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
+        <div class="flex justify-between items-center pt-4 border-t">
+          <div>
+            {#if !student.emailVerified}
+              <Button
+                type="button"
+                variant="destructive"
+                onclick={() => (showDeleteConfirm = true)}
+              >
+                <Trash2 class="h-4 w-4 mr-2" />
+                Delete Unverified Account
+              </Button>
+            {/if}
+          </div>
 
-          <Button type="submit">
-            <Save class="h-4 w-4 mr-2" />
-            <!-- {isSubmitting ? "Saving..." : "Save Changes"} -->
-            Save Changes
-          </Button>
+          <div class="flex space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onclick={() => {
+                isOpen = false;
+                resetForm();
+              }}
+            >
+              <X class="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+
+            <Button type="submit">
+              <Save class="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </div>
         </div>
       </div>
     </form>
+  </DialogContent>
+</Dialog>
+
+<Dialog bind:open={showDeleteConfirm}>
+  <DialogContent class="max-w-md">
+    <DialogHeader>
+      <DialogTitle class="flex items-center gap-2 text-red-600">
+        <AlertTriangle class="h-5 w-5" />
+        Confirm Deletion
+      </DialogTitle>
+      <DialogDescription>
+        Are you sure you want to delete the account for <strong>{student.firstName} {student.lastName}</strong>? 
+        This will permanently remove their user record and associated student profile.
+        <br /><br />
+        <span class="text-red-600 font-bold">This action cannot be undone.</span>
+      </DialogDescription>
+    </DialogHeader>
+    <div class="flex justify-end gap-2 pt-4">
+      <Button variant="outline" onclick={() => (showDeleteConfirm = false)}>
+        Cancel
+      </Button>
+      <form
+        method="POST"
+        action="?/deleteUserAccount"
+        use:enhance={() => {
+          return async ({ result }) => {
+            if (result.type === "success") {
+              showDeleteConfirm = false;
+              handleSuccess("Account deleted successfully");
+            } else {
+              handleError("Failed to delete account");
+            }
+          };
+        }}
+      >
+        <input type="hidden" name="studentId" value={student.id} />
+        <Button type="submit" variant="destructive">
+          Delete Account
+        </Button>
+      </form>
+    </div>
   </DialogContent>
 </Dialog>

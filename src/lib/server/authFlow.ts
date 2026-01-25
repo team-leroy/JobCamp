@@ -54,9 +54,9 @@ export async function userAccountSetupFlow(locals: App.Locals, pageType: PageTyp
         
         const permissionSlipNeeded = permissionSlipStatus.hasActiveEvent && !permissionSlipStatus.hasPermissionSlip;
         
-        if (permissionSlipNeeded && pageType != PageType.PermissionSlip) {
-            redirect(302, "/permission-slip");
-        } else if (!permissionSlipNeeded && pageType == PageType.PermissionSlip) {
+        // We no longer force students to the permission slip page. They can browse positions
+        // without it, but cannot select favorites.
+        if (!permissionSlipNeeded && pageType == PageType.PermissionSlip) {
             redirect(302, "/dashboard");
         }
     }
