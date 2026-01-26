@@ -14,6 +14,17 @@
   const studentAccountsEnabled = $derived(data.studentAccountsEnabled);
   const companyAccountsEnabled = $derived(data.companyAccountsEnabled);
   const showSignupLogin = $derived(data.showSignupLogin);
+
+  function formatEventDate(date: string | Date | null): string {
+    if (!date) return "";
+    return new Date(date).toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
 </script>
 
 <Navbar
@@ -29,7 +40,14 @@
   class="w-screen h-screen bg-cover bg-center flex flex-col justify-center items-center"
   style="background-image: url({JobCampBanner});"
 >
-  <h1 class="text-7xl md:text-9xl text-black px-4">JobCamp</h1>
+  <div class="flex flex-col items-center -mt-20">
+    <h1 class="text-7xl md:text-9xl text-black px-4">JobCamp</h1>
+    {#if eventDate}
+      <p class="text-2xl md:text-4xl text-black font-medium mt-4">
+        {formatEventDate(eventDate)}
+      </p>
+    {/if}
+  </div>
 
   {#if !seasonActive || !showSignupLogin}
     <!-- Season Over / Preparation Mode -->
