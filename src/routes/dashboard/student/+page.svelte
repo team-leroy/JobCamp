@@ -109,7 +109,7 @@
       }
 
       return {
-        label: "Build Your Picks",
+        label: "Pick Favorite Jobs",
         helper: "Add or reorder your favorite jobs below.",
       };
     })()
