@@ -122,8 +122,37 @@ export const load: PageServerLoad = async ({ locals }) => {
             } | null;
         };
         selected?: boolean;
+        attachments: Array<{
+            id: string;
+            fileName: string;
+        }>;
         [key: string]: unknown;
-    }> = positionData;
+    }> = positionData as unknown as Array<{
+        id: string;
+        title: string;
+        career: string;
+        slots: number;
+        summary: string;
+        address: string;
+        instructions: string;
+        attire: string;
+        arrival: string;
+        start: string;
+        end: string;
+        host: {
+            company: {
+                companyName: string;
+                companyDescription?: string;
+                companyUrl?: string | null;
+            } | null;
+        };
+        selected?: boolean;
+        attachments: Array<{
+            id: string;
+            fileName: string;
+        }>;
+        [key: string]: unknown;
+    }>;
 
     return { 
         positionData: posData, 

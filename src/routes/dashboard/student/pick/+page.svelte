@@ -32,7 +32,7 @@
       } | null;
     };
     selected?: boolean;
-    attachments: Array<{
+    attachments?: Array<{
       id: string;
       fileName: string;
     }>;
@@ -240,9 +240,17 @@
                 <Accordion.Trigger
                   class="text-xl bg-slate-100 hover:bg-slate-200 rounded-t-sm px-5"
                 >
-                  <span
-                    >{position.host?.company?.companyName} - {position.title}</span
-                  >
+                  <div class="flex flex-col items-start w-full pr-4">
+                    <span class="font-bold"
+                      >{position.host?.company?.companyName}</span
+                    >
+                    <div class="flex items-center justify-between w-full">
+                      <span class="text-lg">{position.title}</span>
+                      <span class="text-lg text-slate-500 italic shrink-0"
+                        >({position.slots} slots)</span
+                      >
+                    </div>
+                  </div>
                 </Accordion.Trigger>
             <Accordion.Content class="px-5">
               {#if data.permissionSlipCompleted}
@@ -299,7 +307,7 @@
                   <p class="">Start: {position.start}</p>
                   <p class="">End: {position.end}</p>
 
-                  {#if position.attachments && position.attachments.length > 0}
+                  {#if position.attachments && Array.isArray(position.attachments) && position.attachments.length > 0}
                     <hr class="my-2" />
                     <div class="mt-2">
                       <p class="font-semibold mb-2">Attachments:</p>
@@ -340,9 +348,17 @@
             <Accordion.Trigger
               class="text-xl bg-slate-100 hover:bg-slate-200 rounded-t-sm px-5"
             >
-              <span
-                >{position.host?.company?.companyName} - {position.title}</span
-              >
+              <div class="flex flex-col items-start w-full pr-4">
+                <span class="font-bold"
+                  >{position.host?.company?.companyName}</span
+                >
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-lg">{position.title}</span>
+                  <span class="text-lg text-slate-500 italic shrink-0"
+                    >({position.slots} slots)</span
+                  >
+                </div>
+              </div>
             </Accordion.Trigger>
             <Accordion.Content class="px-5">
               {#if data.permissionSlipCompleted}
@@ -398,7 +414,7 @@
               <p class="">Start: {position.start}</p>
               <p class="">End: {position.end}</p>
 
-              {#if position.attachments && position.attachments.length > 0}
+              {#if position.attachments && Array.isArray(position.attachments) && position.attachments.length > 0}
                 <hr class="my-2" />
                 <div class="mt-2">
                   <p class="font-semibold mb-2">Attachments:</p>

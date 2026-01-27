@@ -314,7 +314,10 @@
         value={data.lotteryResult.id}
         class="w-full px-4"
       >
-        <Accordion.Item value={data.lotteryResult.id} class="my-2 border rounded-md shadow-sm overflow-hidden">
+        <Accordion.Item
+          value={data.lotteryResult.id}
+          class="my-2 border rounded-md shadow-sm overflow-hidden"
+        >
           <Accordion.Trigger
             class="text-left bg-slate-100 hover:bg-slate-200 rounded-t-sm px-4 py-6 min-w-0"
           >
@@ -322,7 +325,14 @@
               <span class="font-bold text-slate-900 break-words overflow-hidden"
                 >{data.lotteryResult.host?.company?.companyName}</span
               >
-              <span class="text-slate-700 break-words overflow-hidden">{data.lotteryResult.title}</span>
+              <div class="flex items-start justify-between gap-2 min-w-0">
+                <span class="text-slate-700 text-sm break-words overflow-hidden"
+                  >{data.lotteryResult.title}</span
+                >
+                <span class="text-sm text-slate-500 italic shrink-0 whitespace-nowrap"
+                  >({data.lotteryResult.slots} slots)</span
+                >
+              </div>
             </div>
           </Accordion.Trigger>
           <Accordion.Content class="px-5">
@@ -448,12 +458,24 @@
               >
                 <div class="flex flex-col gap-1 pr-4 min-w-0">
                   <div class="flex items-start gap-2 min-w-0">
-                    <span class="bg-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5">#{i + 1}</span>
-                    <span class="font-bold text-slate-900 leading-tight break-words overflow-hidden"
+                    <span
+                      class="bg-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5"
+                      >#{i + 1}</span
+                    >
+                    <span
+                      class="font-bold text-slate-900 leading-tight break-words overflow-hidden"
                       >{position.host?.company?.companyName}</span
                     >
                   </div>
-                  <span class="text-slate-600 text-sm ml-8 leading-tight break-words overflow-hidden">{position.title}</span>
+                  <div class="flex items-start justify-between gap-2 min-w-0 ml-8">
+                    <span
+                      class="text-slate-600 text-sm leading-tight break-words overflow-hidden"
+                      >{position.title}</span
+                    >
+                    <span class="text-sm text-slate-500 italic shrink-0 whitespace-nowrap"
+                      >({position.slots} slots)</span
+                    >
+                  </div>
                 </div>
               </Accordion.Trigger>
             </div>
