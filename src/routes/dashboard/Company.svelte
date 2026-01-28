@@ -59,15 +59,16 @@
 {:else}
   {#if data.hasUnpublishedPositions}
     <div
-      class="mx-10 mb-5 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-lg"
+      class="mx-10 mb-5 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg"
     >
       <div class="flex">
         <div class="ml-3">
-          <h3 class="text-lg font-medium text-blue-800">
-            You have positions from a previous event
+          <h3 class="text-2xl font-bold text-yellow-900">
+            You have UNPUBLISHED positions from a previous event
           </h3>
-          <p class="mt-2 text-sm text-blue-700">
-            You can delete or edit and publish them.
+          <p class="mt-2 text-lg font-semibold text-yellow-800">
+            To publish a position and make it visible to students, edit then
+            publish.
           </p>
         </div>
       </div>
