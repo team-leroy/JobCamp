@@ -37,6 +37,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     }
 
     const schoolIds = userInfo.adminOfSchools.map(s => s.id);
+    const schoolId = schoolIds[0];
 
     // Get the active event for this school
     const activeEvent = await prisma.event.findFirst({
@@ -191,7 +192,6 @@ export const load: PageServerLoad = async ({ locals }) => {
     }
 
     // Get lottery configuration for the first school (assuming single school admin for now)
-    const schoolId = schoolIds[0];
     console.log('Getting lottery configuration for school:', schoolId);
     let lotteryConfig = await prisma.lotteryConfiguration.findUnique({
         where: { schoolId },
