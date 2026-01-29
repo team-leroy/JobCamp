@@ -28,6 +28,14 @@
     firstName: string;
     lastName: string;
     grade: number | null;
+    choices: Array<{
+      positionId: string;
+      title: string;
+      companyName: string;
+      slots: number;
+      filled: number;
+      rank: number;
+    }>;
   }
 
   interface Props {
@@ -72,17 +80,34 @@
             <thead>
               <tr class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
                 <th class="px-4 py-2 text-left">Student Name</th>
-                <th class="px-4 py-2 text-center">Grade</th>
+                <th class="px-4 py-2 text-center w-24">Grade</th>
+                <th class="px-4 py-2 text-left">Position Choices & Status</th>
               </tr>
             </thead>
             <tbody class="divide-y">
               {#each unassignedStudents as student}
-                <tr class="hover:bg-slate-50 transition-colors">
+                <tr class="hover:bg-slate-50 transition-colors align-top">
                   <td class="px-4 py-3 font-medium">
                     {student.lastName}, {student.firstName}
                   </td>
                   <td class="px-4 py-3 text-center">
                     {student.grade || "N/A"}
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex flex-wrap gap-2">
+                      {#each student.choices as choice}
+                        <div class="flex flex-col border rounded p-1.5 bg-white shadow-sm min-w-[180px] max-w-[250px]">
+                          <div class="flex justify-between items-start gap-2 mb-1">
+                            <span class="text-[10px] font-bold bg-slate-100 px-1.5 py-0.5 rounded">#{choice.rank}</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded {choice.filled >= choice.slots ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}">
+                              {choice.filled} / {choice.slots} slots
+                            </span>
+                          </div>
+                          <span class="text-xs font-bold truncate" title={choice.companyName}>{choice.companyName}</span>
+                          <span class="text-[10px] text-slate-500 truncate" title={choice.title}>{choice.title}</span>
+                        </div>
+                      {/each}
+                    </div>
                   </td>
                 </tr>
               {/each}

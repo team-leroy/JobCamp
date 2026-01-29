@@ -133,7 +133,21 @@ export const load: PageServerLoad = async ({ locals }) => {
     );
 
     // Find unassigned students (students who made choices but didn't get a result in latestJob)
-    let unassignedStudents: Array<{ id: string, firstName: string, lastName: string, grade: number | null }> = [];
+    let unassignedStudents: Array<{ 
+        id: string, 
+        firstName: string, 
+        lastName: string, 
+        grade: number | null,
+        choices: Array<{
+            positionId: string,
+            title: string,
+            companyName: string,
+            slots: number,
+            filled: number,
+            rank: number
+        }>
+    }> = [];
+
     if (activeEvent && latestJob) {
         const assignedStudentIds = latestJob.results.map(r => r.studentId);
         const unassignedStudentsRaw = await prisma.student.findMany({
@@ -154,13 +168,33 @@ export const load: PageServerLoad = async ({ locals }) => {
                     ]
                 }
             },
-            orderBy: { lastName: 'asc' },
-            select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                graduatingClassYear: true
-            }
+            include: {
+                positionsSignedUpFor: {
+                    where: {
+                        position: {
+                            eventId: activeEvent.id
+                        }
+                    },
+                    orderBy: { rank: 'asc' },
+                    include: {
+                        position: {
+                            include: {
+                                host: {
+                                    include: {
+                                        company: true
+                                    }
+                                },
+                                lotteryAssignments: {
+                                    where: {
+                                        lotteryJobId: latestJob.id
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: { lastName: 'asc' }
         });
 
         unassignedStudents = unassignedStudentsRaw.map(student => ({
@@ -169,7 +203,15 @@ export const load: PageServerLoad = async ({ locals }) => {
             lastName: student.lastName,
             grade: student.graduatingClassYear 
                 ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
-                : null
+                : null,
+            choices: student.positionsSignedUpFor.map(choice => ({
+                positionId: choice.positionId,
+                title: choice.position.title,
+                companyName: choice.position.host.company?.companyName || 'Unknown',
+                slots: choice.position.slots,
+                filled: choice.position.lotteryAssignments.length,
+                rank: choice.rank + 1
+            }))
         }));
     }
 
