@@ -62,9 +62,57 @@ export const load: PageServerLoad = async ({ locals }) => {
         },
         orderBy: { completedAt: 'desc' },
         include: { 
-            results: true
+            results: {
+                include: {
+                    student: true,
+                    position: {
+                        include: {
+                            host: {
+                                include: {
+                                    company: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     });
+
+    // Group results by position
+    const groupedAssignments = latestJob ? latestJob.results.reduce((acc, result) => {
+        const posId = result.positionId;
+        if (!acc[posId]) {
+            acc[posId] = {
+                position: {
+                    id: result.position.id,
+                    title: result.position.title,
+                    slots: result.position.slots,
+                    companyName: result.position.host.company?.companyName || 'Unknown'
+                },
+                students: []
+            };
+        }
+        acc[posId].students.push({
+            id: result.student.id,
+            firstName: result.student.firstName,
+            lastName: result.student.lastName,
+            grade: result.student.graduatingClassYear && activeEvent
+                ? getCurrentGrade(result.student.graduatingClassYear, activeEvent.date)
+                : null,
+            assignmentId: result.id
+        });
+        return acc;
+    }, {} as Record<string, { 
+        position: { id: string, title: string, slots: number, companyName: string }, 
+        students: Array<{ id: string, firstName: string, lastName: string, grade: number | null, assignmentId: string }> 
+    }>) : {};
+
+    // Convert to array and sort by company name
+    const assignmentsArray = Object.values(groupedAssignments).sort((a, b) => 
+        a.position.companyName.localeCompare(b.position.companyName) ||
+        a.position.title.localeCompare(b.position.title)
+    );
 
     let lotteryStats = null;
     if (latestJob && activeEvent) {
@@ -286,7 +334,8 @@ export const load: PageServerLoad = async ({ locals }) => {
         lotteryConfig: transformedLotteryConfig,
         students,
         positions: transformedPositions,
-        companies
+        companies,
+        assignments: assignmentsArray
     };
 }
 
@@ -641,5 +690,38 @@ export const actions: Actions = {
         }
     },
 
+    releaseStudent: async ({ locals, request }) => {
+        if (!locals.user) {
+            return { success: false, message: "User not authenticated" };
+        }
 
+        const formData = await request.formData();
+        const assignmentId = formData.get('assignmentId') as string;
+
+        if (!assignmentId) {
+            return { success: false, message: "Assignment ID is required" };
+        }
+
+        try {
+            // Check if user is admin
+            const userInfo = await prisma.user.findFirst({
+                where: { id: locals.user.id },
+                include: { adminOfSchools: true }
+            });
+
+            if (!userInfo?.adminOfSchools?.length) {
+                return { success: false, message: "Not authorized" };
+            }
+
+            // Delete the assignment
+            await prisma.lotteryResults.delete({
+                where: { id: assignmentId }
+            });
+
+            return { success: true, message: "Student released from position" };
+        } catch (error) {
+            console.error("[ReleaseStudent] Error:", error);
+            return { success: false, message: "Failed to release student" };
+        }
+    }
 };

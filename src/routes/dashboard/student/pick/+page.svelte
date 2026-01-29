@@ -109,9 +109,108 @@
       return val;
     });
   };
+
+  let claimingPosId = $state<string | null>(null);
+  let showConfirmModal = $state(false);
+  let claimError = $state<string | null>(null);
+
+  async function handleClaim(posId: string) {
+    claimingPosId = posId;
+    showConfirmModal = true;
+    claimError = null;
+  }
+
+  async function confirmClaim() {
+    if (!claimingPosId) return;
+
+    const formData = new FormData();
+    formData.append("id", claimingPosId);
+
+    const response = await fetch("/dashboard/student/pick?/claimPosition", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "x-sveltekit-action": "true",
+      },
+    });
+
+    const result = await response.json();
+    const actionResult = JSON.parse(result.data);
+
+    if (actionResult.success) {
+      // Redirect to dashboard on success
+      window.location.href = "/dashboard/student";
+    } else {
+      claimError = actionResult.message || "Failed to claim position.";
+      showConfirmModal = false;
+      claimingPosId = null;
+    }
+  }
 </script>
 
 <Navbar isHost={false} loggedIn={true} isAdmin={false} />
+
+{#if showConfirmModal}
+  <div
+    class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
+  >
+    <div class="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+      <h3 class="text-xl font-bold mb-4">Confirm Position Claim</h3>
+      <p class="text-gray-600 mb-6">
+        Claiming this position will finalize your JobCamp assignment. You cannot
+        change this later. Are you sure?
+      </p>
+      <div class="flex justify-end gap-3">
+        <Button
+          variant="outline"
+          onclick={() => {
+            showConfirmModal = false;
+            claimingPosId = null;
+          }}>Cancel</Button
+        >
+        <Button
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+          onclick={confirmClaim}>Confirm & Claim</Button
+        >
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if claimError}
+  <div
+    class="fixed top-24 left-1/2 -translate-x-1/2 z-[90] w-full max-w-md px-4"
+  >
+    <div
+      class="bg-red-100 border-l-4 border-red-500 p-4 rounded-lg shadow-lg flex justify-between items-center"
+    >
+      <p class="text-red-700 font-medium">{claimError}</p>
+      <button
+        onclick={() => (claimError = null)}
+        class="text-red-500 hover:text-red-700"
+        aria-label="Close error message"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><line x1="18" y1="6" x2="6" y2="18" /><line
+            x1="6"
+            y1="6"
+            x2="18"
+            y2="18"
+          /></svg
+        >
+      </button>
+    </div>
+  </div>
+{/if}
 
 <!-- Event Access Disabled Warning -->
 {#if !data.canSignUp}
@@ -254,27 +353,42 @@
                 </Accordion.Trigger>
             <Accordion.Content class="px-5">
               {#if data.permissionSlipCompleted}
-                <label class="flex gap-2 text-lg my-3 items-center">
-                  {#if count < 10}
-                    <input
-                      type="checkbox"
-                      name="selected"
-                      class="w-4 h-4 rounded"
-                      disabled={count >= 10}
-                      bind:checked={position.selected}
-                      onchange={() => togglePosition(position.id)}
-                    />
-                    Add to My Favorite Jobs
+                {#if data.isScrambleMode}
+                  {#if data.isAssigned}
+                    <div class="bg-blue-50 p-3 rounded-md mb-4 text-blue-800 text-sm">
+                      You are already assigned to a position.
+                    </div>
                   {:else}
-                    <span class="bg-red-200 px-1"
-                      >You have 10 Favorite Jobs selected. If you want to
-                      add this one, you'll need to <a
-                        href="/dashboard/student"
-                        >delete one from your list.</a
-                      ></span
-                     >
+                    <Button 
+                      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold my-3"
+                      onclick={() => handleClaim(position.id)}
+                    >
+                      Claim this Position
+                    </Button>
                   {/if}
-                </label>
+                {:else}
+                  <label class="flex gap-2 text-lg my-3 items-center">
+                    {#if count < 10}
+                      <input
+                        type="checkbox"
+                        name="selected"
+                        class="w-4 h-4 rounded"
+                        disabled={count >= 10}
+                        bind:checked={position.selected}
+                        onchange={() => togglePosition(position.id)}
+                      />
+                      Add to My Favorite Jobs
+                    {:else}
+                      <span class="bg-red-200 px-1"
+                        >You have 10 Favorite Jobs selected. If you want to
+                        add this one, you'll need to <a
+                          href="/dashboard/student"
+                          >delete one from your list.</a
+                        ></span
+                      >
+                    {/if}
+                  </label>
+                {/if}
               {/if}
 
               <p class="mt-1">Career: {position.career}</p>
@@ -337,9 +451,24 @@
   </div>
   <div class="hidden sm:flex flex-col w-full h-full">
     {#if selectedTerm == ""}
-      <h1 class="text-xl text-center mt-5">
-        Please select a career or company to view positions.
-      </h1>
+      <div class="flex flex-col items-center justify-center h-full mt-10 px-4 text-center">
+        <h1 class="text-2xl font-bold mb-2">
+          {data.isScrambleMode ? "Available Positions" : "Find Your Favorite Jobs"}
+        </h1>
+        <p class="text-slate-600 max-w-md">
+          {data.isScrambleMode 
+            ? "Browse the list of positions that still have available slots. Select a category on the left to see jobs you can claim." 
+            : "Please select a career or company on the left to view positions and build your favorites list."}
+        </p>
+        {#if data.isScrambleMode && data.positionData.length === 0}
+          <div class="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-xl max-w-lg">
+            <p class="text-amber-800 font-medium">
+              All job shadow positions for this event are currently full. 
+              Please contact your administrator if you still need assistance.
+            </p>
+          </div>
+        {/if}
+      </div>
     {/if}
     <div class="mx-4 mt-2">
       <Accordion.Root type="multiple">
@@ -362,26 +491,41 @@
             </Accordion.Trigger>
             <Accordion.Content class="px-5">
               {#if data.permissionSlipCompleted}
-                <label class="flex gap-2 text-lg my-3 items-center">
-                  {#if count < 10}
-                    <input
-                      type="checkbox"
-                      name="selected"
-                      class="w-4 h-4 rounded"
-                      disabled={count >= 10}
-                      bind:checked={position.selected}
-                      onchange={() => togglePosition(position.id)}
-                    />
-                    Add to My Favorite Jobs
+                {#if data.isScrambleMode}
+                  {#if data.isAssigned}
+                    <div class="bg-blue-50 p-3 rounded-md mb-4 text-blue-800 text-sm">
+                      You are already assigned to a position.
+                    </div>
                   {:else}
-                    <span class="bg-red-200 px-1"
-                      >You have 10 Favorite Jobs selected. If you want to add
-                      this one, you'll need to <a href="/dashboard/student"
-                        >delete one from your list.</a
-                      ></span
+                    <Button 
+                      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold my-3"
+                      onclick={() => handleClaim(position.id)}
                     >
+                      Claim this Position
+                    </Button>
                   {/if}
-                </label>
+                {:else}
+                  <label class="flex gap-2 text-lg my-3 items-center">
+                    {#if count < 10}
+                      <input
+                        type="checkbox"
+                        name="selected"
+                        class="w-4 h-4 rounded"
+                        disabled={count >= 10}
+                        bind:checked={position.selected}
+                        onchange={() => togglePosition(position.id)}
+                      />
+                      Add to My Favorite Jobs
+                    {:else}
+                      <span class="bg-red-200 px-1"
+                        >You have 10 Favorite Jobs selected. If you want to add
+                        this one, you'll need to <a href="/dashboard/student"
+                          >delete one from your list.</a
+                        ></span
+                      >
+                    {/if}
+                  </label>
+                {/if}
               {/if}
 
               <p class="mt-1">Career: {position.career}</p>

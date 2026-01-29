@@ -43,6 +43,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
                 return await exportHosts(schoolIds, url);
             case 'positions':
                 return await exportPositions(schoolIds, url);
+            case 'lottery-results':
+                return await exportLotteryResults(schoolIds, activeEvent);
             case 'students':
             default:
                 return await exportStudents(schoolIds, activeEvent, url);
@@ -635,6 +637,89 @@ async function exportPositions(schoolIds: string[], url: URL) {
         headers: {
             'Content-Type': 'text/csv; charset=utf-8',
             'Content-Disposition': `attachment; filename="positions-${new Date().toISOString().split('T')[0]}.csv"`
+        }
+    });
+}
+
+async function exportLotteryResults(schoolIds: string[], activeEvent: { id: string; date: Date }) {
+    // Find the most recent lottery job for this event
+    const latestJob = await prisma.lotteryJob.findFirst({
+        where: { 
+            status: 'COMPLETED',
+            eventId: activeEvent.id
+        },
+        orderBy: { completedAt: 'desc' }
+    });
+
+    if (!latestJob) {
+        return new Response("No completed lottery found for the active event", { status: 404 });
+    }
+
+    // Get all results for this job
+    const results = await prisma.lotteryResults.findMany({
+        where: {
+            lotteryJobId: latestJob.id
+        },
+        include: {
+            student: true,
+            position: {
+                include: {
+                    host: {
+                        include: {
+                            company: true
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Format for CSV
+    const csvData = results.map(result => {
+        const grade = result.student.graduatingClassYear 
+            ? getCurrentGrade(result.student.graduatingClassYear, activeEvent.date)
+            : 'N/A';
+
+        return {
+            firstName: result.student.firstName,
+            lastName: result.student.lastName,
+            grade: grade,
+            company: result.position.host.company?.companyName || 'Unknown',
+            position: result.position.title,
+            contactName: result.position.contact_name,
+            contactEmail: result.position.contact_email,
+            address: result.position.address
+        };
+    });
+
+    // Sort by company then last name
+    csvData.sort((a, b) => 
+        a.company.localeCompare(b.company) || 
+        a.lastName.localeCompare(b.lastName)
+    );
+
+    // Generate CSV
+    const headers = ['First Name', 'Last Name', 'Grade', 'Company', 'Position', 'Contact Name', 'Contact Email', 'Address'];
+    const csvRows = [
+        headers.join(','),
+        ...csvData.map(row => [
+            `"${row.firstName}"`,
+            `"${row.lastName}"`,
+            row.grade,
+            `"${row.company}"`,
+            `"${row.position}"`,
+            `"${row.contactName}"`,
+            `"${row.contactEmail}"`,
+            `"${row.address.replace(/"/g, '""')}"`
+        ].join(','))
+    ];
+
+    const csvContent = csvRows.join('\n');
+
+    return new Response(csvContent, {
+        headers: {
+            'Content-Type': 'text/csv; charset=utf-8',
+            'Content-Disposition': `attachment; filename="lottery-results-${activeEvent.id}-${new Date().toISOString().split('T')[0]}.csv"`
         }
     });
 }

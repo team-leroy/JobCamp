@@ -2,6 +2,7 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import LotteryWidget from "$lib/components/admin/LotteryWidget.svelte";
   import LotteryConfigurationWidget from "$lib/components/admin/LotteryConfigurationWidget.svelte";
+  import LotteryAssignmentsWidget from "$lib/components/admin/LotteryAssignmentsWidget.svelte";
   import type { PageData } from "./$types";
 
   interface Props {
@@ -40,5 +41,8 @@
       data={lotteryData}
       gradeOrder={lotteryConfig?.gradeOrder || "NONE"}
     />
+
+    <!-- Assignment Review Section -->
+    <LotteryAssignmentsWidget assignments={data.assignments} />
   </div>
 </div>

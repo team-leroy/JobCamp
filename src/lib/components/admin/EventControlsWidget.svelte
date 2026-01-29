@@ -191,14 +191,12 @@
           <!-- Allow Students to Pick Jobs (under Student Accounts) -->
           <div
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg ml-6"
-            class:opacity-50={!studentAccountsEnabled || lotteryPublished}
+            class:opacity-50={!studentAccountsEnabled}
           >
             <div class="flex items-center space-x-3">
               <Switch
                 checked={studentSignupsEnabled}
-                disabled={isUpdating ||
-                  !studentAccountsEnabled ||
-                  lotteryPublished}
+                disabled={isUpdating || !studentAccountsEnabled}
                 onclick={() =>
                   handleControlChange("studentSignups", studentSignupsEnabled)}
               />
@@ -209,25 +207,21 @@
             <span class="text-sm text-gray-500">
               {!studentAccountsEnabled
                 ? "Requires Student Account Logins"
-                : lotteryPublished
-                  ? "Cannot enable while lottery results are published"
-                  : studentSignupsEnabled
-                    ? "Enabled"
-                    : "Disabled"}
+                : studentSignupsEnabled
+                  ? "Enabled"
+                  : "Disabled"}
             </span>
           </div>
 
           <!-- Publish Lottery Results to Students (under Student Accounts) -->
           <div
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg ml-6"
-            class:opacity-50={!studentAccountsEnabled || studentSignupsEnabled}
+            class:opacity-50={!studentAccountsEnabled}
           >
             <div class="flex items-center space-x-3">
               <Switch
                 checked={lotteryPublished}
-                disabled={isUpdating ||
-                  !studentAccountsEnabled ||
-                  studentSignupsEnabled}
+                disabled={isUpdating || !studentAccountsEnabled}
                 onclick={() =>
                   handleControlChange("lotteryPublished", lotteryPublished)}
               />
@@ -238,11 +232,9 @@
             <span class="text-sm text-gray-500">
               {!studentAccountsEnabled
                 ? "Requires Student Account Logins"
-                : studentSignupsEnabled
-                  ? "Cannot enable while students can pick jobs"
-                  : lotteryPublished
-                    ? "Published"
-                    : "Hidden"}
+                : lotteryPublished
+                  ? "Published"
+                  : "Hidden"}
             </span>
           </div>
         </div>

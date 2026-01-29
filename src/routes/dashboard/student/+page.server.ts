@@ -65,6 +65,9 @@ export const load: PageServerLoad = async (event) => {
     // Only show lottery results if event is active AND lottery is published
     const showLotteryResult = Boolean(activeEvent?.isActive) && lotteryPublished;
 
+    // If lottery is published and student signups are enabled, we're in "Scramble" mode
+    const isScrambleMode = Boolean(activeEvent?.isActive) && lotteryPublished && studentSignupsEnabled;
+
     // Load lottery result from the new event-specific LotteryResults table
     let lotteryResult = null;
     if (showLotteryResult && activeEvent) {
@@ -123,13 +126,31 @@ export const load: PageServerLoad = async (event) => {
                             company: true
                         }
                     },
-                    attachments: true
+                    attachments: true,
+                    lotteryAssignments: activeEvent ? {
+                        where: {
+                            lotteryJob: {
+                                eventId: activeEvent.id
+                            }
+                        }
+                    } : false
                 }
             }
         }
     }) : [];
 
-    const positions = positionsOnStudents.map(pos => pos.position);
+    const positions = positionsOnStudents.map(pos => {
+        const p = pos.position;
+        // In scramble mode, we want to know if slots are still available
+        if (isScrambleMode) {
+            const filledSlots = p.lotteryAssignments?.length || 0;
+            return {
+                ...p,
+                availableSlots: p.slots - filledSlots
+            };
+        }
+        return p;
+    });
 
     // Load important dates for the active event
     const importantDates = activeEvent
@@ -149,6 +170,7 @@ export const load: PageServerLoad = async (event) => {
         studentAccountsEnabled,
         studentSignupsEnabled,
         lotteryPublished,
+        isScrambleMode,
         showLotteryResult,
         activeEventName: permissionSlipStatus.eventName,
         activeEventDate: activeEvent?.date ? activeEvent.date.toISOString() : null,

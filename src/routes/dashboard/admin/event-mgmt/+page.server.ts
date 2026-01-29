@@ -223,13 +223,12 @@ export const actions: Actions = {
             // Handle mutual exclusivity between studentSignupsEnabled and lotteryPublished
             const updateData: Record<string, boolean> = { [field]: enabled };
             
-            if (field === 'studentSignupsEnabled' && enabled) {
-                // If enabling student signups, disable lottery published
-                updateData.lotteryPublished = false;
-            } else if (field === 'lotteryPublished' && enabled) {
-                // If enabling lottery published, disable student signups
-                updateData.studentSignupsEnabled = false;
-            }
+            /* 
+               REMOVED MUTUAL EXCLUSIVITY:
+               We now allow studentSignupsEnabled and lotteryPublished to be true simultaneously.
+               This state represents the "Scramble" phase where unassigned students can 
+               manually claim remaining positions.
+            */
 
             // Update the event control
             await prisma.event.update({

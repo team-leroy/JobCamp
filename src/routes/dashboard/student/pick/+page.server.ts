@@ -30,11 +30,41 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     const studentAccountsEnabled = activeEvent?.studentAccountsEnabled ?? false;
     const studentSignupsEnabled = activeEvent?.studentSignupsEnabled ?? false;
+    const lotteryPublished = activeEvent?.lotteryPublished ?? false;
 
     // Student signups require: Event active + Student accounts enabled + Student signups enabled
     const canSignUp = Boolean(activeEvent?.isActive) && studentAccountsEnabled && studentSignupsEnabled;
 
-    const positionData = await prisma.position.findMany({
+    const student = await prisma.student.findFirst({where: {userId: locals.user.id}});
+    const studentId = student?.id;
+    if (!studentId) {
+        redirect(302, "/login");
+    }
+
+    // Check if student is already assigned a position
+    let isAssigned = false;
+    if (activeEvent && lotteryPublished) {
+        const lotteryJob = await prisma.lotteryJob.findFirst({
+            where: { eventId: activeEvent.id },
+            orderBy: { completedAt: 'desc' }
+        });
+
+        if (lotteryJob) {
+            const result = await prisma.lotteryResults.findFirst({
+                where: {
+                    studentId: studentId,
+                    lotteryJobId: lotteryJob.id
+                }
+            });
+            isAssigned = !!result;
+        }
+    }
+
+    // If lottery is published, we're in "Scramble" mode. 
+    // Filter positions to only show those with remaining slots.
+    const isScrambleMode = Boolean(activeEvent?.isActive) && lotteryPublished && studentSignupsEnabled;
+
+    let positionData = await prisma.position.findMany({
         where: {
             event: {
                 schoolId: school.id,
@@ -56,14 +86,23 @@ export const load: PageServerLoad = async ({ locals }) => {
                     company: true
                 }
             },
-            attachments: true
+            attachments: true,
+            lotteryAssignments: activeEvent ? {
+                where: {
+                    lotteryJob: {
+                        eventId: activeEvent.id
+                    }
+                }
+            } : false
         }
     });
 
-    const student = await prisma.student.findFirst({where: {userId: locals.user.id}});
-    const studentId = student?.id;
-    if (!studentId) {
-        redirect(302, "/login");
+    // If in scramble mode, filter to only show positions with available slots
+    if (isScrambleMode) {
+        positionData = positionData.filter(pos => {
+            const filledSlots = pos.lotteryAssignments?.length || 0;
+            return filledSlots < pos.slots;
+        });
     }
 
     // Check if contact info verification is needed for the active event
@@ -161,6 +200,9 @@ export const load: PageServerLoad = async ({ locals }) => {
         parentEmail: student.parentEmail,
         studentAccountsEnabled,
         studentSignupsEnabled,
+        lotteryPublished,
+        isScrambleMode,
+        isAssigned,
         canSignUp,
         activeEventName: permissionSlipStatus.eventName,
         hasActiveEvent: permissionSlipStatus.hasActiveEvent
@@ -169,6 +211,101 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 
 export const actions: Actions = {
+    claimPosition: async ({ request, locals }) => {
+        const data = await request.formData();
+        const posId = data.get("id")?.toString();
+
+        if (!posId) {
+            return { success: false, message: "Position ID is required." };
+        }
+
+        if (!locals.user) {
+            redirect(302, "/login");
+        }
+
+        const student = await prisma.student.findFirst({ where: { userId: locals.user.id } });
+        if (!student) {
+            redirect(302, "/login");
+        }
+
+        const activeEvent = await prisma.event.findFirst({
+            where: {
+                schoolId: student.schoolId,
+                isActive: true
+            }
+        });
+
+        if (!activeEvent || !activeEvent.lotteryPublished || !activeEvent.studentSignupsEnabled) {
+            return { success: false, message: "Manual selection is not currently available." };
+        }
+
+        // Find the most recent lottery job
+        const lotteryJob = await prisma.lotteryJob.findFirst({
+            where: { eventId: activeEvent.id },
+            orderBy: { completedAt: 'desc' }
+        });
+
+        if (!lotteryJob) {
+            return { success: false, message: "Lottery results are not yet available." };
+        }
+
+        try {
+            const result = await prisma.$transaction(async (tx) => {
+                // 1. Check if student is already assigned
+                const existingAssignment = await tx.lotteryResults.findFirst({
+                    where: {
+                        studentId: student.id,
+                        lotteryJobId: lotteryJob.id
+                    }
+                });
+
+                if (existingAssignment) {
+                    throw new Error("You are already assigned to a position.");
+                }
+
+                // 2. Check position availability
+                const position = await tx.position.findUnique({
+                    where: { id: posId },
+                    include: {
+                        lotteryAssignments: {
+                            where: { lotteryJobId: lotteryJob.id }
+                        }
+                    }
+                });
+
+                if (!position || position.eventId !== activeEvent.id) {
+                    throw new Error("Invalid position selection.");
+                }
+
+                if (position.lotteryAssignments.length >= position.slots) {
+                    throw new Error("Sorry, this position has just filled up.");
+                }
+
+                // 3. Create the assignment
+                return await tx.lotteryResults.create({
+                    data: {
+                        studentId: student.id,
+                        positionId: posId,
+                        lotteryJobId: lotteryJob.id
+                    }
+                });
+            });
+
+            if (result) {
+                // Track participation
+                await trackStudentParticipation(student.id, activeEvent.id);
+                return { success: true, message: "Position claimed successfully!" };
+            }
+        } catch (error) {
+            console.error("[ClaimPosition] Error:", error);
+            return { 
+                success: false, 
+                message: error instanceof Error ? error.message : "An unexpected error occurred." 
+            };
+        }
+
+        return { success: false, message: "Failed to claim position." };
+    },
     sendPermissionSlip: async({ request, locals }) => {
         const data = await request.formData();
         console.log(data);

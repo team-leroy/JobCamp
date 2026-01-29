@@ -60,8 +60,8 @@ describe('Event Controls Mutual Exclusivity', () => {
     vi.mocked(prisma.event.update).mockResolvedValue({});
   });
 
-  describe('Student Signups and Lottery Published Mutual Exclusivity', () => {
-    it('should disable lottery published when enabling student signups', async () => {
+  describe('Student Signups and Lottery Published Scramble Mode', () => {
+    it('should allow enabling student signups without disabling lottery published', async () => {
       const actions = await import('../src/routes/dashboard/admin/event-mgmt/+page.server');
       const updateEventControls = actions.actions.updateEventControls;
 
@@ -79,13 +79,12 @@ describe('Event Controls Mutual Exclusivity', () => {
       expect(vi.mocked(prisma.event.update)).toHaveBeenCalledWith({
         where: { id: 'active-event-1' },
         data: {
-          studentSignupsEnabled: true,
-          lotteryPublished: false
+          studentSignupsEnabled: true
         }
       });
     });
 
-    it('should disable student signups when enabling lottery published', async () => {
+    it('should allow enabling lottery published without disabling student signups', async () => {
       const actions = await import('../src/routes/dashboard/admin/event-mgmt/+page.server');
       const updateEventControls = actions.actions.updateEventControls;
 
@@ -103,8 +102,7 @@ describe('Event Controls Mutual Exclusivity', () => {
       expect(vi.mocked(prisma.event.update)).toHaveBeenCalledWith({
         where: { id: 'active-event-1' },
         data: {
-          lotteryPublished: true,
-          studentSignupsEnabled: false
+          lotteryPublished: true
         }
       });
     });
@@ -125,13 +123,12 @@ describe('Event Controls Mutual Exclusivity', () => {
 
       expect(result.success).toBe(true);
       
-      // Verify only studentSignupsEnabled and lotteryPublished are affected
+      // Verify only studentSignupsEnabled is affected
       const updateCall = vi.mocked(prisma.event.update).mock.calls[0];
       const updateData = updateCall[0].data;
       
       expect(updateData).toEqual({
-        studentSignupsEnabled: true,
-        lotteryPublished: false
+        studentSignupsEnabled: true
       });
     });
 
@@ -151,13 +148,12 @@ describe('Event Controls Mutual Exclusivity', () => {
 
       expect(result.success).toBe(true);
       
-      // Verify only lotteryPublished and studentSignupsEnabled are affected
+      // Verify only lotteryPublished is affected
       const updateCall = vi.mocked(prisma.event.update).mock.calls[0];
       const updateData = updateCall[0].data;
       
       expect(updateData).toEqual({
-        lotteryPublished: true,
-        studentSignupsEnabled: false
+        lotteryPublished: true
       });
     });
 
