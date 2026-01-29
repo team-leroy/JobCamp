@@ -255,7 +255,7 @@
 
       <div class="rounded-lg border bg-white p-3 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Favorite Jobs
+          Favorite Jobs (ranked)
         </p>
         <p class="mt-1 text-2xl font-semibold text-slate-900">
           {positions.posList.length}
@@ -399,7 +399,7 @@
         </Accordion.Item>
       </Accordion.Root>
     {:else if positions.posList.length != 0}
-      <h2 class="text-2xl font-bold pb-4 w-full px-4">My Favorite Jobs</h2>
+      <h2 class="text-2xl font-bold pb-4 w-full px-4">My Favorite Jobs (ranked)</h2>
       <div class="px-4 mb-4">
         <Button href="/dashboard/student/pick" class="w-full sm:w-auto">
           View All Companies
@@ -536,7 +536,7 @@
       </Accordion.Root>
     {:else}
       <div class="text-center mt-4 md:mt-0 px-4">
-        <h1 class="text-2xl pb-4">My Favorite Jobs</h1>
+        <h1 class="text-2xl pb-4">My Favorite Jobs (ranked)</h1>
         <p class="text-gray-600 mb-4">No favorite jobs selected yet.</p>
         {#if data.studentSignupsEnabled}
           <Button href="/dashboard/student/pick">View Companies</Button>
