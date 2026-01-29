@@ -8,26 +8,26 @@
   }
 
   const { upcomingEvent }: Props = $props();
-  
+
   // Check if there's an active event
   const hasActiveEvent = $derived(!!upcomingEvent && upcomingEvent.isActive);
 
   // Event control states - derived from props
   const companyAccountsEnabled = $derived(
-    upcomingEvent?.companyAccountsEnabled ?? false
+    upcomingEvent?.companyAccountsEnabled ?? false,
   );
   const companySignupsEnabled = $derived(
-    upcomingEvent?.companySignupsEnabled ?? false
+    upcomingEvent?.companySignupsEnabled ?? false,
   );
   const studentAccountsEnabled = $derived(
-    upcomingEvent?.studentAccountsEnabled ?? false
+    upcomingEvent?.studentAccountsEnabled ?? false,
   );
   const studentSignupsEnabled = $derived(
-    upcomingEvent?.studentSignupsEnabled ?? false
+    upcomingEvent?.studentSignupsEnabled ?? false,
   );
   const lotteryPublished = $derived(upcomingEvent?.lotteryPublished ?? false);
   const companyDirectoryEnabled = $derived(
-    upcomingEvent?.companyDirectoryEnabled ?? false
+    upcomingEvent?.companyDirectoryEnabled ?? false,
   );
 
   let isUpdating = $state(false);
@@ -38,7 +38,7 @@
     isUpdating = true;
 
     console.log(
-      `🔄 Attempting to change ${control} from ${currentValue} to ${newValue}`
+      `🔄 Attempting to change ${control} from ${currentValue} to ${newValue}`,
     );
 
     // Create a form and submit it natively
@@ -94,12 +94,15 @@
     <!-- Active Event Info -->
     <div class="mb-4 p-3 bg-blue-50 rounded-lg">
       <p class="text-sm text-blue-700">
-      {#if upcomingEvent}
-        <strong>Active Event:</strong>
-        {upcomingEvent.name} ({upcomingEvent.date.toLocaleDateString("en-US", {
-          timeZone: "UTC",
-        })})
-      {/if}
+        {#if upcomingEvent}
+          <strong>Active Event:</strong>
+          {upcomingEvent.name} ({upcomingEvent.date.toLocaleDateString(
+            "en-US",
+            {
+              timeZone: "UTC",
+            },
+          )})
+        {/if}
         <br />
         <strong>Event Controls:</strong> These access controls determine what users
         can do within the active event. You can keep controls disabled while preparing
@@ -125,7 +128,7 @@
                 onclick={() =>
                   handleControlChange(
                     "companyAccounts",
-                    companyAccountsEnabled
+                    companyAccountsEnabled,
                   )}
               />
               <Label class="text-base font-medium"
@@ -176,7 +179,7 @@
                 onclick={() =>
                   handleControlChange(
                     "studentAccounts",
-                    studentAccountsEnabled
+                    studentAccountsEnabled,
                   )}
               />
               <Label class="text-base font-medium"
@@ -250,7 +253,7 @@
               onclick={() =>
                 handleControlChange(
                   "companyDirectory",
-                  companyDirectoryEnabled
+                  companyDirectoryEnabled,
                 )}
             />
             <Label class="text-base font-medium"

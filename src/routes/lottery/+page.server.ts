@@ -64,7 +64,18 @@ export const load: PageServerLoad = async ({ locals }) => {
         include: { 
             results: {
                 include: {
-                    student: true,
+                    student: {
+                        include: {
+                            positionsSignedUpFor: activeEvent ? {
+                                where: {
+                                    position: {
+                                        eventId: activeEvent.id
+                                    }
+                                },
+                                orderBy: { rank: 'asc' }
+                            } : false
+                        }
+                    },
                     position: {
                         include: {
                             host: {
@@ -93,6 +104,11 @@ export const load: PageServerLoad = async ({ locals }) => {
                 students: []
             };
         }
+
+        // Find the rank of this position in the student's favorites
+        const favoriteRecord = result.student.positionsSignedUpFor?.find(p => p.positionId === posId);
+        const rank = favoriteRecord ? favoriteRecord.rank + 1 : null;
+
         acc[posId].students.push({
             id: result.student.id,
             firstName: result.student.firstName,
@@ -100,12 +116,13 @@ export const load: PageServerLoad = async ({ locals }) => {
             grade: result.student.graduatingClassYear && activeEvent
                 ? getCurrentGrade(result.student.graduatingClassYear, activeEvent.date)
                 : null,
-            assignmentId: result.id
+            assignmentId: result.id,
+            rank: rank
         });
         return acc;
     }, {} as Record<string, { 
         position: { id: string, title: string, slots: number, companyName: string }, 
-        students: Array<{ id: string, firstName: string, lastName: string, grade: number | null, assignmentId: string }> 
+        students: Array<{ id: string, firstName: string, lastName: string, grade: number | null, assignmentId: string, rank: number | null }> 
     }>) : {};
 
     // Convert to array and sort by company name

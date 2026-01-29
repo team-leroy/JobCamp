@@ -824,8 +824,10 @@
             <h3 class="text-lg font-bold text-slate-900 mb-2 leading-tight">
               {dateInfo.title}
             </h3>
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-            <div class="text-sm text-slate-600 prose prose-sm max-w-none">{@html dateInfo.description}</div>
+            <div class="text-sm text-slate-600 prose prose-sm max-w-none">
+              <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+              {@html dateInfo.description}
+            </div>
           </div>
         {/each}
       </div>

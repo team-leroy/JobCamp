@@ -48,7 +48,7 @@
           return value.host.company?.companyName == selectedTerm;
         }
       });
-    })()
+    })(),
   );
 
   let terms = $derived(
@@ -65,7 +65,7 @@
         }
       });
       return Object.keys(possible).sort();
-    })()
+    })(),
   );
 
   const selectTerm = (term: string) => {
@@ -240,14 +240,34 @@
   </div>
 {:else if !data.permissionSlipCompleted}
   <div class="mt-24 mx-auto max-w-4xl px-4 mb-[-4rem] relative z-10">
-    <div class="p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg shadow-sm">
+    <div
+      class="p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg shadow-sm"
+    >
       <div class="flex items-center">
         <div class="shrink-0 text-orange-400">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            ><circle cx="12" cy="12" r="10" /><line
+              x1="12"
+              x2="12"
+              y1="8"
+              y2="12"
+            /><line x1="12" x2="12.01" y1="16" y2="16" /></svg
+          >
         </div>
         <div class="ml-3">
           <p class="text-sm text-orange-800">
-            <strong>Browsing Mode:</strong> You can view all available positions, but you must have a signed permission slip on file before you can select favorites.
+            <strong>Browsing Mode:</strong> You can view all available positions,
+            but you must have a signed permission slip on file before you can select
+            favorites.
           </p>
         </div>
       </div>
@@ -267,10 +287,13 @@
       <div
         class="flex flex-col p-4 border rounded-lg mb-4 bg-orange-50 border-orange-200"
       >
-        <span class="text-lg font-bold text-orange-800 mb-2">Permission Slip Needed</span>
+        <span class="text-lg font-bold text-orange-800 mb-2"
+          >Permission Slip Needed</span
+        >
         <span class="text-sm text-orange-700 mb-3"
-          >To select Favorite Jobs, your parent permission slip must be completed.
-          You can view companies below, but cannot add them to your list yet.</span
+          >To select Favorite Jobs, your parent permission slip must be
+          completed. You can view companies below, but cannot add them to your
+          list yet.</span
         >
         <form
           class="flex flex-col gap-2"
@@ -278,7 +301,8 @@
           action="?/sendPermissionSlip"
           use:enhance
         >
-          <Label class="text-xs font-semibold text-orange-900">RESEND TO PARENT EMAIL
+          <Label class="text-xs font-semibold text-orange-900"
+            >RESEND TO PARENT EMAIL
             <Input
               type="email"
               name="parent-email"
@@ -292,7 +316,9 @@
             >Send Email</button
           >
           {#if form && form.sent}
-            <span class="text-green-600 text-sm font-bold mt-1">✓ Sent successfully</span>
+            <span class="text-green-600 text-sm font-bold mt-1"
+              >✓ Sent successfully</span
+            >
           {/if}
           {#if form && form.err}
             <span class="text-red-600 text-sm font-bold mt-1"
@@ -351,47 +377,49 @@
                     </div>
                   </div>
                 </Accordion.Trigger>
-            <Accordion.Content class="px-5">
-              {#if data.permissionSlipCompleted}
-                {#if data.isScrambleMode}
-                  {#if data.isAssigned}
-                    <div class="bg-blue-50 p-3 rounded-md mb-4 text-blue-800 text-sm">
-                      You are already assigned to a position.
-                    </div>
-                  {:else}
-                    <Button 
-                      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold my-3"
-                      onclick={() => handleClaim(position.id)}
-                    >
-                      Claim this Position
-                    </Button>
-                  {/if}
-                {:else}
-                  <label class="flex gap-2 text-lg my-3 items-center">
-                    {#if count < 10}
-                      <input
-                        type="checkbox"
-                        name="selected"
-                        class="w-4 h-4 rounded"
-                        disabled={count >= 10}
-                        bind:checked={position.selected}
-                        onchange={() => togglePosition(position.id)}
-                      />
-                      Add to My Favorite Jobs
+                <Accordion.Content class="px-5">
+                  {#if data.permissionSlipCompleted}
+                    {#if data.isScrambleMode}
+                      {#if data.isAssigned}
+                        <div
+                          class="bg-blue-50 p-3 rounded-md mb-4 text-blue-800 text-sm"
+                        >
+                          You are already assigned to a position.
+                        </div>
+                      {:else}
+                        <Button
+                          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold my-3"
+                          onclick={() => handleClaim(position.id)}
+                        >
+                          Claim this Position
+                        </Button>
+                      {/if}
                     {:else}
-                      <span class="bg-red-200 px-1"
-                        >You have 10 Favorite Jobs selected. If you want to
-                        add this one, you'll need to <a
-                          href="/dashboard/student"
-                          >delete one from your list.</a
-                        ></span
-                      >
+                      <label class="flex gap-2 text-lg my-3 items-center">
+                        {#if count < 10}
+                          <input
+                            type="checkbox"
+                            name="selected"
+                            class="w-4 h-4 rounded"
+                            disabled={count >= 10}
+                            bind:checked={position.selected}
+                            onchange={() => togglePosition(position.id)}
+                          />
+                          Add to My Favorite Jobs
+                        {:else}
+                          <span class="bg-red-200 px-1"
+                            >You have 10 Favorite Jobs selected. If you want to
+                            add this one, you'll need to <a
+                              href="/dashboard/student"
+                              >delete one from your list.</a
+                            ></span
+                          >
+                        {/if}
+                      </label>
                     {/if}
-                  </label>
-                {/if}
-              {/if}
+                  {/if}
 
-              <p class="mt-1">Career: {position.career}</p>
+                  <p class="mt-1">Career: {position.career}</p>
                   <br />
                   <p class="mt-1">
                     Description: {position.host?.company?.companyDescription}
@@ -451,20 +479,26 @@
   </div>
   <div class="hidden sm:flex flex-col w-full h-full">
     {#if selectedTerm == ""}
-      <div class="flex flex-col items-center justify-center h-full mt-10 px-4 text-center">
+      <div
+        class="flex flex-col items-center justify-center h-full mt-10 px-4 text-center"
+      >
         <h1 class="text-2xl font-bold mb-2">
-          {data.isScrambleMode ? "Available Positions" : "Find Your Favorite Jobs"}
+          {data.isScrambleMode
+            ? "Available Positions"
+            : "Find Your Favorite Jobs"}
         </h1>
         <p class="text-slate-600 max-w-md">
-          {data.isScrambleMode 
-            ? "Browse the list of positions that still have available slots. Select a category on the left to see jobs you can claim." 
+          {data.isScrambleMode
+            ? "Browse the list of positions that still have available slots. Select a category on the left to see jobs you can claim."
             : "Please select a career or company on the left to view positions and build your favorites list."}
         </p>
         {#if data.isScrambleMode && data.positionData.length === 0}
-          <div class="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-xl max-w-lg">
+          <div
+            class="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-xl max-w-lg"
+          >
             <p class="text-amber-800 font-medium">
-              All job shadow positions for this event are currently full. 
-              Please contact your administrator if you still need assistance.
+              All job shadow positions for this event are currently full. Please
+              contact your administrator if you still need assistance.
             </p>
           </div>
         {/if}
@@ -493,11 +527,13 @@
               {#if data.permissionSlipCompleted}
                 {#if data.isScrambleMode}
                   {#if data.isAssigned}
-                    <div class="bg-blue-50 p-3 rounded-md mb-4 text-blue-800 text-sm">
+                    <div
+                      class="bg-blue-50 p-3 rounded-md mb-4 text-blue-800 text-sm"
+                    >
                       You are already assigned to a position.
                     </div>
                   {:else}
-                    <Button 
+                    <Button
                       class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold my-3"
                       onclick={() => handleClaim(position.id)}
                     >

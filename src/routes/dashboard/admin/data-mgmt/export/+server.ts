@@ -661,7 +661,18 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
             lotteryJobId: latestJob.id
         },
         include: {
-            student: true,
+            student: {
+                include: {
+                    positionsSignedUpFor: {
+                        where: {
+                            position: {
+                                eventId: activeEvent.id
+                            }
+                        },
+                        orderBy: { rank: 'asc' }
+                    }
+                }
+            },
             position: {
                 include: {
                     host: {
@@ -680,10 +691,15 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
             ? getCurrentGrade(result.student.graduatingClassYear, activeEvent.date)
             : 'N/A';
 
+        // Find the rank of this position in the student's favorites
+        const favoriteRecord = result.student.positionsSignedUpFor?.find(p => p.positionId === result.positionId);
+        const rank = favoriteRecord ? (favoriteRecord.rank + 1).toString() : 'Manual';
+
         return {
             firstName: result.student.firstName,
             lastName: result.student.lastName,
             grade: grade,
+            choice: rank,
             company: result.position.host.company?.companyName || 'Unknown',
             position: result.position.title,
             contactName: result.position.contact_name,
@@ -699,13 +715,14 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
     );
 
     // Generate CSV
-    const headers = ['First Name', 'Last Name', 'Grade', 'Company', 'Position', 'Contact Name', 'Contact Email', 'Address'];
+    const headers = ['First Name', 'Last Name', 'Grade', 'Choice', 'Company', 'Position', 'Contact Name', 'Contact Email', 'Address'];
     const csvRows = [
         headers.join(','),
         ...csvData.map(row => [
             `"${row.firstName}"`,
             `"${row.lastName}"`,
             row.grade,
+            `"${row.choice}"`,
             `"${row.company}"`,
             `"${row.position}"`,
             `"${row.contactName}"`,
