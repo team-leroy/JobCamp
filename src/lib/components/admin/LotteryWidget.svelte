@@ -261,7 +261,7 @@
             <div class="text-2xl font-bold text-red-600">
               {data.stats.notPlaced}
             </div>
-            <div class="text-sm text-gray-600">Not Placed</div>
+            <div class="text-sm text-gray-600">Not Assigned</div>
           </div>
         {/if}
       </div>

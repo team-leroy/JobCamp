@@ -43,6 +43,9 @@
     />
 
     <!-- Assignment Review Section -->
-    <LotteryAssignmentsWidget assignments={data.assignments} />
+    <LotteryAssignmentsWidget 
+      assignments={data.assignments} 
+      unassignedStudents={data.unassignedStudents}
+    />
   </div>
 </div>

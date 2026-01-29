@@ -131,6 +131,47 @@ export const load: PageServerLoad = async ({ locals }) => {
         a.position.title.localeCompare(b.position.title)
     );
 
+    // Find unassigned students (students who made choices but didn't get a result in latestJob)
+    let unassignedStudents: Array<{ id: string, firstName: string, lastName: string, grade: number | null }> = [];
+    if (activeEvent && latestJob) {
+        const assignedStudentIds = latestJob.results.map(r => r.studentId);
+        const unassignedStudentsRaw = await prisma.student.findMany({
+            where: {
+                schoolId,
+                id: { notIn: assignedStudentIds },
+                positionsSignedUpFor: {
+                    some: {
+                        position: {
+                            eventId: activeEvent.id
+                        }
+                    }
+                },
+                user: {
+                    OR: [
+                        { role: null },
+                        { role: { not: 'INTERNAL_TESTER' } }
+                    ]
+                }
+            },
+            orderBy: { lastName: 'asc' },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                graduatingClassYear: true
+            }
+        });
+
+        unassignedStudents = unassignedStudentsRaw.map(student => ({
+            id: student.id,
+            firstName: student.firstName,
+            lastName: student.lastName,
+            grade: student.graduatingClassYear 
+                ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
+                : null
+        }));
+    }
+
     let lotteryStats = null;
     if (latestJob && activeEvent) {
         // Calculate choice statistics
@@ -352,7 +393,8 @@ export const load: PageServerLoad = async ({ locals }) => {
         students,
         positions: transformedPositions,
         companies,
-        assignments: assignmentsArray
+        assignments: assignmentsArray,
+        unassignedStudents
     };
 }
 
