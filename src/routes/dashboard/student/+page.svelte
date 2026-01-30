@@ -66,6 +66,14 @@
         };
       }
 
+      if (!data.studentSignupsEnabled) {
+        return {
+          label: "Not assigned",
+          tone: "text-red-600",
+          helper: "Lottery is published — you did not receive an assignment",
+        };
+      }
+
       return {
         label: "Pending",
         tone: "text-amber-600",
@@ -95,17 +103,15 @@
       // If lottery is published and student has been assigned, show review dates message
       if (data.lotteryPublished && data.lotteryResult) {
         return {
-          label: "Review important dates",
-          helper:
-            "Check the important dates section for upcoming deadlines and events.",
+          label: "Review important info",
+          helper: "Carefully review all details below.",
         };
       }
 
       if (!data.studentSignupsEnabled) {
         return {
           label: "Signups Closed",
-          helper:
-            "You can review your picks, but changes are currently locked.",
+          helper: "No changes can be made for this event.",
         };
       }
 
@@ -395,10 +401,7 @@
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Permission Slip
         </p>
-        <p
-          class={"mt-1 text-lg font-semibold text-slate-900 " +
-            permissionSlipStatus.tone}
-        >
+        <p class={"mt-1 text-lg font-semibold " + permissionSlipStatus.tone}>
           {permissionSlipStatus.label}
         </p>
         <p class="mt-1 text-xs text-slate-600 leading-snug">
@@ -420,10 +423,11 @@
             {:else}
               You must have the permission slip signed before you can pick jobs.
             {/if}
-          {:else if positions.posList.length === 1}
-            You've selected one favorite so far.
           {:else}
-            You have {positions.posList.length} jobs ranked in your list.
+            You selected {positions.posList.length} favorite job{positions
+              .posList.length === 1
+              ? ""
+              : "s"}
           {/if}
         </p>
       </div>
@@ -432,10 +436,7 @@
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Lottery Status
         </p>
-        <p
-          class={"mt-1 text-lg font-semibold text-slate-900 " +
-            lotterySummary.tone}
-        >
+        <p class={"mt-1 text-lg font-semibold " + lotterySummary.tone}>
           {lotterySummary.label}
         </p>
         <p class="mt-1 text-xs text-slate-600 leading-snug">
@@ -456,10 +457,11 @@
       <div class="px-4 w-full">
         <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
           <p class="text-sm font-bold text-blue-800">
-            ACTION REQUIRED: PLEASE CHECK ALL DETAILS OF YOUR POSITION.
+            CHECK ALL DETAILS OF YOUR POSITION
           </p>
           <p class="text-xs text-blue-700 mt-1">
-            Review start time, location, required ID, and any forms to complete.
+            Review arrival time, location, attire, etc. Some companies require
+            additional forms
           </p>
         </div>
         <h2 class="text-xl font-semibold mb-2">Your Assigned Position:</h2>
@@ -554,6 +556,44 @@
           </Accordion.Content>
         </Accordion.Item>
       </Accordion.Root>
+    {:else if data.lotteryPublished && !data.lotteryResult && !data.studentSignupsEnabled}
+      <div class="px-4 w-full">
+        <div
+          class="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-6 rounded-lg shadow-sm"
+        >
+          <div class="flex items-start gap-4">
+            <div class="shrink-0 text-yellow-400 mt-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                ><path
+                  d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+                /><path d="M12 9v4" /><path d="M12 17h.01" /></svg
+              >
+            </div>
+            <div class="space-y-2">
+              <p class="text-base font-bold text-yellow-900">
+                Your choices were full or you did not select a position.
+              </p>
+              <p class="text-sm text-yellow-800">Signups are now closed.</p>
+              <p class="text-sm text-yellow-800">
+                If you believe this is a mistake, contact <a
+                  href="mailto:admin@jobcamp.org"
+                  class="font-bold underline hover:text-yellow-900"
+                  >admin@jobcamp.org</a
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     {:else if positions.posList.length != 0}
       <h2 class="text-2xl font-bold pb-4 w-full px-4">
         My Favorite Jobs (ranked)

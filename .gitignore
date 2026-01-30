@@ -26,3 +26,10 @@ prisma/dev.sqlite
 *.pem
 staging-backup-*.sql
 migrate-lottery-to-event-specific.sql
+deep-voyage-*.json
+*.json
+!package.json
+!package-lock.json
+!components.json
+!tsconfig.json
+!tsconfig.svelte-check.json

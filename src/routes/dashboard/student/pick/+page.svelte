@@ -244,9 +244,6 @@
               • Student signups are disabled
             </p>
           {/if}
-          <p class="text-sm text-yellow-700 mt-2">
-            Please contact your administrator for more information.
-          </p>
         </div>
       </div>
     </div>
