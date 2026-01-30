@@ -1084,7 +1084,7 @@
                 100
               ).toFixed(1)}%
             </div>
-            <div class="text-sm text-gray-600">Unassigned Rate</div>
+            <div class="text-sm text-gray-600">Not Placed Rate</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-slate-600">
