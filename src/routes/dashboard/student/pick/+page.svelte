@@ -5,6 +5,8 @@
   import { Input } from "$lib/components/ui/input";
   import { enhance } from "$app/forms";
   import Label from "$lib/components/ui/label/label.svelte";
+  import { Loader2 } from "lucide-svelte";
+  import { goto } from "$app/navigation";
 
   let { data, form } = $props();
 
@@ -149,17 +151,20 @@
           use:enhance={() => {
             isClaiming = true;
             return async ({ result }) => {
-              isClaiming = false;
-              if (result.type === "success") {
-                window.location.href = "/dashboard/student";
+              if (result.type === "redirect") {
+                // Modal stays open while navigating, but button shows loading
+                // We'll close it once we know we're successfully redirecting
+                showConfirmModal = false;
+                goto(result.location);
               } else if (result.type === "failure") {
+                isClaiming = false;
                 claimError =
                   (result.data as { message?: string })?.message ||
                   "Failed to claim position.";
                 showConfirmModal = false;
                 claimingPosId = null;
-              } else if (result.type === "error") {
-                claimError = "An unexpected error occurred.";
+              } else {
+                isClaiming = false;
                 showConfirmModal = false;
                 claimingPosId = null;
               }
@@ -169,10 +174,15 @@
           <input type="hidden" name="id" value={claimingPosId} />
           <Button
             type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold min-w-[140px]"
             disabled={isClaiming}
           >
-            {isClaiming ? "Claiming..." : "Confirm & Claim"}
+            {#if isClaiming}
+              <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+              Claiming...
+            {:else}
+              Confirm & Claim
+            {/if}
           </Button>
         </form>
       </div>

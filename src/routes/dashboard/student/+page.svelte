@@ -1,11 +1,12 @@
 <script lang="ts">
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import * as Accordion from "$lib/components/ui/accordion/index.js";
-  import { ArrowBigDown, ArrowBigUp, Trash2Icon } from "lucide-svelte";
+  import { ArrowBigDown, ArrowBigUp, Trash2Icon, Loader2 } from "lucide-svelte";
   import { Label } from "$lib/components/ui/label";
   import { Input } from "$lib/components/ui/input";
   import { enhance } from "$app/forms";
   import Button from "$lib/components/ui/button/button.svelte";
+  import { goto } from "$app/navigation";
 
   let { data, form } = $props();
 
@@ -231,17 +232,18 @@
           use:enhance={() => {
             isClaiming = true;
             return async ({ result }) => {
-              isClaiming = false;
-              if (result.type === "success") {
-                window.location.reload();
+              if (result.type === "redirect") {
+                showConfirmModal = false;
+                goto(result.location);
               } else if (result.type === "failure") {
+                isClaiming = false;
                 claimError =
                   (result.data as { message?: string })?.message ||
                   "Failed to claim position.";
                 showConfirmModal = false;
                 claimingPosId = null;
-              } else if (result.type === "error") {
-                claimError = "An unexpected error occurred.";
+              } else {
+                isClaiming = false;
                 showConfirmModal = false;
                 claimingPosId = null;
               }
@@ -251,10 +253,15 @@
           <input type="hidden" name="id" value={claimingPosId} />
           <Button
             type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold min-w-[140px]"
             disabled={isClaiming}
           >
-            {isClaiming ? "Claiming..." : "Confirm & Claim"}
+            {#if isClaiming}
+              <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+              Claiming...
+            {:else}
+              Confirm & Claim
+            {/if}
           </Button>
         </form>
       </div>

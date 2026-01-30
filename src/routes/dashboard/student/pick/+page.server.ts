@@ -294,7 +294,7 @@ export const actions: Actions = {
             if (result) {
                 // Track participation
                 await trackStudentParticipation(student.id, activeEvent.id);
-                return { success: true, message: "Position claimed successfully!" };
+                redirect(303, "/dashboard/student");
             }
         } catch (error) {
             console.error("[ClaimPosition] Error:", error);
