@@ -101,7 +101,7 @@
     ArcElement,
     LineController,
     LineElement,
-    PointElement
+    PointElement,
   );
 
   function createChart() {
@@ -205,7 +205,7 @@
                 const value = tooltipItem.parsed.y;
                 const total = data.reduce(
                   (a: number, b: number | null) => a + (b ?? 0),
-                  0
+                  0,
                 );
                 const percentage = ((value / total) * 100).toFixed(1);
                 return `${value} students (${percentage}%)`;
@@ -375,7 +375,7 @@
   let choiceChartCanvas = $state<HTMLCanvasElement | undefined>(undefined);
   let slotChartCanvas = $state<HTMLCanvasElement | undefined>(undefined);
   let choiceVsSlotsChartCanvas = $state<HTMLCanvasElement | undefined>(
-    undefined
+    undefined,
   );
   let gradeChart = $state<Chart | null>(null);
   let choiceChart = $state<Chart | null>(null);
@@ -384,13 +384,13 @@
 
   // Event Timeline Charts
   let registrationChartCanvas = $state<HTMLCanvasElement | undefined>(
-    undefined
+    undefined,
   );
   let choiceTimelineChartCanvas = $state<HTMLCanvasElement | undefined>(
-    undefined
+    undefined,
   );
   let companyTimelineChartCanvas = $state<HTMLCanvasElement | undefined>(
-    undefined
+    undefined,
   );
   let registrationChart = $state<Chart | null>(null);
   let choiceTimelineChart = $state<Chart | null>(null);
@@ -755,10 +755,10 @@
 
     // Create maps for quick lookup
     const companyMap = new Map(
-      timelineStats.companyStats.map((c) => [c.date, c.count])
+      timelineStats.companyStats.map((c) => [c.date, c.count]),
     );
     const positionMap = new Map(
-      timelineStats.positionStats.map((p) => [p.date, p.count])
+      timelineStats.positionStats.map((p) => [p.date, p.count]),
     );
 
     // Build aligned data arrays (use 0 for missing dates)
@@ -1033,7 +1033,7 @@
       <!-- Additional Stats -->
       <div class="mt-8 bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">Detailed Statistics</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           <div class="text-center">
             <div class="text-lg font-semibold">
               {lotteryStats.totalStudents}
@@ -1080,12 +1080,20 @@
           <div class="text-center">
             <div class="text-lg font-semibold text-red-600">
               {(
-                ((lotteryStats.notPlaced + lotteryStats.noChoices) /
-                  lotteryStats.totalStudents) *
+                (lotteryStats.notPlaced / lotteryStats.totalStudents) *
                 100
               ).toFixed(1)}%
             </div>
             <div class="text-sm text-gray-600">Unassigned Rate</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-slate-600">
+              {(
+                (lotteryStats.noChoices / lotteryStats.totalStudents) *
+                100
+              ).toFixed(1)}%
+            </div>
+            <div class="text-sm text-gray-600">No Choice Rate</div>
           </div>
         </div>
       </div>
@@ -1601,7 +1609,7 @@
                 <span class="font-medium"
                   >{timelineStats.milestones.firstRegistration
                     ? new Date(
-                        timelineStats.milestones.firstRegistration
+                        timelineStats.milestones.firstRegistration,
                       ).toLocaleDateString()
                     : "N/A"}</span
                 >
@@ -1611,7 +1619,7 @@
                 <span class="font-medium"
                   >{timelineStats.milestones.lastRegistration
                     ? new Date(
-                        timelineStats.milestones.lastRegistration
+                        timelineStats.milestones.lastRegistration,
                       ).toLocaleDateString()
                     : "N/A"}</span
                 >
@@ -1626,7 +1634,7 @@
                 <span class="text-gray-600">Avg per Day:</span>
                 <span class="font-medium"
                   >{timelineStats.velocity.avgRegistrationsPerDay.toFixed(
-                    1
+                    1,
                   )}</span
                 >
               </div>
@@ -1641,7 +1649,7 @@
                 <span class="font-medium"
                   >{timelineStats.milestones.firstChoice
                     ? new Date(
-                        timelineStats.milestones.firstChoice
+                        timelineStats.milestones.firstChoice,
                       ).toLocaleDateString()
                     : "N/A"}</span
                 >
@@ -1651,7 +1659,7 @@
                 <span class="font-medium"
                   >{timelineStats.milestones.lastChoice
                     ? new Date(
-                        timelineStats.milestones.lastChoice
+                        timelineStats.milestones.lastChoice,
                       ).toLocaleDateString()
                     : "N/A"}</span
                 >
