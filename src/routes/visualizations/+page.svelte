@@ -129,7 +129,9 @@
           "8th Choice",
           "9th Choice",
           "10th Choice",
+          "Manual",
           "Not Placed",
+          "No Choices",
         ],
         datasets: [
           {
@@ -145,7 +147,9 @@
               lotteryStats.eighthChoice,
               lotteryStats.ninthChoice,
               lotteryStats.tenthChoice,
+              lotteryStats.manual,
               lotteryStats.notPlaced,
+              lotteryStats.noChoices,
             ],
             backgroundColor: [
               "#10b981", // Green for 1st choice
@@ -158,7 +162,9 @@
               "#84cc16", // Lime for 8th choice
               "#fbbf24", // Amber for 9th choice
               "#f97316", // Orange for 10th choice
+              "#6366f1", // Indigo for manual
               "#ef4444", // Red for not placed
+              "#94a3b8", // Slate for no choices
             ],
             borderColor: [
               "#059669",
@@ -171,7 +177,9 @@
               "#65a30d",
               "#d97706",
               "#ea580c",
+              "#4f46e5",
               "#dc2626",
+              "#64748b",
             ],
             borderWidth: 1,
           },
@@ -980,6 +988,19 @@
               </div>
             </div>
 
+            <div class="text-center p-4 bg-indigo-50 rounded-lg">
+              <div class="text-2xl font-bold text-indigo-600">
+                {lotteryStats.manual}
+              </div>
+              <div class="text-sm text-indigo-600">Manual Claims</div>
+              <div class="text-xs text-gray-500">
+                {(
+                  (lotteryStats.manual / lotteryStats.totalStudents) *
+                  100
+                ).toFixed(1)}% of students
+              </div>
+            </div>
+
             <div class="text-center p-4 bg-red-50 rounded-lg">
               <div class="text-2xl font-bold text-red-600">
                 {lotteryStats.notPlaced}
@@ -988,6 +1009,19 @@
               <div class="text-xs text-gray-500">
                 {(
                   (lotteryStats.notPlaced / lotteryStats.totalStudents) *
+                  100
+                ).toFixed(1)}% of students
+              </div>
+            </div>
+
+            <div class="text-center p-4 bg-slate-50 rounded-lg">
+              <div class="text-2xl font-bold text-slate-600">
+                {lotteryStats.noChoices}
+              </div>
+              <div class="text-sm text-slate-600">No Choices</div>
+              <div class="text-xs text-gray-500">
+                {(
+                  (lotteryStats.noChoices / lotteryStats.totalStudents) *
                   100
                 ).toFixed(1)}% of students
               </div>
@@ -1016,7 +1050,9 @@
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-blue-600">
-              {lotteryStats.totalStudents - lotteryStats.notPlaced}
+              {lotteryStats.totalStudents -
+                lotteryStats.notPlaced -
+                lotteryStats.noChoices}
             </div>
             <div class="text-sm text-gray-600">Successfully Placed</div>
           </div>
@@ -1032,7 +1068,9 @@
           <div class="text-center">
             <div class="text-lg font-semibold text-orange-600">
               {(
-                ((lotteryStats.totalStudents - lotteryStats.notPlaced) /
+                ((lotteryStats.totalStudents -
+                  lotteryStats.notPlaced -
+                  lotteryStats.noChoices) /
                   lotteryStats.totalStudents) *
                 100
               ).toFixed(1)}%
@@ -1042,11 +1080,12 @@
           <div class="text-center">
             <div class="text-lg font-semibold text-red-600">
               {(
-                (lotteryStats.notPlaced / lotteryStats.totalStudents) *
+                ((lotteryStats.notPlaced + lotteryStats.noChoices) /
+                  lotteryStats.totalStudents) *
                 100
               ).toFixed(1)}%
             </div>
-            <div class="text-sm text-gray-600">Not Placed Rate</div>
+            <div class="text-sm text-gray-600">Unassigned Rate</div>
           </div>
         </div>
       </div>

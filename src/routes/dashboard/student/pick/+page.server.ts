@@ -249,6 +249,7 @@ export const actions: Actions = {
             return fail(400, { message: "Lottery results are not yet available." });
         }
 
+        let shouldRedirect = false;
         try {
             const result = await prisma.$transaction(async (tx) => {
                 // 1. Check if student is already assigned
@@ -294,13 +295,17 @@ export const actions: Actions = {
             if (result) {
                 // Track participation
                 await trackStudentParticipation(student.id, activeEvent.id);
-                redirect(303, "/dashboard/student");
+                shouldRedirect = true;
             }
         } catch (error) {
             console.error("[ClaimPosition] Error:", error);
             return fail(400, { 
                 message: error instanceof Error ? error.message : "An unexpected error occurred." 
             });
+        }
+
+        if (shouldRedirect) {
+            redirect(303, "/dashboard/student");
         }
 
         return fail(400, { message: "Failed to claim position." });

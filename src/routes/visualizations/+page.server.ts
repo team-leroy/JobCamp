@@ -177,7 +177,7 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
 
                 if (latestJob) {
                     // Calculate choice statistics for selected event only
-                    lotteryStats = await calculateLotteryStats(latestJob.results, selectedEvent.id);
+                    lotteryStats = await calculateLotteryStats(latestJob, selectedEvent.id);
                 }
                 
                 // Calculate analytics for selected event only
@@ -211,19 +211,49 @@ export const load = async ({ locals, url }: { locals: Locals; url: URL }) => {
     }
 };
 
-async function calculateLotteryStats(results: { studentId: string; positionId: string }[], activeEventId: string) {
+interface LotteryResultWithCreatedAt {
+    id: string;
+    studentId: string;
+    positionId: string;
+    lotteryJobId: string;
+    createdAt: Date;
+}
+
+interface LatestLotteryJob {
+    id: string;
+    status: string;
+    completedAt: Date | null;
+    results: LotteryResultWithCreatedAt[];
+}
+
+async function calculateLotteryStats(latestJob: LatestLotteryJob, activeEventId: string) {
     try {
-        // Get all students who participated in this event
-        // Exclude internal testers, inactive, and graduated students
-        let allStudentsWithChoices = await prisma.student.findMany({
+        const jobCompletedAt = latestJob.completedAt;
+
+        // Get all students who participated in this event (anyone who even visited the dashboard while it was active)
+        // or has at least one position selection.
+        const allParticipatedStudents = await prisma.student.findMany({
             where: {
                 isActive: true,
                 graduatedAt: null,
-                eventParticipation: {
-                    some: {
-                        eventId: activeEventId
+                OR: [
+                    {
+                        eventParticipation: {
+                            some: {
+                                eventId: activeEventId
+                            }
+                        }
+                    },
+                    {
+                        positionsSignedUpFor: {
+                            some: {
+                                position: {
+                                    eventId: activeEventId
+                                }
+                            }
+                        }
                     }
-                },
+                ],
                 user: {
                     OR: [
                         { role: null },
@@ -231,36 +261,25 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                     ]
                 }
             },
-            select: { id: true }
-        });
-        
-        // If no participation records found (e.g., for old archived events), fall back to students with choices
-        if (allStudentsWithChoices.length === 0) {
-            allStudentsWithChoices = await prisma.student.findMany({
-                where: {
-                    isActive: true,
-                    graduatedAt: null,
-                    positionsSignedUpFor: {
-                        some: {
-                            position: {
-                                eventId: activeEventId
-                            }
+            include: {
+                positionsSignedUpFor: {
+                    where: {
+                        position: {
+                            eventId: activeEventId
                         }
                     },
-                    user: {
-                        OR: [
-                            { role: null },
-                            { role: { not: 'INTERNAL_TESTER' } }
-                        ]
-                    }
+                    orderBy: { rank: 'asc' },
+                    select: { positionId: true }
                 },
-                select: { id: true }
-            });
-        }
-        
-        const totalStudents = allStudentsWithChoices.length;
-        const placedStudents = results.length;
-        const notPlacedCount = totalStudents - placedStudents;
+                lotteryAssignments: {
+                    where: {
+                        lotteryJobId: latestJob.id
+                    }
+                }
+            }
+        });
+
+        const totalStudents = allParticipatedStudents.length;
         
         const choiceCounts = {
             firstChoice: 0,
@@ -273,8 +292,47 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
             eighthChoice: 0,
             ninthChoice: 0,
             tenthChoice: 0,
-            notPlaced: notPlacedCount
+            manual: 0,
+            notPlaced: 0,
+            noChoices: 0
         };
+
+        for (const student of allParticipatedStudents) {
+            const assignment = student.lotteryAssignments[0];
+            const choices = student.positionsSignedUpFor;
+
+            if (assignment) {
+                // Determine if this was a manual claim or lottery placement
+                // Any result created after the job completion is considered manual
+                const isManualClaim = jobCompletedAt && assignment.createdAt > jobCompletedAt;
+
+                if (isManualClaim) {
+                    choiceCounts.manual++;
+                } else {
+                    // Find which choice this result represents
+                    const choiceIndex = choices.findIndex(c => c.positionId === assignment.positionId);
+                    
+                    if (choiceIndex === 0) choiceCounts.firstChoice++;
+                    else if (choiceIndex === 1) choiceCounts.secondChoice++;
+                    else if (choiceIndex === 2) choiceCounts.thirdChoice++;
+                    else if (choiceIndex === 3) choiceCounts.fourthChoice++;
+                    else if (choiceIndex === 4) choiceCounts.fifthChoice++;
+                    else if (choiceIndex === 5) choiceCounts.sixthChoice++;
+                    else if (choiceIndex === 6) choiceCounts.seventhChoice++;
+                    else if (choiceIndex === 7) choiceCounts.eighthChoice++;
+                    else if (choiceIndex === 8) choiceCounts.ninthChoice++;
+                    else if (choiceIndex === 9) choiceCounts.tenthChoice++;
+                    else choiceCounts.manual++; // Position not in student's choices, but placed during lottery (e.g. manual override)
+                }
+            } else {
+                // No assignment
+                if (choices.length === 0) {
+                    choiceCounts.noChoices++;
+                } else {
+                    choiceCounts.notPlaced++;
+                }
+            }
+        }
 
         // Get positions for this event
         // For archived events, show all positions
@@ -358,37 +416,6 @@ async function calculateLotteryStats(results: { studentId: string; positionId: s
                 ...stats
             }))
             .sort((a, b) => b.averageSubscriptionRate - a.averageSubscriptionRate);
-
-        for (const result of results) {
-            // Get student's choices in order for the active event only
-            const studentChoices = await prisma.positionsOnStudents.findMany({
-                where: { 
-                    studentId: result.studentId,
-                    position: {
-                        eventId: activeEventId
-                    }
-                },
-                orderBy: { rank: 'asc' },
-                select: { positionId: true }
-            });
-
-            // Find which choice this result represents
-            const choiceIndex = studentChoices.findIndex(choice => 
-                choice.positionId === result.positionId
-            );
-
-            if (choiceIndex === 0) choiceCounts.firstChoice++;
-            else if (choiceIndex === 1) choiceCounts.secondChoice++;
-            else if (choiceIndex === 2) choiceCounts.thirdChoice++;
-            else if (choiceIndex === 3) choiceCounts.fourthChoice++;
-            else if (choiceIndex === 4) choiceCounts.fifthChoice++;
-            else if (choiceIndex === 5) choiceCounts.sixthChoice++;
-            else if (choiceIndex === 6) choiceCounts.seventhChoice++;
-            else if (choiceIndex === 7) choiceCounts.eighthChoice++;
-            else if (choiceIndex === 8) choiceCounts.ninthChoice++;
-            else if (choiceIndex === 9) choiceCounts.tenthChoice++;
-            else choiceCounts.notPlaced++; // Position not in student's choices
-        }
 
         return {
             totalStudents,
