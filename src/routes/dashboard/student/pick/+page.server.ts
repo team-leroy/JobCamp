@@ -1,5 +1,5 @@
 import { prisma } from '$lib/server/prisma';
-import { redirect } from '@sveltejs/kit';
+import { redirect, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { generatePermissionSlipCode } from '$lib/server/auth';
 import { sendPermissionSlipEmail } from '$lib/server/email';
@@ -216,7 +216,7 @@ export const actions: Actions = {
         const posId = data.get("id")?.toString();
 
         if (!posId) {
-            return { success: false, message: "Position ID is required." };
+            return fail(400, { message: "Position ID is required." });
         }
 
         if (!locals.user) {
@@ -236,7 +236,7 @@ export const actions: Actions = {
         });
 
         if (!activeEvent || !activeEvent.lotteryPublished || !activeEvent.studentSignupsEnabled) {
-            return { success: false, message: "Manual selection is not currently available." };
+            return fail(400, { message: "Manual selection is not currently available." });
         }
 
         // Find the most recent lottery job
@@ -246,7 +246,7 @@ export const actions: Actions = {
         });
 
         if (!lotteryJob) {
-            return { success: false, message: "Lottery results are not yet available." };
+            return fail(400, { message: "Lottery results are not yet available." });
         }
 
         try {
@@ -298,13 +298,12 @@ export const actions: Actions = {
             }
         } catch (error) {
             console.error("[ClaimPosition] Error:", error);
-            return { 
-                success: false, 
+            return fail(400, { 
                 message: error instanceof Error ? error.message : "An unexpected error occurred." 
-            };
+            });
         }
 
-        return { success: false, message: "Failed to claim position." };
+        return fail(400, { message: "Failed to claim position." });
     },
     sendPermissionSlip: async({ request, locals }) => {
         const data = await request.formData();

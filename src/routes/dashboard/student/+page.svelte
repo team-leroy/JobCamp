@@ -195,38 +195,12 @@
   let claimingPosId = $state<string | null>(null);
   let showConfirmModal = $state(false);
   let claimError = $state<string | null>(null);
+  let isClaiming = $state(false);
 
   async function handleClaim(posId: string) {
     claimingPosId = posId;
     showConfirmModal = true;
     claimError = null;
-  }
-
-  async function confirmClaim() {
-    if (!claimingPosId) return;
-
-    const formData = new FormData();
-    formData.append("id", claimingPosId);
-
-    const response = await fetch("/dashboard/student/pick?/claimPosition", {
-      method: "POST",
-      body: formData,
-      headers: {
-        "x-sveltekit-action": "true",
-      },
-    });
-
-    const result = await response.json();
-    const actionResult = JSON.parse(result.data);
-
-    if (actionResult.success) {
-      // Refresh the page to show assignment
-      window.location.reload();
-    } else {
-      claimError = actionResult.message || "Failed to claim position.";
-      showConfirmModal = false;
-      claimingPosId = null;
-    }
   }
 </script>
 
@@ -245,15 +219,44 @@
       <div class="flex justify-end gap-3">
         <Button
           variant="outline"
+          disabled={isClaiming}
           onclick={() => {
             showConfirmModal = false;
             claimingPosId = null;
           }}>Cancel</Button
         >
-        <Button
-          class="bg-blue-600 hover:bg-blue-700 text-white font-bold"
-          onclick={confirmClaim}>Confirm & Claim</Button
+        <form
+          method="POST"
+          action="/dashboard/student/pick?/claimPosition"
+          use:enhance={() => {
+            isClaiming = true;
+            return async ({ result }) => {
+              isClaiming = false;
+              if (result.type === "success") {
+                window.location.reload();
+              } else if (result.type === "failure") {
+                claimError =
+                  (result.data as { message?: string })?.message ||
+                  "Failed to claim position.";
+                showConfirmModal = false;
+                claimingPosId = null;
+              } else if (result.type === "error") {
+                claimError = "An unexpected error occurred.";
+                showConfirmModal = false;
+                claimingPosId = null;
+              }
+            };
+          }}
         >
+          <input type="hidden" name="id" value={claimingPosId} />
+          <Button
+            type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+            disabled={isClaiming}
+          >
+            {isClaiming ? "Claiming..." : "Confirm & Claim"}
+          </Button>
+        </form>
       </div>
     </div>
   </div>
