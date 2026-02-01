@@ -1,8 +1,9 @@
 <script lang="ts">
   import Button from "$lib/components/ui/button/button.svelte";
   import { buttonVariants } from "$lib/components/ui/button/index.js";
+  import { enhance } from "$app/forms";
 
-  var { data } = $props();
+  var { data, form } = $props();
 
   var formEl: HTMLFormElement;
 
@@ -26,9 +27,10 @@
     <p class="text-sm text-gray-500 font-bold uppercase">(CHECK SPAM FOLDER)</p>
   {/if}
 
-  {#if data.msg}<p class="text-red-500 font-medium">{data.msg}</p>{/if}
+  {#if data.msg || form?.msg}<p class="text-red-500 font-medium">{data.msg || form?.msg}</p>{/if}
+  {#if form?.success}<p class="text-emerald-600 font-medium">{form.success}</p>{/if}
 
-  <form method="POST" action="?/resend" bind:this={formEl}>
+  <form method="POST" action="?/resend" bind:this={formEl} use:enhance>
     <Button onclick={() => formEl.submit()} variant="outline" class="text-lg"
       >Resend Email</Button
     >

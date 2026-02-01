@@ -143,7 +143,9 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions: Actions = {
     resend: async (event) => {
-        if (!event.locals.user) return;
+        if (!event.locals.user) {
+            return { msg: "You must be logged in to resend the verification email." };
+        }
 
         const email = event.locals.user.email;
         const userId = event.locals.user.id;
@@ -161,5 +163,7 @@ export const actions: Actions = {
 
         const code = await generateEmailVerificationCode(userId, email)
         await sendEmailVerificationEmail(userId, email, code, schoolName);
+
+        return { success: "Verification email resent!" };
     }
 };
