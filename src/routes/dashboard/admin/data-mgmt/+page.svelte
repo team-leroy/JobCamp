@@ -45,6 +45,7 @@
     emailVerified: boolean;
     parentEmail: string;
     permissionSlipStatus: string;
+    permissionSlipCode: string | null;
     permissionSlipDate: Date | null;
     lastLogin: Date | null;
     studentPicks: Array<{
@@ -247,11 +248,11 @@
         matchesEvent &&
         matchesTester
       );
-    })
+    }),
   );
 
   let paginatedStudents = $derived(
-    filteredStudents.slice(0, studentPage * pageSize)
+    filteredStudents.slice(0, studentPage * pageSize),
   );
 
   // Computed filtered companies (Consolidated)
@@ -268,14 +269,14 @@
       const matchesHostName =
         !hostNameFilter ||
         company.hosts.some((host) =>
-          host.name.toLowerCase().includes(hostNameFilter.toLowerCase())
+          host.name.toLowerCase().includes(hostNameFilter.toLowerCase()),
         );
 
       // 3. Position Title Search
       const matchesPositionTitle =
         !positionTitleFilter ||
         company.activePositions.some((pos) =>
-          pos.title.toLowerCase().includes(positionTitleFilter.toLowerCase())
+          pos.title.toLowerCase().includes(positionTitleFilter.toLowerCase()),
         );
 
       // 4. Email Verified Filter
@@ -311,11 +312,11 @@
         matchesEvent &&
         matchesTester
       );
-    })
+    }),
   );
 
   let paginatedCompanies = $derived(
-    filteredCompanies.slice(0, companyPage * pageSize)
+    filteredCompanies.slice(0, companyPage * pageSize),
   );
 
   // Reset pagination when filters change
@@ -710,6 +711,16 @@
                         >
                           {statusInfo.label}: {statusInfo.status}
                         </span>
+                        {#if statusInfo.label === "Permission Slip" && statusInfo.status === "Pending" && student.permissionSlipCode}
+                          <a
+                            href="/permission-slip/{student.permissionSlipCode}"
+                            target="_blank"
+                            class="text-xs text-blue-600 underline ml-2 hover:text-blue-800"
+                            onclick={(e) => e.stopPropagation()}
+                          >
+                            Copy Link
+                          </a>
+                        {/if}
                       </div>
                     {/each}
 
@@ -774,7 +785,7 @@
                               </span>
                               <p class="text-sm text-gray-600">
                                 Assigned: {formatDate(
-                                  student.lotteryAssignment.assignedAt
+                                  student.lotteryAssignment.assignedAt,
                                 )}
                               </p>
                             </div>
@@ -1214,7 +1225,9 @@
                                             <div
                                               class="text-sm text-gray-700 flex items-center gap-2"
                                             >
-                                              <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                              <span
+                                                class="w-1.5 h-1.5 rounded-full bg-gray-400"
+                                              ></span>
                                               {attachment.fileName}
                                             </div>
                                           {/each}
@@ -1227,7 +1240,7 @@
                                           ? "Published"
                                           : "Created"}: {formatDate(
                                           position.publishedAt ||
-                                            position.createdAt
+                                            position.createdAt,
                                         )}</span
                                       >
                                     </div>

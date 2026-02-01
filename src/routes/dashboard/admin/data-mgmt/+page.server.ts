@@ -141,6 +141,14 @@ export const load: PageServerLoad = async ({ locals }) => {
         }
     });
 
+    // Get active permission slip codes for these students
+    const permissionSlipCodes = await prisma.permissionSlipCode.findMany({
+        where: {
+            user_id: { in: students.map(s => s.userId).filter((id): id is string => id !== null) }
+        }
+    });
+    const slipCodeMap = new Map(permissionSlipCodes.map(c => [c.user_id, c.code]));
+
     // Get positions for lottery results
     const positionIds = lotteryResults.map(result => result.positionId);
     const positions = await prisma.position.findMany({
@@ -184,6 +192,10 @@ export const load: PageServerLoad = async ({ locals }) => {
             ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
             : null;
         
+        const hasSlip = !!slip;
+        const slipCode = student.userId ? slipCodeMap.get(student.userId) : null;
+        const permissionSlipStatus = hasSlip ? 'Complete' : (slipCode ? 'Pending' : 'Not Started');
+        
         return {
             id: student.id,
             firstName: student.firstName,
@@ -194,7 +206,8 @@ export const load: PageServerLoad = async ({ locals }) => {
             email: student.user?.email || 'No Email',
             emailVerified: student.user?.emailVerified || false,
             parentEmail: student.parentEmail,
-            permissionSlipStatus: slip ? 'Complete' : 'Not Started',
+            permissionSlipStatus,
+            permissionSlipCode: slipCode,
             permissionSlipDate: slip?.createdAt ? new Date(slip.createdAt).toISOString() : null,
             lastLogin: student.user?.lastLogin ? new Date(student.user.lastLogin).toISOString() : null,
             isInternalTester: student.user?.role === 'INTERNAL_TESTER',
@@ -788,6 +801,14 @@ export const actions: Actions = {
                 }
             });
 
+            // Get active permission slip codes for these students
+            const permissionSlipCodes = await prisma.permissionSlipCode.findMany({
+                where: {
+                    user_id: { in: students.map(s => s.userId).filter((id): id is string => id !== null) }
+                }
+            });
+            const slipCodeMap = new Map(permissionSlipCodes.map(c => [c.user_id, c.code]));
+
             // Transform and filter students
             // Convert graduatingClassYear to grade for filtering and display
             const filteredStudents = students.filter(student => {
@@ -802,7 +823,10 @@ export const actions: Actions = {
                     (grade !== null && grade.toString() === gradeFilter);
                 
                 const permissionSlip = student.permissionSlips[0];
-                const permissionSlipStatus = permissionSlip ? 'Complete' : 'Not Started';
+                const hasSlip = !!permissionSlip;
+                const slipCode = student.userId ? slipCodeMap.get(student.userId) : null;
+                const permissionSlipStatus = hasSlip ? 'Complete' : (slipCode ? 'Pending' : 'Not Started');
+                
                 const matchesPermissionSlip = permissionSlipFilter === "All" || 
                     permissionSlipStatus === permissionSlipFilter;
                 
@@ -821,6 +845,10 @@ export const actions: Actions = {
                     ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
                     : null;
                 
+                const hasSlip = !!permissionSlip;
+                const slipCode = student.userId ? slipCodeMap.get(student.userId) : null;
+                const permissionSlipStatus = hasSlip ? 'Complete' : (slipCode ? 'Pending' : 'Not Started');
+
                 return {
                     firstName: student.firstName,
                     lastName: student.lastName,
@@ -828,7 +856,8 @@ export const actions: Actions = {
                     phone: student.phone || '',
                     email: student.user.email || '',
                     parentEmail: student.parentEmail || '',
-                    permissionSlipStatus: permissionSlip ? 'Complete' : 'Not Started',
+                    permissionSlipStatus,
+                    permissionSlipCode: slipCode,
                     lastLogin: student.user.lastLogin ? new Date(student.user.lastLogin).toISOString() : 'Never',
                     studentPicks: student.positionsSignedUpFor.map(pos => 
                         `${pos.rank}. ${pos.position.host.company.companyName} - ${pos.position.title}`

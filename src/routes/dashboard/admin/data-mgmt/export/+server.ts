@@ -161,6 +161,14 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
             }
         });
 
+        // Get active permission slip codes for these students
+        const permissionSlipCodes = await prisma.permissionSlipCode.findMany({
+            where: {
+                user_id: { in: students.map(s => s.userId).filter((id): id is string => id !== null) }
+            }
+        });
+        const slipCodeMap = new Map(permissionSlipCodes.map(c => [c.user_id, c.code]));
+
         // Transform and filter students
         const filteredStudents = students.filter(student => {
             const matchesLastName = !lastNameFilter || 
@@ -174,7 +182,10 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
             (grade !== null && grade.toString() === gradeFilter);
             
             const permissionSlip = student.permissionSlips[0];
-            const permissionSlipStatus = permissionSlip ? 'Complete' : 'Not Started';
+            const hasSlip = !!permissionSlip;
+            const slipCode = student.userId ? slipCodeMap.get(student.userId) : null;
+            const permissionSlipStatus = hasSlip ? 'Complete' : (slipCode ? 'Pending' : 'Not Started');
+            
             const matchesPermissionSlip = permissionSlipFilter === "All" || 
                 permissionSlipStatus === permissionSlipFilter;
             
@@ -202,6 +213,10 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
             ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
             : null;
             
+            const hasSlip = !!permissionSlip;
+            const slipCode = student.userId ? slipCodeMap.get(student.userId) : null;
+            const permissionSlipStatus = hasSlip ? 'Complete' : (slipCode ? 'Pending' : 'Not Started');
+
             return {
                 firstName: student.firstName,
                 lastName: student.lastName,
@@ -210,7 +225,8 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
                 email: student.user.email || '',
                 emailVerified: student.user.emailVerified ? 'Yes' : 'No',
                 parentEmail: student.parentEmail || '',
-                permissionSlipStatus: permissionSlip ? 'Complete' : 'Not Started',
+                permissionSlipStatus,
+                permissionSlipCode: slipCode,
                 lastLogin: student.user.lastLogin ? new Date(student.user.lastLogin).toISOString() : 'Never',
                 studentPicks: student.positionsSignedUpFor.map(pos => 
                     `${pos.rank}. ${pos.position.host.company.companyName} - ${pos.position.title}`
