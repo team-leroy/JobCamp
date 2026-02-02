@@ -21,7 +21,11 @@ async function sendEmailViaSendGrid(to: string, subject: string, html: string): 
     // Wrap content in proper HTML tags to satisfy spam filters
     const fullHtml = `<!DOCTYPE html><html><body>${html}</body></html>`;
     // Create a plain-text version by stripping HTML tags
-    const plainText = html.replace(/<[^>]*>?/gm, '').trim();
+    // First, preserve links by converting <a href="url">text</a> to "text (url)"
+    const plainText = html
+        .replace(/<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '$2 ($1)')
+        .replace(/<[^>]*>?/gm, '')
+        .trim();
 
     const payload = {
         personalizations: [{
