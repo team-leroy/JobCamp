@@ -1134,18 +1134,12 @@
       <!-- Company Summary -->
       <div class="mt-8 bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">Company Summary</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
           <div class="text-center">
             <div class="text-lg font-semibold">
               {companyStats.totalCompanies}
             </div>
             <div class="text-sm text-gray-600">Total Companies</div>
-          </div>
-          <div class="text-center">
-            <div class="text-lg font-semibold text-green-600">
-              {companyStats.totalChoices}
-            </div>
-            <div class="text-sm text-gray-600">Top 3 Student Choices</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-blue-600">
@@ -1158,25 +1152,6 @@
               {companyStats.totalPositions}
             </div>
             <div class="text-sm text-gray-600">Total Positions</div>
-          </div>
-          <div class="text-center">
-            <div class="text-lg font-semibold text-orange-600">
-              {(
-                (companyStats.totalChoices / companyStats.totalSlots) *
-                100
-              ).toFixed(1)}%
-            </div>
-            <div class="text-sm text-gray-600">Fill Rate</div>
-          </div>
-          <div class="text-center">
-            <div class="text-lg font-semibold text-red-600">
-              {(
-                companyStats.totalChoices / companyStats.totalPositions
-              ).toFixed(1)}
-            </div>
-            <div class="text-sm text-gray-600">
-              Avg Top 3 Choices per Position
-            </div>
           </div>
         </div>
       </div>
