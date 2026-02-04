@@ -349,7 +349,7 @@
         plugins: {
           title: {
             display: true,
-            text: "Company Popularity by Student Choices",
+            text: "Top 10 most popular by student choices.",
             font: { size: 18, weight: "bold" },
           },
           legend: {
@@ -1123,8 +1123,7 @@
 
         <!-- Company Popularity -->
         <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-xl font-semibold mb-1">Company Popularity</h2>
-          <p class="text-sm text-gray-600 mb-4">Top 10 most popular by student choices.</p>
+          <h2 class="text-xl font-semibold mb-4">Company Popularity</h2>
           <div class="h-96">
             <canvas bind:this={companyChartCanvas} width="800" height="400"
             ></canvas>
