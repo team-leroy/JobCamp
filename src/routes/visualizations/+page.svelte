@@ -329,16 +329,16 @@
           {
             data: topCompanies.map((c) => c.totalChoices),
             backgroundColor: [
-              "#1e40af", // Dark blue
+              "#ef4444", // Red
+              "#f97316", // Orange
+              "#eab308", // Amber
+              "#22c55e", // Green
+              "#14b8a6", // Teal
               "#3b82f6", // Blue
-              "#60a5fa", // Light blue
-              "#93c5fd", // Lighter blue
-              "#dbeafe", // Very light blue
-              "#1e3a8a", // Navy blue
-              "#1d4ed8", // Royal blue
-              "#2563eb", // Medium blue
-              "#7c3aed", // Purple (for variety)
-              "#8b5cf6", // Light purple
+              "#6366f1", // Indigo
+              "#8b5cf6", // Violet
+              "#ec4899", // Pink
+              "#64748b", // Slate
             ],
           },
         ],
@@ -1123,7 +1123,8 @@
 
         <!-- Company Popularity -->
         <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-xl font-semibold mb-4">Company Popularity</h2>
+          <h2 class="text-xl font-semibold mb-1">Company Popularity</h2>
+          <p class="text-sm text-gray-600 mb-4">Top 10 most popular by student choices.</p>
           <div class="h-96">
             <canvas bind:this={companyChartCanvas} width="800" height="400"
             ></canvas>
