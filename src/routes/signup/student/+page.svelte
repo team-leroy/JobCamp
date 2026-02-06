@@ -127,14 +127,22 @@
     {#if $errors.phone}<span class="text-sm text-red-500">{$errors.phone}</span
       >{/if}
 
-    <div class="flex w-96 justify-center items-center gap-2">
-      <input
-        type="checkbox"
-        class="rounded"
-        name="allowPhoneMessaging"
-        bind:checked={allowPhoneMessaging}
-      />
-      <label for="allowPhoneMessaging">I Accept SMS Messages</label>
+    <div
+      class="w-96 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3"
+    >
+      <div class="flex items-start gap-2">
+        <input
+          type="checkbox"
+          class="rounded mt-1"
+          name="allowPhoneMessaging"
+          bind:checked={allowPhoneMessaging}
+        />
+        <label for="allowPhoneMessaging" class="text-sm text-gray-700">
+          I agree to receive SMS messages from JobCamp. Up to 5 SMS reminders
+          will be sent over the next two months. Message & data rates may apply.
+          Reply STOP to opt out.
+        </label>
+      </div>
     </div>
     {#if $errors.allowPhoneMessaging}<span class="text-sm text-red-500"
         >{$errors.allowPhoneMessaging}</span
@@ -183,6 +191,12 @@
       class="mt-2 w-24 h-8 rounded bg-blue-500 text-white hover:bg-blue-600"
       >Sign Up</button
     >
+    <p class="text-xs text-gray-500 text-center mt-2">
+      By continuing, you agree to our
+      <a href="/terms" class="underline hover:text-gray-700">Terms of Service</a>
+      and
+      <a href="/privacy" class="underline hover:text-gray-700">Privacy Policy</a>.
+    </p>
   </form>
   <a href="/login" class="underline text-blue-500">Do you want to login?</a>
 </div>
