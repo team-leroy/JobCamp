@@ -687,8 +687,13 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
         const studentInclude = {
             user: {
                 select: {
-                    lastLogin: true
+                    lastLogin: true,
+                    emailVerified: true
                 }
+            },
+            permissionSlips: {
+                where: { eventId: activeEventId },
+                take: 1
             },
             positionsSignedUpFor: {
                 where: {
@@ -783,7 +788,11 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
                 studentsWithManyChoices: [],
                 averageChoices: 0,
                 averageChoicesPerStudent: 0,
-                totalChoices: 0
+                totalChoices: 0,
+                totalStudentsWithChoices: 0,
+                emailUnverified: 0,
+                noPermissionSlip: 0,
+                permissionSlipNoChoices: 0
             };
         }
 
@@ -932,6 +941,15 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
             }
         ];
 
+        const emailUnverifiedCount = studentsWithChoices.filter(s => s.user && !s.user.emailVerified).length;
+        const noPermissionSlipCount = studentsWithChoices.filter(s => !s.permissionSlips || s.permissionSlips.length === 0).length;
+        // Students who have permission slip signed but have not made any position choices yet
+        const permissionSlipNoChoicesCount = studentsWithChoices.filter(s => {
+            const hasPermissionSlip = Array.isArray(s.permissionSlips) && s.permissionSlips.length > 0;
+            const hasNoChoices = Array.isArray(s.positionsSignedUpFor) && s.positionsSignedUpFor.length === 0;
+            return hasPermissionSlip && hasNoChoices;
+        }).length;
+
         return {
             gradeStats,
             choiceStats,
@@ -943,8 +961,11 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
             totalStudentsWithChoices: studentsWithChoices.filter(s => s.positionsSignedUpFor.length > 0).length,
             totalChoices: studentsWithChoices.reduce((sum, s) => sum + s.positionsSignedUpFor.length, 0),
             totalAvailableSlots,
-            averageChoicesPerStudent: studentsWithChoices.length > 0 ? 
-                (studentsWithChoices.reduce((sum, s) => sum + s.positionsSignedUpFor.length, 0) / studentsWithChoices.length) : 0
+            averageChoicesPerStudent: studentsWithChoices.length > 0 ?
+                (studentsWithChoices.reduce((sum, s) => sum + s.positionsSignedUpFor.length, 0) / studentsWithChoices.length) : 0,
+            emailUnverified: emailUnverifiedCount,
+            noPermissionSlip: noPermissionSlipCount,
+            permissionSlipNoChoices: permissionSlipNoChoicesCount
         };
     } catch (error) {
         console.error('Error calculating student stats:', error);

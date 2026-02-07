@@ -1370,9 +1370,46 @@
         </div>
       </div>
 
-      <!-- Student Summary -->
+      <!-- Student Readiness Summary -->
       <div class="mt-8 bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">Student Summary</h2>
+        <h2 class="text-xl font-semibold mb-4">Student Readiness Summary</h2>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div class="text-center">
+            <div class="text-lg font-semibold">
+              {studentStats.totalStudents}
+            </div>
+            <div class="text-sm text-gray-600">Total Students</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-green-600">
+              {studentStats.totalStudentsWithChoices}
+            </div>
+            <div class="text-sm text-gray-600">Students w/choices</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-orange-600">
+              {studentStats.permissionSlipNoChoices ?? 0}
+            </div>
+            <div class="text-sm text-gray-600">Permission Slip, No Choices</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-red-600">
+              {studentStats.noPermissionSlip}
+            </div>
+            <div class="text-sm text-gray-600">No Permission Slip</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold text-amber-600">
+              {studentStats.emailUnverified}
+            </div>
+            <div class="text-sm text-gray-600">Email Unverified</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Choice Summary -->
+      <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Student Choice Summary</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <div class="text-center">
             <div class="text-lg font-semibold">
@@ -1413,80 +1450,7 @@
         </div>
       </div>
 
-      <!-- Student Details Table -->
-      <div class="mt-8 bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">Student Details</h2>
-        <div class="overflow-x-auto">
-          <table class="min-w-full bg-white border border-gray-200">
-            <thead>
-              <tr>
-                <th
-                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                  >Grade</th
-                >
-                <th
-                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                  >Total Students</th
-                >
-                <th
-                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                  >Students with Choices</th
-                >
-              </tr>
-            </thead>
-            <tbody>
-              {#each studentStats.gradeStats as grade}
-                <tr>
-                  <td class="py-2 px-4 border-b text-sm text-gray-800"
-                    >{grade.grade}</td
-                  >
-                  <td class="py-2 px-4 border-b text-sm text-green-600"
-                    >{grade.totalStudents}</td
-                  >
-                  <td class="py-2 px-4 border-b text-sm text-blue-600"
-                    >{grade.studentsWithChoices}</td
-                  >
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Choice Details Table -->
-      <div class="mt-8 bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-4">Choice Details</h2>
-        <div class="overflow-x-auto">
-          <table class="min-w-full bg-white border border-gray-200">
-            <thead>
-              <tr>
-                <th
-                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                  >Number of Choices</th
-                >
-                <th
-                  class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                  >Count</th
-                >
-              </tr>
-            </thead>
-            <tbody>
-              {#each studentStats.choiceStats as choice}
-                <tr>
-                  <td class="py-2 px-4 border-b text-sm text-gray-800"
-                    >{choice.choices} choices</td
-                  >
-                  <td class="py-2 px-4 border-b text-sm text-blue-600"
-                    >{choice.count}</td
-                  >
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Slot Details Table -->
+      <!-- Choice Patterns vs Slot Availability -->
       <div class="mt-8 bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">
           Choice Patterns vs Slot Availability
