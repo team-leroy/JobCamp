@@ -754,17 +754,31 @@
                         <h4 class="font-semibold mb-2">
                           Student Preferences (Rank Ordered):
                         </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {#each student.studentPicks as pick}
-                            <div
-                              class="flex items-center space-x-2 p-2 bg-gray-50 rounded"
-                            >
-                              <Badge variant="secondary">{pick.rank}</Badge>
-                              <span class="text-sm">
-                                {pick.companyName} - {pick.title}
-                              </span>
-                            </div>
-                          {/each}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                          <div class="space-y-2">
+                            {#each student.studentPicks.slice(0, 5) as pick}
+                              <div
+                                class="flex items-center space-x-2 p-2 bg-gray-50 rounded"
+                              >
+                                <Badge variant="secondary">{pick.rank + 1}</Badge>
+                                <span class="text-sm">
+                                  {pick.companyName} - {pick.title}
+                                </span>
+                              </div>
+                            {/each}
+                          </div>
+                          <div class="space-y-2">
+                            {#each student.studentPicks.slice(5) as pick}
+                              <div
+                                class="flex items-center space-x-2 p-2 bg-gray-50 rounded"
+                              >
+                                <Badge variant="secondary">{pick.rank + 1}</Badge>
+                                <span class="text-sm">
+                                  {pick.companyName} - {pick.title}
+                                </span>
+                              </div>
+                            {/each}
+                          </div>
                         </div>
                       </div>
 
