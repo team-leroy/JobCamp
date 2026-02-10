@@ -20,6 +20,21 @@
   } from "chart.js";
 
   import type { PageData } from "./$types";
+  import { ChevronDown, ChevronRight } from "lucide-svelte";
+
+  function getSubscriptionStatusLabel(rate: number): string {
+    if (rate === 0) return "No Pick";
+    if (rate <= 0.5) return "Available";
+    if (rate <= 1) return "Popular";
+    return "Oversubscribed";
+  }
+
+  function getSubscriptionStatusClasses(rate: number): string {
+    if (rate === 0) return "bg-slate-100 text-slate-800";
+    if (rate <= 0.5) return "bg-green-100 text-green-800";
+    if (rate <= 1) return "bg-orange-100 text-orange-800";
+    return "bg-red-100 text-red-800";
+  }
 
   interface Props {
     data: PageData;
@@ -42,6 +57,14 @@
   let chart = $state<Chart | null>(null);
   let selectedVisualization = $state("lottery");
   let selectedEventId = $state("");
+  let expandedCompanySubscription = $state(new Set<string>());
+
+  function toggleCompanySubscription(companyName: string) {
+    const next = new Set(expandedCompanySubscription);
+    if (next.has(companyName)) next.delete(companyName);
+    else next.add(companyName);
+    expandedCompanySubscription = next;
+  }
   $effect.pre(() => {
     if (!selectedEventId && data.selectedEvent?.id) {
       selectedEventId = data.selectedEvent.id;
@@ -1233,49 +1256,95 @@
             </thead>
             <tbody>
               {#each companyStats.companySubscriptionStats as company}
-                <tr>
-                  <td class="py-2 px-4 border-b text-sm text-gray-800"
-                    >{company.company}</td
-                  >
-                  <td class="py-2 px-4 border-b text-sm text-gray-600"
+                <tr class="border-b">
+                  <td class="py-2 px-4 text-sm text-gray-800">
+                    {#if company.totalPositions > 1}
+                      <button
+                        type="button"
+                        class="flex items-center gap-1 hover:text-blue-600 focus:outline-none"
+                        onclick={() => toggleCompanySubscription(company.company)}
+                        aria-expanded={expandedCompanySubscription.has(company.company)}
+                      >
+                        {#if expandedCompanySubscription.has(company.company)}
+                          <ChevronDown class="h-4 w-4 shrink-0" />
+                        {:else}
+                          <ChevronRight class="h-4 w-4 shrink-0" />
+                        {/if}
+                        {company.company}
+                      </button>
+                    {:else}
+                      {company.company}
+                    {/if}
+                  </td>
+                  <td class="py-2 px-4 text-sm text-gray-600"
                     >{company.totalPositions}</td
                   >
-                  <td class="py-2 px-4 border-b text-sm text-green-600"
+                  <td class="py-2 px-4 text-sm text-green-600"
                     >{company.totalChoices}</td
                   >
-                  <td class="py-2 px-4 border-b text-sm text-blue-600"
+                  <td class="py-2 px-4 text-sm text-blue-600"
                     >{company.totalSlots}</td
                   >
-                  <td class="py-2 px-4 border-b text-sm font-medium">
+                  <td class="py-2 px-4 text-sm font-medium">
                     <span
                       class={company.averageSubscriptionRate > 1
                         ? "text-red-600"
                         : company.averageSubscriptionRate > 0.5
                           ? "text-orange-600"
-                          : "text-green-600"}
+                          : company.averageSubscriptionRate > 0
+                            ? "text-green-600"
+                            : "text-slate-600"}
                     >
                       {(company.averageSubscriptionRate * 100).toFixed(1)}%
                     </span>
                   </td>
-                  <td class="py-2 px-4 border-b text-sm">
-                    {#if company.averageSubscriptionRate > 1}
-                      <span
-                        class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs"
-                        >Oversubscribed</span
-                      >
-                    {:else if company.averageSubscriptionRate > 0.5}
-                      <span
-                        class="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs"
-                        >Moderate</span
-                      >
-                    {:else}
-                      <span
-                        class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs"
-                        >Available</span
-                      >
-                    {/if}
+                  <td class="py-2 px-4 text-sm">
+                    <span
+                      class="px-2 py-1 rounded-full text-xs {getSubscriptionStatusClasses(company.averageSubscriptionRate)}"
+                    >
+                      {getSubscriptionStatusLabel(company.averageSubscriptionRate)}
+                    </span>
                   </td>
                 </tr>
+                {#if company.totalPositions > 1 && expandedCompanySubscription.has(company.company)}
+                  <tr class="bg-gray-50">
+                    <td colspan="6" class="py-3 px-4">
+                      <div class="pl-8 text-sm">
+                        <div class="font-medium text-gray-600 mb-2">Position subscription rates</div>
+                        <table class="min-w-full text-xs">
+                          <thead>
+                            <tr class="border-b border-gray-200">
+                              <th class="py-1.5 px-3 text-left font-medium text-gray-500">Position</th>
+                              <th class="py-1.5 px-3 text-left font-medium text-gray-500">Choices</th>
+                              <th class="py-1.5 px-3 text-left font-medium text-gray-500">Slots</th>
+                              <th class="py-1.5 px-3 text-left font-medium text-gray-500">Rate</th>
+                              <th class="py-1.5 px-3 text-left font-medium text-gray-500">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {#each company.positions as pos}
+                              <tr class="border-b border-gray-100">
+                                <td class="py-1.5 px-3 text-gray-800">{pos.title}</td>
+                                <td class="py-1.5 px-3 text-green-600">{pos.choices}</td>
+                                <td class="py-1.5 px-3 text-blue-600">{pos.slots}</td>
+                                <td class="py-1.5 px-3 font-medium">
+                                  {(pos.rate * 100).toFixed(1)}%
+                                </td>
+                                <td class="py-1.5 px-3">
+                                  <span
+                                    class="px-1.5 py-0.5 rounded text-xs {getSubscriptionStatusClasses(pos.rate)}"
+                                  >
+                                    {getSubscriptionStatusLabel(pos.rate)}
+                                  </span>
+                                </td>
+                              </tr>
+                            {/each}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                {/if}
               {/each}
             </tbody>
           </table>
