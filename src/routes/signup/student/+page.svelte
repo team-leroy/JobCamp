@@ -127,27 +127,6 @@
     {#if $errors.phone}<span class="text-sm text-red-500">{$errors.phone}</span
       >{/if}
 
-    <div
-      class="w-96 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3"
-    >
-      <div class="flex items-start gap-2">
-        <input
-          type="checkbox"
-          class="rounded mt-1"
-          name="allowPhoneMessaging"
-          bind:checked={allowPhoneMessaging}
-        />
-        <label for="allowPhoneMessaging" class="text-sm text-gray-700">
-          I agree to receive SMS messages from JobCamp. Up to 5 SMS reminders
-          will be sent over the next two months. Message & data rates may apply.
-          Reply STOP to opt out.
-        </label>
-      </div>
-    </div>
-    {#if $errors.allowPhoneMessaging}<span class="text-sm text-red-500"
-        >{$errors.allowPhoneMessaging}</span
-      >{/if}
-
     <div class="flex w-96 justify-between">
       <label for="parentEmail">PARENT Email</label>
       <Input
@@ -184,6 +163,27 @@
     </div>
     {#if $errors.password}<span class="text-sm text-red-500"
         >{$errors.password}</span
+      >{/if}
+
+    <div
+      class="w-96 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3"
+    >
+      <div class="flex items-start gap-2">
+        <input
+          type="checkbox"
+          class="rounded mt-1"
+          name="allowPhoneMessaging"
+          bind:checked={allowPhoneMessaging}
+        />
+        <label for="allowPhoneMessaging" class="text-sm text-gray-700">
+          I agree to receive SMS messages from JobCamp. Up to 5 SMS reminders
+          will be sent over the next two months. Message & data rates may apply.
+          Reply STOP to opt out.
+        </label>
+      </div>
+    </div>
+    {#if $errors.allowPhoneMessaging}<span class="text-sm text-red-500"
+        >{$errors.allowPhoneMessaging}</span
       >{/if}
 
     <button

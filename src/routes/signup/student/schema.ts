@@ -39,9 +39,7 @@ export const createStudentSchema = (schoolEmailDomain?: string) => {
 				(value) => phonePattern.test(value),
 				"Please enter a valid phone number in format (XXX) XXX-XXXX."
 			),
-		allowPhoneMessaging: z.literal(true, {
-			errorMap: () => ({ message: "You must allow SMS messaging." })
-		}),
+		allowPhoneMessaging: z.boolean().optional(),
 		email: z.string().email("Please enter a valid school email."),
 		password: z.string().min(8, "Password must be at least 8 characters long.")
 	});
