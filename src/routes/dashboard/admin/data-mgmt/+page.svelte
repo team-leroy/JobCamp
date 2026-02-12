@@ -48,6 +48,8 @@
     permissionSlipCode: string | null;
     permissionSlipDate: Date | null;
     lastLogin: Date | null;
+    accountCreated: string | null;
+    lastChoicesUpdate: string | null;
     studentPicks: Array<{
       rank: number;
       positionId: string;
@@ -742,6 +744,20 @@
                       <Calendar class="h-4 w-4 text-gray-500" />
                       <span class="text-sm text-gray-600">
                         Last Login: {formatDate(student.lastLogin)}
+                      </span>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                      <Calendar class="h-4 w-4 text-gray-500" />
+                      <span class="text-sm text-gray-600">
+                        Account created: {formatDate(student.accountCreated)}
+                      </span>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                      <Calendar class="h-4 w-4 text-gray-500" />
+                      <span class="text-sm text-gray-600">
+                        Last choices: {student.lastChoicesUpdate ? formatDate(student.lastChoicesUpdate) : 'None'}
                       </span>
                     </div>
                   </div>

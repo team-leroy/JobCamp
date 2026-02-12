@@ -86,6 +86,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                 select: {
                     email: true,
                     lastLogin: true,
+                    createdAt: true,
                     role: true,
                     emailVerified: true
                 }
@@ -210,6 +211,10 @@ export const load: PageServerLoad = async ({ locals }) => {
             permissionSlipCode: slipCode,
             permissionSlipDate: slip?.createdAt ? new Date(slip.createdAt).toISOString() : null,
             lastLogin: student.user?.lastLogin ? new Date(student.user.lastLogin).toISOString() : null,
+            accountCreated: student.user?.createdAt ? new Date(student.user.createdAt).toISOString() : null,
+            lastChoicesUpdate: student.positionsSignedUpFor.length > 0
+                ? new Date(Math.max(...student.positionsSignedUpFor.map(p => new Date(p.createdAt).getTime()))).toISOString()
+                : null,
             isInternalTester: student.user?.role === 'INTERNAL_TESTER',
             studentPicks: student.positionsSignedUpFor.map(pos => ({
                 rank: pos.rank,
