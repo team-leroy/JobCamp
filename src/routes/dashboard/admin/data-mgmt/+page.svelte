@@ -811,6 +811,19 @@
                 </CardContent>
               </Card>
             {/each}
+
+            {#if filteredStudents.length > paginatedStudents.length}
+              <div class="flex justify-center pt-4 pb-8">
+                <Button
+                  variant="outline"
+                  onclick={() => studentPage++}
+                  class="w-full max-w-xs"
+                >
+                  Load More Students ({filteredStudents.length -
+                    paginatedStudents.length} remaining)
+                </Button>
+              </div>
+            {/if}
           </div>
 
           {#if filteredStudents.length === 0}

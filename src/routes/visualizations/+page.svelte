@@ -591,10 +591,11 @@
       return;
     }
 
+    // Single-axis bar chart: students by choice count (no dual-axis confusion)
     choiceVsSlotsChart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: filteredData.map((s) => `${s.choices} choices`),
+        labels: filteredData.map((s) => `${s.choices} choice${s.choices === 1 ? "" : "s"}`),
         datasets: [
           {
             label: "Number of Students",
@@ -602,15 +603,6 @@
             backgroundColor: "#3b82f6",
             borderColor: "#2563eb",
             borderWidth: 1,
-            yAxisID: "y",
-          },
-          {
-            label: "Average Slots Available",
-            data: filteredData.map((s) => s.averageSlots),
-            backgroundColor: "#10b981",
-            borderColor: "#059669",
-            borderWidth: 1,
-            yAxisID: "y1",
           },
         ],
       },
@@ -620,28 +612,17 @@
         plugins: {
           title: {
             display: true,
-            text: "Student Choice Patterns vs Available Slots",
+            text: "Students by Number of Choices",
             font: { size: 18, weight: "bold" },
           },
           legend: {
-            display: true,
+            display: false,
           },
         },
         scales: {
           y: {
-            type: "linear",
-            display: true,
-            position: "left",
+            beginAtZero: true,
             title: { display: true, text: "Number of Students" },
-          },
-          y1: {
-            type: "linear",
-            display: true,
-            position: "right",
-            title: { display: true, text: "Average Slots Available" },
-            grid: {
-              drawOnChartArea: false,
-            },
           },
         },
       },
@@ -1519,15 +1500,43 @@
         </div>
       </div>
 
-      <!-- Choice Patterns vs Slot Availability -->
+      <!-- Choice Patterns & Slot Availability -->
       <div class="mt-8 bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">
-          Choice Patterns vs Slot Availability
+          Choice Patterns & Slot Availability
         </h2>
-        <div class="h-96">
-          <canvas bind:this={choiceVsSlotsChartCanvas} width="800" height="400"
+        <p class="text-sm text-gray-600 mb-4">
+          How many students picked each number of choices, and the slot
+          availability for positions in their lists.
+        </p>
+        <div class="h-80 mb-6">
+          <canvas bind:this={choiceVsSlotsChartCanvas} width="800" height="320"
           ></canvas>
         </div>
+        {#if studentStats?.slotStats?.filter((s) => s.choices > 0).length > 0}
+          <div class="overflow-x-auto">
+            <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+              <thead>
+                <tr class="bg-gray-50">
+                  <th class="py-2 px-4 border-b text-left font-semibold text-gray-600"># of Choices</th>
+                  <th class="py-2 px-4 border-b text-right font-semibold text-gray-600">Students</th>
+                  <th class="py-2 px-4 border-b text-right font-semibold text-gray-600">Avg Slots per Student</th>
+                  <th class="py-2 px-4 border-b text-right font-semibold text-gray-600">Total Slots</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each studentStats.slotStats.filter((s) => s.choices > 0) as row}
+                  <tr class="border-b hover:bg-gray-50">
+                    <td class="py-2 px-4">{row.choices}</td>
+                    <td class="py-2 px-4 text-right">{row.studentCount}</td>
+                    <td class="py-2 px-4 text-right">{row.averageSlots.toFixed(1)}</td>
+                    <td class="py-2 px-4 text-right">{row.totalSlots}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {/if}
       </div>
     {:else if selectedVisualization === "student" && !studentStats}
       <div class="bg-white rounded-lg shadow p-6">
