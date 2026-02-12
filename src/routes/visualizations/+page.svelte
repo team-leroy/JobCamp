@@ -154,7 +154,6 @@
           "10th Choice",
           "Manual",
           "Not Placed",
-          "No Choices",
         ],
         datasets: [
           {
@@ -172,7 +171,6 @@
               lotteryStats.tenthChoice,
               lotteryStats.manual,
               lotteryStats.notPlaced,
-              lotteryStats.noChoices,
             ],
             backgroundColor: [
               "#10b981", // Green for 1st choice
@@ -187,7 +185,6 @@
               "#f97316", // Orange for 10th choice
               "#6366f1", // Indigo for manual
               "#ef4444", // Red for not placed
-              "#94a3b8", // Slate for no choices
             ],
             borderColor: [
               "#059669",
@@ -202,7 +199,6 @@
               "#ea580c",
               "#4f46e5",
               "#dc2626",
-              "#64748b",
             ],
             borderWidth: 1,
           },
@@ -968,157 +964,161 @@
           </div>
         </div>
 
-        <!-- Summary Stats -->
+        <!-- Summary Stats (percentages use students with choices only) -->
         <div class="bg-white rounded-lg shadow p-6">
           <h2 class="text-xl font-semibold mb-4">Summary</h2>
-          <div class="space-y-4">
-            <div class="text-center p-4 bg-green-50 rounded-lg">
-              <div class="text-2xl font-bold text-green-600">
-                {lotteryStats.firstChoice}
+          {#if lotteryStats}
+            {@const summaryTotalWithChoices = lotteryStats.totalStudents - lotteryStats.noChoices}
+            <div class="space-y-4">
+              <div class="text-center p-4 bg-green-50 rounded-lg">
+                <div class="text-2xl font-bold text-green-600">
+                  {lotteryStats.firstChoice}
+                </div>
+                <div class="text-sm text-green-600">Got 1st Choice</div>
+                <div class="text-xs text-gray-500">
+                  {summaryTotalWithChoices > 0
+                    ? (
+                        (lotteryStats.firstChoice / summaryTotalWithChoices) *
+                        100
+                      ).toFixed(1)
+                    : "0"}% of students with choices
+                </div>
               </div>
-              <div class="text-sm text-green-600">Got 1st Choice</div>
-              <div class="text-xs text-gray-500">
-                {(
-                  (lotteryStats.firstChoice / lotteryStats.totalStudents) *
-                  100
-                ).toFixed(1)}% of students
-              </div>
-            </div>
 
-            <div class="text-center p-4 bg-yellow-50 rounded-lg">
-              <div class="text-2xl font-bold text-yellow-600">
-                {lotteryStats.secondChoice}
+              <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                <div class="text-2xl font-bold text-yellow-600">
+                  {lotteryStats.secondChoice}
+                </div>
+                <div class="text-sm text-yellow-600">Got 2nd Choice</div>
+                <div class="text-xs text-gray-500">
+                  {summaryTotalWithChoices > 0
+                    ? (
+                        (lotteryStats.secondChoice / summaryTotalWithChoices) *
+                        100
+                      ).toFixed(1)
+                    : "0"}% of students with choices
+                </div>
               </div>
-              <div class="text-sm text-yellow-600">Got 2nd Choice</div>
-              <div class="text-xs text-gray-500">
-                {(
-                  (lotteryStats.secondChoice / lotteryStats.totalStudents) *
-                  100
-                ).toFixed(1)}% of students
-              </div>
-            </div>
 
-            <div class="text-center p-4 bg-orange-50 rounded-lg">
-              <div class="text-2xl font-bold text-orange-600">
-                {lotteryStats.thirdChoice}
+              <div class="text-center p-4 bg-orange-50 rounded-lg">
+                <div class="text-2xl font-bold text-orange-600">
+                  {lotteryStats.thirdChoice}
+                </div>
+                <div class="text-sm text-orange-600">Got 3rd Choice</div>
+                <div class="text-xs text-gray-500">
+                  {summaryTotalWithChoices > 0
+                    ? (
+                        (lotteryStats.thirdChoice / summaryTotalWithChoices) *
+                        100
+                      ).toFixed(1)
+                    : "0"}% of students with choices
+                </div>
               </div>
-              <div class="text-sm text-orange-600">Got 3rd Choice</div>
-              <div class="text-xs text-gray-500">
-                {(
-                  (lotteryStats.thirdChoice / lotteryStats.totalStudents) *
-                  100
-                ).toFixed(1)}% of students
-              </div>
-            </div>
 
-            <div class="text-center p-4 bg-indigo-50 rounded-lg">
-              <div class="text-2xl font-bold text-indigo-600">
-                {lotteryStats.manual}
+              <div class="text-center p-4 bg-indigo-50 rounded-lg">
+                <div class="text-2xl font-bold text-indigo-600">
+                  {lotteryStats.manual}
+                </div>
+                <div class="text-sm text-indigo-600">Manual Claims</div>
+                <div class="text-xs text-gray-500">
+                  {summaryTotalWithChoices > 0
+                    ? (
+                        (lotteryStats.manual / summaryTotalWithChoices) *
+                        100
+                      ).toFixed(1)
+                    : "0"}% of students with choices
+                </div>
               </div>
-              <div class="text-sm text-indigo-600">Manual Claims</div>
-              <div class="text-xs text-gray-500">
-                {(
-                  (lotteryStats.manual / lotteryStats.totalStudents) *
-                  100
-                ).toFixed(1)}% of students
-              </div>
-            </div>
 
-            <div class="text-center p-4 bg-red-50 rounded-lg">
-              <div class="text-2xl font-bold text-red-600">
-                {lotteryStats.notPlaced}
-              </div>
-              <div class="text-sm text-red-600">Not Placed</div>
-              <div class="text-xs text-gray-500">
-                {(
-                  (lotteryStats.notPlaced / lotteryStats.totalStudents) *
-                  100
-                ).toFixed(1)}% of students
-              </div>
-            </div>
-
-            <div class="text-center p-4 bg-slate-50 rounded-lg">
-              <div class="text-2xl font-bold text-slate-600">
-                {lotteryStats.noChoices}
-              </div>
-              <div class="text-sm text-slate-600">No Choices</div>
-              <div class="text-xs text-gray-500">
-                {(
-                  (lotteryStats.noChoices / lotteryStats.totalStudents) *
-                  100
-                ).toFixed(1)}% of students
+              <div class="text-center p-4 bg-red-50 rounded-lg">
+                <div class="text-2xl font-bold text-red-600">
+                  {lotteryStats.notPlaced}
+                </div>
+                <div class="text-sm text-red-600">Not Placed</div>
+                <div class="text-xs text-gray-500">
+                  {summaryTotalWithChoices > 0
+                    ? (
+                        (lotteryStats.notPlaced / summaryTotalWithChoices) *
+                        100
+                      ).toFixed(1)
+                    : "0"}% of students with choices
+                </div>
               </div>
             </div>
-          </div>
+          {/if}
         </div>
       </div>
 
       <!-- Additional Stats -->
       <div class="mt-8 bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-4">Detailed Statistics</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-          <div class="text-center">
-            <div class="text-lg font-semibold">
-              {lotteryStats.totalStudents}
+        {#if lotteryStats}
+          {@const totalWithChoices = lotteryStats.totalStudents - lotteryStats.noChoices}
+          {@const successfullyPlaced =
+            lotteryStats.firstChoice +
+            lotteryStats.secondChoice +
+            lotteryStats.thirdChoice +
+            lotteryStats.fourthChoice +
+            lotteryStats.fifthChoice +
+            lotteryStats.sixthChoice +
+            lotteryStats.seventhChoice +
+            lotteryStats.eighthChoice +
+            lotteryStats.ninthChoice +
+            lotteryStats.tenthChoice +
+            lotteryStats.manual}
+          {@const top3Choices =
+            lotteryStats.firstChoice +
+            lotteryStats.secondChoice +
+            lotteryStats.thirdChoice}
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div class="text-center">
+              <div class="text-lg font-semibold">
+                {totalWithChoices}
+              </div>
+              <div class="text-sm text-gray-600">Total Students with Choices</div>
             </div>
-            <div class="text-sm text-gray-600">Total Students</div>
-          </div>
-          <div class="text-center">
-            <div class="text-lg font-semibold text-green-600">
-              {lotteryStats.firstChoice +
-                lotteryStats.secondChoice +
-                lotteryStats.thirdChoice}
+            <div class="text-center">
+              <div class="text-lg font-semibold text-green-600">
+                {successfullyPlaced}
+              </div>
+              <div class="text-sm text-gray-600">Successfully Placed</div>
             </div>
-            <div class="text-sm text-gray-600">Top 3 Choices</div>
-          </div>
-          <div class="text-center">
-            <div class="text-lg font-semibold text-blue-600">
-              {lotteryStats.totalStudents -
-                lotteryStats.notPlaced -
-                lotteryStats.noChoices}
+            <div class="text-center">
+              <div class="text-lg font-semibold text-purple-600">
+                {totalWithChoices > 0
+                  ? ((lotteryStats.firstChoice / totalWithChoices) * 100).toFixed(
+                      1
+                    )
+                  : "0"}%
+              </div>
+              <div class="text-sm text-gray-600">1st Choice Rate</div>
             </div>
-            <div class="text-sm text-gray-600">Successfully Placed</div>
-          </div>
-          <div class="text-center">
-            <div class="text-lg font-semibold text-purple-600">
-              {(
-                (lotteryStats.firstChoice / lotteryStats.totalStudents) *
-                100
-              ).toFixed(1)}%
+            <div class="text-center">
+              <div class="text-lg font-semibold text-orange-600">
+                {totalWithChoices > 0
+                  ? ((top3Choices / totalWithChoices) * 100).toFixed(1)
+                  : "0"}%
+              </div>
+              <div class="text-sm text-gray-600">Top 3 Choices Rate</div>
             </div>
-            <div class="text-sm text-gray-600">1st Choice Rate</div>
-          </div>
-          <div class="text-center">
-            <div class="text-lg font-semibold text-orange-600">
-              {(
-                ((lotteryStats.totalStudents -
-                  lotteryStats.notPlaced -
-                  lotteryStats.noChoices) /
-                  lotteryStats.totalStudents) *
-                100
-              ).toFixed(1)}%
+            <div class="text-center">
+              <div class="text-lg font-semibold text-blue-600">
+                {totalWithChoices > 0
+                  ? ((successfullyPlaced / totalWithChoices) * 100).toFixed(1)
+                  : "0"}%
+              </div>
+              <div class="text-sm text-gray-600">Placement Rate</div>
             </div>
-            <div class="text-sm text-gray-600">Placement Rate</div>
-          </div>
-          <div class="text-center">
-            <div class="text-lg font-semibold text-red-600">
-              {(
-                (lotteryStats.notPlaced / lotteryStats.totalStudents) *
-                100
-              ).toFixed(1)}%
+            <div class="text-center">
+              <div class="text-lg font-semibold text-red-600">
+                {totalWithChoices > 0
+                  ? ((lotteryStats.notPlaced / totalWithChoices) * 100).toFixed(1)
+                  : "0"}%
+              </div>
+              <div class="text-sm text-gray-600">Not Placed Rate</div>
             </div>
-            <div class="text-sm text-gray-600">Not Placed Rate</div>
           </div>
-          <div class="text-center">
-            <div class="text-lg font-semibold text-slate-600">
-              {(
-                (lotteryStats.noChoices / lotteryStats.totalStudents) *
-                100
-              ).toFixed(1)}%
-            </div>
-            <div class="text-sm text-gray-600">No Choice Rate</div>
-          </div>
-        </div>
+        {/if}
       </div>
     {:else if selectedVisualization === "lottery" && !lotteryStats}
       <div class="bg-white rounded-lg shadow p-6">
