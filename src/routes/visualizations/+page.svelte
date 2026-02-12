@@ -1193,7 +1193,7 @@
             <div class="text-lg font-semibold text-green-600">
               {companyStats.totalChoices}
             </div>
-            <div class="text-sm text-gray-600">Total Choices</div>
+            <div class="text-sm text-gray-600">Total Choices (Top 3 Only)</div>
           </div>
           <div class="text-center">
             <div class="text-lg font-semibold text-blue-600">
@@ -1238,7 +1238,7 @@
                 >
                 <th
                   class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                  >Total Choices</th
+                  >Choices (Top 3)</th
                 >
                 <th
                   class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
@@ -1364,7 +1364,7 @@
                 >
                 <th
                   class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
-                  >Total Choices</th
+                  >Choices (Top 3)</th
                 >
                 <th
                   class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600"
