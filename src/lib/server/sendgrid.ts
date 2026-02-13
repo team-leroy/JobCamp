@@ -99,11 +99,6 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
       } : undefined
     };
 
-    // For single recipient emails, we can add a List-Unsubscribe header
-    if (recipients.length === 1) {
-      payload.headers["List-Unsubscribe"] = `<mailto:admin@jobcamp.org?subject=unsubscribe-${recipients[0].email}>`;
-    }
-
     // If plain text version provided, add it
     if (options.text) {
       payload.content.unshift({

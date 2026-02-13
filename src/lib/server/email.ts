@@ -38,7 +38,6 @@ async function sendEmailViaSendGrid(to: string, subject: string, html: string): 
         },
         // Add robust headers to reduce spaminess
         headers: {
-            "List-Unsubscribe": `<mailto:${SENDER.email}?subject=unsubscribe-${to}>`,
             "X-Mailer": "JobCamp Custom Mailer",
             "X-Priority": "3"
         } as Record<string, string>,
