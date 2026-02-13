@@ -640,57 +640,43 @@
             </CardContent>
           </Card>
 
-          <!-- Student List -->
-          <Card>
+          <!-- Sort and Student List -->
+          <Card class="mb-4">
             <CardHeader>
-              <CardTitle class="text-lg">
-                Students ({filteredStudents.length})
-              </CardTitle>
+              <CardTitle class="text-lg">Results</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div class="space-y-2">
+            <CardContent class="space-y-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <Label for="studentSortBy" class="text-sm text-gray-600 whitespace-nowrap">
+                  Sort by:
+                </Label>
+                <select
+                  id="studentSortBy"
+                  bind:value={studentSortBy}
+                  class="h-8 rounded-md border border-gray-300 px-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="lastLogin">Last Login</option>
+                  <option value="lastChoices">Last choices</option>
+                  <option value="accountCreated">Account created</option>
+                </select>
                 <Button
                   variant="outline"
-                  onclick={() => window.location.reload()}
+                  size="sm"
+                  onclick={() => (studentSortDir = studentSortDir === 'desc' ? 'asc' : 'desc')}
+                  title={studentSortDir === 'desc' ? 'Most recent first (click for oldest first)' : 'Oldest first (click for most recent first)'}
                 >
-                  Refresh
+                  {#if studentSortDir === 'desc'}
+                    <ArrowDown class="h-4 w-4" />
+                  {:else}
+                    <ArrowUp class="h-4 w-4" />
+                  {/if}
                 </Button>
               </div>
+              <p class="text-sm text-gray-600">
+                Students ({filteredStudents.length})
+              </p>
             </CardContent>
           </Card>
-
-          <!-- Results Summary and Sort -->
-          <div class="mb-4 flex flex-wrap items-center gap-4">
-            <p class="text-sm text-gray-600">
-              Results: {filteredStudents.length} students found
-            </p>
-            <div class="flex items-center gap-2">
-              <Label for="studentSortBy" class="text-sm text-gray-600 whitespace-nowrap">
-                Sort by:
-              </Label>
-              <select
-                id="studentSortBy"
-                bind:value={studentSortBy}
-                class="h-8 rounded-md border border-gray-300 px-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="lastLogin">Last Login</option>
-                <option value="lastChoices">Last choices</option>
-                <option value="accountCreated">Account created</option>
-              </select>
-              <Button
-                variant="outline"
-                size="sm"
-                onclick={() => (studentSortDir = studentSortDir === 'desc' ? 'asc' : 'desc')}
-                title={studentSortDir === 'desc' ? 'Most recent first (click for oldest first)' : 'Oldest first (click for most recent first)'}
-              >
-                {#if studentSortDir === 'desc'}
-                  <ArrowDown class="h-4 w-4" />
-                {:else}
-                  <ArrowUp class="h-4 w-4" />
-                {/if}
-              </Button>
-            </div>
-          </div>
 
           <!-- Student List -->
           <div class="space-y-4">
