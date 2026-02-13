@@ -11,6 +11,8 @@
   } from "$lib/components/ui/card";
   import { Badge } from "$lib/components/ui/badge";
   import {
+    ArrowDown,
+    ArrowUp,
     ChevronDown,
     ChevronUp,
     Mail,
@@ -212,6 +214,10 @@
   let companyPage = $state(1);
   const pageSize = 50;
 
+  // Student sort state (default: lastLogin desc = most recent first)
+  let studentSortBy = $state<'lastLogin' | 'lastChoices' | 'accountCreated'>('lastLogin');
+  let studentSortDir = $state<'asc' | 'desc'>('desc');
+
   // Computed filtered students
   let filteredStudents = $derived(
     data.students.filter((student) => {
@@ -253,8 +259,26 @@
     }),
   );
 
+  // Sorted filtered students
+  let sortedFilteredStudents = $derived.by(() => {
+    const list = [...filteredStudents];
+    const dir = studentSortDir === 'desc' ? -1 : 1;
+    const nullVal = studentSortDir === 'desc' ? -Infinity : Infinity;
+    const getVal = (s: Student) => {
+      const raw =
+        studentSortBy === 'lastChoices'
+          ? s.lastChoicesUpdate
+          : studentSortBy === 'lastLogin'
+            ? s.lastLogin
+            : s.accountCreated;
+      return raw ? new Date(raw).getTime() : nullVal;
+    };
+    list.sort((a, b) => dir * (getVal(a) - getVal(b)));
+    return list;
+  });
+
   let paginatedStudents = $derived(
-    filteredStudents.slice(0, studentPage * pageSize),
+    sortedFilteredStudents.slice(0, studentPage * pageSize),
   );
 
   // Computed filtered companies (Consolidated)
@@ -334,6 +358,12 @@
     void permissionSlipFilter;
     void lotteryStatusFilter;
     void studentEventFilter;
+    studentPage = 1;
+  });
+
+  $effect(() => {
+    void studentSortBy;
+    void studentSortDir;
     studentPage = 1;
   });
 
@@ -629,11 +659,37 @@
             </CardContent>
           </Card>
 
-          <!-- Results Summary -->
-          <div class="mb-4">
+          <!-- Results Summary and Sort -->
+          <div class="mb-4 flex flex-wrap items-center gap-4">
             <p class="text-sm text-gray-600">
               Results: {filteredStudents.length} students found
             </p>
+            <div class="flex items-center gap-2">
+              <Label for="studentSortBy" class="text-sm text-gray-600 whitespace-nowrap">
+                Sort by:
+              </Label>
+              <select
+                id="studentSortBy"
+                bind:value={studentSortBy}
+                class="h-8 rounded-md border border-gray-300 px-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="lastLogin">Last Login</option>
+                <option value="lastChoices">Last choices</option>
+                <option value="accountCreated">Account created</option>
+              </select>
+              <Button
+                variant="outline"
+                size="sm"
+                onclick={() => (studentSortDir = studentSortDir === 'desc' ? 'asc' : 'desc')}
+                title={studentSortDir === 'desc' ? 'Most recent first (click for oldest first)' : 'Oldest first (click for most recent first)'}
+              >
+                {#if studentSortDir === 'desc'}
+                  <ArrowDown class="h-4 w-4" />
+                {:else}
+                  <ArrowUp class="h-4 w-4" />
+                {/if}
+              </Button>
+            </div>
           </div>
 
           <!-- Student List -->
@@ -740,25 +796,25 @@
                       {/if}
                     </div>
 
-                    <div class="flex items-center space-x-2">
-                      <Calendar class="h-4 w-4 text-gray-500" />
-                      <span class="text-sm text-gray-600">
-                        Last Login: {formatDate(student.lastLogin)}
-                      </span>
-                    </div>
-
-                    <div class="flex items-center space-x-2">
-                      <Calendar class="h-4 w-4 text-gray-500" />
-                      <span class="text-sm text-gray-600">
-                        Account created: {formatDate(student.accountCreated)}
-                      </span>
-                    </div>
-
-                    <div class="flex items-center space-x-2">
-                      <Calendar class="h-4 w-4 text-gray-500" />
-                      <span class="text-sm text-gray-600">
-                        Last choices: {student.lastChoicesUpdate ? formatDate(student.lastChoicesUpdate) : 'None'}
-                      </span>
+                    <div class="flex flex-col gap-y-1">
+                      <div class="flex items-center space-x-2">
+                        <Calendar class="h-4 w-4 text-gray-500 shrink-0" />
+                        <span class="text-sm text-gray-600">
+                          Last Login: {formatDate(student.lastLogin)}
+                        </span>
+                      </div>
+                      <div class="flex items-center space-x-2">
+                        <Calendar class="h-4 w-4 text-gray-500 shrink-0" />
+                        <span class="text-sm text-gray-600">
+                          Last choices: {student.lastChoicesUpdate ? formatDate(student.lastChoicesUpdate) : 'None'}
+                        </span>
+                      </div>
+                      <div class="flex items-center space-x-2">
+                        <Calendar class="h-4 w-4 text-gray-500 shrink-0" />
+                        <span class="text-sm text-gray-600">
+                          Account created: {formatDate(student.accountCreated)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
