@@ -99,6 +99,11 @@ export async function getStudentsWithIncompletePermissionSlip(schoolId: string):
     where: {
       schoolId,
       isActive: true,
+      eventParticipation: {
+        some: {
+          eventId: activeEvent.id
+        }
+      },
       permissionSlips: {
         none: {
           eventId: activeEvent.id
@@ -143,6 +148,11 @@ export async function getStudentsWithNoJobPicks(schoolId: string): Promise<Stude
     where: {
       schoolId,
       isActive: true,
+      eventParticipation: {
+        some: {
+          eventId: activeEvent.id
+        }
+      },
       positionsSignedUpFor: {
         none: {
           position: {
@@ -191,7 +201,12 @@ export async function getStudentsWithFewPicks(schoolId: string, maxPicks: number
   const students = await prisma.student.findMany({
     where: {
       schoolId,
-      isActive: true
+      isActive: true,
+      eventParticipation: {
+        some: {
+          eventId: activeEvent.id
+        }
+      }
     },
     include: {
       user: {
@@ -247,7 +262,12 @@ export async function getStudentsWithFewSlots(schoolId: string, maxSlots: number
   const students = await prisma.student.findMany({
     where: {
       schoolId,
-      isActive: true
+      isActive: true,
+      eventParticipation: {
+        some: {
+          eventId: activeEvent.id
+        }
+      }
     },
     include: {
       user: {
