@@ -36,7 +36,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     let archivedEventCompanies: string[] = [];
     
     if (directoryAccessible) {
-        positionData = await prisma.position.findMany({
+        const positions = await prisma.position.findMany({
             where: {
                 event: {
                     schoolId: school.id,
@@ -59,6 +59,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
                     }
                 }
             }
+        });
+        // Sort by company name (alphabetically), then by position title within same company
+        positionData = positions.sort((a, b) => {
+            const nameA = a.host?.company?.companyName ?? '';
+            const nameB = b.host?.company?.companyName ?? '';
+            const cmp = nameA.localeCompare(nameB);
+            return cmp !== 0 ? cmp : (a.title ?? '').localeCompare(b.title ?? '');
         });
     } else {
         // Get the last archived event for this school
