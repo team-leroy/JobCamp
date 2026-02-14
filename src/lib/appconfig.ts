@@ -4,7 +4,7 @@ export const careers = [
     "Engineering/Manufacturing",
     "Education",
     "Entrepreneurship",
-    "Finance/Accounting",
+    "Investing/Finance",
     "Government/Legal",
     "Healthcare",
     "Human Resources",
