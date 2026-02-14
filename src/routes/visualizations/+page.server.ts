@@ -829,7 +829,8 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
             }
             
             const choiceCount = student.positionsSignedUpFor.length;
-            
+            const hasPermissionSlip = Array.isArray(student.permissionSlips) && student.permissionSlips.length > 0;
+
             // Grade distribution
             if (!gradeDistribution[grade]) {
                 gradeDistribution[grade] = {
@@ -845,14 +846,21 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
                 gradeDistribution[grade].studentsWithChoices++;
             }
 
-            // Choice distribution
-            if (!choiceDistribution[choiceCount]) {
-                choiceDistribution[choiceCount] = 0;
-            }
-            choiceDistribution[choiceCount]++;
-
-            // Students with no choices
+            // Choice distribution - for 0 choices, only count students with permission slip signed (excludes email unverified, no permission slip)
             if (choiceCount === 0) {
+                if (hasPermissionSlip) {
+                    if (!choiceDistribution[0]) choiceDistribution[0] = 0;
+                    choiceDistribution[0]++;
+                }
+            } else {
+                if (!choiceDistribution[choiceCount]) {
+                    choiceDistribution[choiceCount] = 0;
+                }
+                choiceDistribution[choiceCount]++;
+            }
+
+            // Students with no choices (permission slip signed but no choices - matches chart)
+            if (choiceCount === 0 && hasPermissionSlip) {
                 studentsWithNoChoices.push({
                     name: `${student.firstName} ${student.lastName}`,
                     grade: grade
@@ -874,14 +882,18 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
                 totalSlotsAvailable += choice.position.slots;
             }
 
-            if (!slotAvailability[choiceCount]) {
-                slotAvailability[choiceCount] = {
-                    totalSlots: 0,
-                    studentCount: 0
-                };
+            // For 0 choices, only count in slot stats if they have permission slip (consistent with choice distribution)
+            const countInSlotStats = (choiceCount > 0) || (choiceCount === 0 && hasPermissionSlip);
+            if (countInSlotStats) {
+                if (!slotAvailability[choiceCount]) {
+                    slotAvailability[choiceCount] = {
+                        totalSlots: 0,
+                        studentCount: 0
+                    };
+                }
+                slotAvailability[choiceCount].totalSlots += totalSlotsAvailable;
+                slotAvailability[choiceCount].studentCount++;
             }
-            slotAvailability[choiceCount].totalSlots += totalSlotsAvailable;
-            slotAvailability[choiceCount].studentCount++;
         }
 
         // Calculate averages
@@ -936,7 +948,7 @@ async function calculateStudentStats(userInfo: UserInfo, activeEventId: string) 
             },
             {
                 category: 'Students with No Choices',
-                value: studentsWithChoices.filter(s => s.positionsSignedUpFor.length === 0).length,
+                value: studentsWithNoChoices.length,
                 color: '#ef4444'
             }
         ];
