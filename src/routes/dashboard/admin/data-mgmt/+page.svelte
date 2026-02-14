@@ -139,6 +139,15 @@
     isPublished: boolean;
     isInternalTester: boolean;
     attachments: Attachment[];
+    studentsWhoChose?: Array<{
+      studentId: string;
+      firstName: string;
+      lastName: string;
+      grade: number | null;
+      email: string;
+      rank: number;
+      createdAt: string | null;
+    }>;
   }
 
   interface Props {
@@ -205,6 +214,7 @@
   // UI states
   let expandedStudents = $state(new Set<string>());
   let expandedCompanies = $state(new Set<string>()); // This will now track expanded positions within companies
+  let expandedPositionStudents = $state(new Set<string>()); // Position IDs whose "students who chose" subsection is expanded
   let selectedTab = $state("Student");
   let showMessengerDialog = $state(false);
   let showCompanyMessengerDialog = $state(false);
@@ -396,6 +406,15 @@
       expandedCompanies.add(positionId);
     }
     expandedCompanies = new Set(expandedCompanies);
+  }
+
+  function togglePositionStudentsExpansion(positionId: string) {
+    if (expandedPositionStudents.has(positionId)) {
+      expandedPositionStudents.delete(positionId);
+    } else {
+      expandedPositionStudents.add(positionId);
+    }
+    expandedPositionStudents = new Set(expandedPositionStudents);
   }
 
   function clearFilters() {
@@ -1298,6 +1317,86 @@
                                         >
                                         {position.instructions || "None"}
                                       </p>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                      <button
+                                        type="button"
+                                        onclick={() =>
+                                          togglePositionStudentsExpansion(position.id)}
+                                        class="w-full flex items-center justify-between text-left py-1 hover:bg-gray-50 rounded -mx-1 px-1"
+                                      >
+                                        <span
+                                          class="text-xs font-bold text-gray-400 uppercase tracking-tight"
+                                          >Students who chose this position</span
+                                        >
+                                        <span class="flex items-center gap-2 text-sm text-gray-600">
+                                          {position.studentsWhoChose?.length ?? 0} students
+                                          {#if expandedPositionStudents.has(position.id)}
+                                            <ChevronUp class="h-4 w-4" />
+                                          {:else}
+                                            <ChevronDown class="h-4 w-4" />
+                                          {/if}
+                                        </span>
+                                      </button>
+                                      {#if expandedPositionStudents.has(position.id)}
+                                        {#if position.studentsWhoChose && position.studentsWhoChose.length > 0}
+                                          <div class="mt-3 overflow-x-auto">
+                                            <table
+                                              class="w-full text-sm border-collapse"
+                                            >
+                                              <thead>
+                                                <tr class="border-b border-gray-200">
+                                                  <th
+                                                    class="text-left py-2 px-2 text-xs font-bold text-gray-500 uppercase"
+                                                  >
+                                                    Student Name
+                                                  </th>
+                                                  <th
+                                                    class="text-left py-2 px-2 text-xs font-bold text-gray-500 uppercase"
+                                                  >
+                                                    Grade
+                                                  </th>
+                                                  <th
+                                                    class="text-left py-2 px-2 text-xs font-bold text-gray-500 uppercase"
+                                                  >
+                                                    Choice
+                                                  </th>
+                                                </tr>
+                                              </thead>
+                                              <tbody>
+                                                {#each position.studentsWhoChose as student}
+                                                  <tr
+                                                    class="border-b border-gray-100"
+                                                  >
+                                                    <td class="py-2 px-2 font-medium">
+                                                      {student.lastName},
+                                                      {student.firstName}
+                                                    </td>
+                                                    <td class="py-2 px-2 text-gray-600">
+                                                      {student.grade ?? '—'}
+                                                    </td>
+                                                    <td class="py-2 px-2">
+                                                      <Badge
+                                                        variant="secondary"
+                                                        class={student.rank === 0
+                                                          ? 'bg-green-100 text-green-800 border-green-200'
+                                                          : 'bg-blue-100 text-blue-800 border-blue-200'}
+                                                      >
+                                                        #{student.rank + 1}
+                                                      </Badge>
+                                                    </td>
+                                                  </tr>
+                                                {/each}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        {:else}
+                                          <p class="text-sm text-gray-500 italic mt-2">
+                                            No students have chosen this
+                                            position yet.
+                                          </p>
+                                        {/if}
+                                      {/if}
                                     </div>
                                     {#if position.attachments && position.attachments.length > 0}
                                       <div class="space-y-1">

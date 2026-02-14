@@ -274,7 +274,19 @@ export const load: PageServerLoad = async ({ locals }) => {
                     date: true
                 }
             },
-            attachments: true
+            attachments: true,
+            students: {
+                include: {
+                    student: {
+                        include: {
+                            user: {
+                                select: { email: true }
+                            }
+                        }
+                    }
+                },
+                orderBy: { rank: 'asc' }
+            }
         },
         orderBy: {
             title: 'asc'
@@ -306,7 +318,21 @@ export const load: PageServerLoad = async ({ locals }) => {
             companyName: position.host?.company?.companyName || 'No Company',
             isPublished: position.isPublished,
             isInternalTester: position.host?.user?.role === 'INTERNAL_TESTER',
-            attachments: position.attachments
+            attachments: position.attachments,
+            studentsWhoChose: position.students.map(s => {
+                const grade = s.student.graduatingClassYear && activeEvent
+                    ? getCurrentGrade(s.student.graduatingClassYear, new Date(activeEvent.date))
+                    : null;
+                return {
+                    studentId: s.student.id,
+                    firstName: s.student.firstName,
+                    lastName: s.student.lastName,
+                    grade,
+                    email: s.student.user?.email || 'No email',
+                    rank: s.rank,
+                    createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : null
+                };
+            })
         };
     });
 
