@@ -67,7 +67,7 @@
 <div class="mt-32 mb-5 w-full flex justify-center items-center">
   <form
     method="POST"
-    class="z-0 relative md:border-2 px-10 py-8 md:rounded-lg w-[700px] mx-5 flex flex-col gap-4 items-center justify-center"
+    class="z-0 relative md:border-2 px-5 md:px-10 py-8 md:rounded-lg w-full max-w-[700px] mx-5 flex flex-col gap-4 items-center justify-center"
     use:enhance
   >
     <h1 class="text-4xl">Permission Slip for {firstName}</h1>
@@ -320,7 +320,7 @@
 
     <button
       type="submit"
-      class="my-2 p-4 py-2 rounded-md shadow-xl bg-blue-500 text-white hover:bg-blue-600"
+      class="my-4 px-8 py-4 rounded-md shadow-xl bg-blue-500 text-white hover:bg-blue-600 cursor-pointer text-lg font-semibold min-h-[48px] w-full sm:w-auto"
       >Complete</button
     >
   </form>
