@@ -766,14 +766,14 @@ export const actions: Actions = {
 
     removePrefillSetting: async ({ locals, request }) => {
         if (!locals.user) {
-            return { success: false, message: "User not authenticated" };
+            return fail(401, { success: false, message: "User not authenticated" });
         }
 
         const formData = await request.formData();
         const companyId = formData.get('companyId') as string;
 
         if (!companyId) {
-            return { success: false, message: "Company ID is required" };
+            return fail(400, { success: false, message: "Company ID is required" });
         }
 
         try {
@@ -784,7 +784,7 @@ export const actions: Actions = {
             });
 
             if (!userInfo?.adminOfSchools?.length) {
-                return { success: false, message: "Not authorized" };
+                return fail(403, { success: false, message: "Not authorized" });
             }
 
             const schoolId = userInfo.adminOfSchools[0].id;
@@ -795,20 +795,24 @@ export const actions: Actions = {
             });
 
             if (!config) {
-                return { success: false, message: "No lottery configuration found" };
+                return fail(400, { success: false, message: "No lottery configuration found" });
             }
 
-            // Remove prefill setting
-            await prisma.prefillSetting.deleteMany({
+            // Remove all prefill settings for this company (includes settings where
+            // lotteryConfigurationId may be null for backwards compatibility)
+            const deleted = await prisma.prefillSetting.deleteMany({
                 where: {
-                    lotteryConfigurationId: config.id,
-                    companyId
+                    companyId,
+                    OR: [
+                        { lotteryConfigurationId: config.id },
+                        { lotteryConfigurationId: null }
+                    ]
                 }
             });
 
-            return { success: true, message: "Prefill setting removed" };
+            return { success: true, message: "Prefill setting removed", deleted: deleted.count };
         } catch {
-            return { success: false, message: "Failed to remove prefill setting" };
+            return fail(500, { success: false, message: "Failed to remove prefill setting" });
         }
     },
 
