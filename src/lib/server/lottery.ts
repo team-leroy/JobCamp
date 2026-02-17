@@ -234,7 +234,8 @@ async function runLotteryInBackground(jobId: string) {
                 );
                 
                 for (const position of companyPositions) {
-                    const slotsToFill = Math.floor(position.slots * setting.prefillPercentage / 100);
+                    const pct = setting.slots;
+                    const slotsToFill = Math.floor(position.slots * pct / 100);
                     // This is a simplified prefill - in practice you'd want more sophisticated logic
                     prefillAssignments.set(position.id, slotsToFill);
                 }

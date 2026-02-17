@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types';
-import { redirect } from '@sveltejs/kit';
+import { redirect, fail } from '@sveltejs/kit';
 import { startLotteryJob } from '$lib/server/lottery';
 import { prisma } from '$lib/server/prisma';
 import { getCurrentGrade } from '$lib/server/gradeUtils';
@@ -399,7 +399,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         })),
         prefillSettings: lotteryConfig.prefillSettings?.map(ps => ({
             companyId: ps.companyId,
-            prefillPercentage: ps.prefillPercentage,
+            prefillPercentage: ps.slots,
             company: ps.company
         }))
     } : null;
@@ -680,17 +680,15 @@ export const actions: Actions = {
 
     updatePrefillSetting: async ({ locals, request }) => {
         if (!locals.user) {
-            return { success: false, message: "User not authenticated" };
+            return fail(401, { success: false, message: "User not authenticated" });
         }
 
         const formData = await request.formData();
         const companyId = formData.get('companyId') as string;
-        const positionId = formData.get('positionId') as string;
-        const slots = parseInt(formData.get('slots') as string);
         const prefillPercentage = parseInt(formData.get('prefillPercentage') as string);
 
-        if (!companyId || !positionId || isNaN(slots) || isNaN(prefillPercentage) || prefillPercentage < 0 || prefillPercentage > 100) {
-            return { success: false, message: "Valid company, position, slots, and percentage (0-100) are required" };
+        if (!companyId || isNaN(prefillPercentage) || prefillPercentage < 0 || prefillPercentage > 100) {
+            return fail(400, { success: false, message: "Valid company and percentage (0-100) are required" });
         }
 
         try {
@@ -701,45 +699,68 @@ export const actions: Actions = {
             });
 
             if (!userInfo?.adminOfSchools?.length) {
-                return { success: false, message: "Not authorized" };
+                return fail(403, { success: false, message: "Not authorized" });
             }
 
             const schoolId = userInfo.adminOfSchools[0].id;
+
+            // Get active event
+            const activeEvent = await prisma.event.findFirst({
+                where: { schoolId, isActive: true }
+            });
+            if (!activeEvent) {
+                return fail(400, { success: false, message: "No active event found" });
+            }
 
             // Get or create lottery configuration
             let config = await prisma.lotteryConfiguration.findUnique({
                 where: { schoolId }
             });
-
             if (!config) {
                 config = await prisma.lotteryConfiguration.create({
                     data: { schoolId, gradeOrder: 'NONE' }
                 });
             }
 
-            // Update prefill setting
-            await prisma.prefillSetting.upsert({
+            // Find all positions for this company in the active event
+            const companyPositions = await prisma.position.findMany({
                 where: {
-                    companyId_positionId: {
-                        companyId,
-                        positionId
+                    eventId: activeEvent.id,
+                    host: {
+                        companyId
                     }
-                },
-                update: {
-                    prefillPercentage
-                },
-                create: {
-                    lotteryConfigurationId: config.id,
-                    companyId,
-                    positionId,
-                    slots,
-                    prefillPercentage
                 }
             });
 
+            if (companyPositions.length === 0) {
+                return fail(400, { success: false, message: "No positions found for this company in the active event" });
+            }
+
+            // Create/update prefill setting for each position of this company
+            // Note: PrefillSetting.slots stores the percentage (0-100), not slot count
+            for (const position of companyPositions) {
+                await prisma.prefillSetting.upsert({
+                    where: {
+                        companyId_positionId: {
+                            companyId,
+                            positionId: position.id
+                        }
+                    },
+                    update: {
+                        slots: prefillPercentage
+                    },
+                    create: {
+                        lotteryConfigurationId: config.id,
+                        companyId,
+                        positionId: position.id,
+                        slots: prefillPercentage
+                    }
+                });
+            }
+
             return { success: true, message: "Prefill setting updated" };
         } catch {
-            return { success: false, message: "Failed to update prefill setting" };
+            return fail(500, { success: false, message: "Failed to update prefill setting" });
         }
     },
 
