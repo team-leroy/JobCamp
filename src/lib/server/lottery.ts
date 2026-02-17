@@ -382,14 +382,7 @@ async function runLotteryWithSeed(
     positions.forEach(pos => {
         positionSlots[pos.id] = pos.slots;
     });
-    
-    // Apply prefill assignments
-    for (const [positionId, slotsToFill] of prefillAssignments.entries()) {
-        if (positionSlots[positionId]) {
-            positionSlots[positionId] = Math.max(0, positionSlots[positionId] - slotsToFill);
-        }
-    }
-    
+
     const assignments: { [key: string]: { positionId: string | null, rank: number | null } } = {};
     studentsCopy.forEach((s: Student) => {
         assignments[s.id] = { positionId: null, rank: null };
@@ -403,7 +396,41 @@ async function runLotteryWithSeed(
         }
     }
 
-    // Convert student preferences to the format your algorithm expects
+    // Apply prefill: assign students who chose these positions, by rank order
+    // Process by rank (0, 1, 2...) so students get their best prefill match first
+    for (let prefillRank = 0; prefillRank < 10; prefillRank++) {
+        for (const [positionId, slotsToFill] of prefillAssignments.entries()) {
+            if (!positionSlots[positionId] || slotsToFill <= 0) continue;
+            const filled = Object.values(assignments).filter(
+                (a) => a.positionId === positionId
+            ).length;
+            const remainingToFill = slotsToFill - filled;
+            if (remainingToFill <= 0) continue;
+
+            // Find unassigned students who have this position at this rank
+            const candidates = studentsCopy.filter((s) => {
+                if (assignments[s.id].positionId !== null) return false;
+                const pref = s.positionsSignedUpFor.find((p) => p.positionId === positionId);
+                return pref && pref.rank === prefillRank;
+            });
+
+            let assigned = 0;
+            for (const student of candidates) {
+                if (assigned >= remainingToFill) break;
+                if (positionSlots[positionId] <= 0) break;
+                assignments[student.id] = {
+                    positionId,
+                    rank: prefillRank
+                };
+                positionSlots[positionId] -= 1;
+                cost += prefillRank;
+                if (prefillRank > worstrank) worstrank = prefillRank;
+                assigned++;
+            }
+        }
+    }
+
+    // Main lottery: assign remaining students by preference rank
     for (let currentRank = 0; currentRank < 10; currentRank++) {
         for (const student of studentsCopy) {
             if (assignments[student.id].positionId !== null) continue;
