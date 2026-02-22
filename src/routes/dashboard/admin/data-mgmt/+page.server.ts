@@ -2083,9 +2083,20 @@ export const actions: Actions = {
                 return { success: false, message: "Cannot delete verified accounts via this action" };
             }
 
-            // Cascade delete will handle Student/Host/Session records
-            await prisma.user.delete({
-                where: { id: userIdToDelete }
+            // Delete dependent records that don't cascade, so User (and then Student/Host/Session) can be removed.
+            // PositionsOnStudents (student picks) has no onDelete and would block Student delete.
+            // EmailVerificationCodes, PasswordResetTokens, PermissionSlipCode, Message reference User and can block User delete.
+            await prisma.$transaction(async (tx) => {
+                if (studentId) {
+                    await tx.positionsOnStudents.deleteMany({ where: { studentId } });
+                }
+                await tx.emailVerificationCodes.deleteMany({ where: { user_id: userIdToDelete } });
+                await tx.passwordResetTokens.deleteMany({ where: { user_id: userIdToDelete } });
+                await tx.permissionSlipCode.deleteMany({ where: { user_id: userIdToDelete } });
+                await tx.message.deleteMany({ where: { senderId: userIdToDelete } });
+                await tx.user.delete({
+                    where: { id: userIdToDelete }
+                });
             });
 
             return { success: true, message: "Account deleted successfully" };
