@@ -56,6 +56,11 @@ export const load: PageServerLoad = async (event) => {
     const userId = props.get("uid")?.toString();
 
     if (code && userId) {
+        // #region agent log
+        const ua = event.request.headers.get('user-agent') || '';
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+        fetch('http://127.0.0.1:7806/ingest/a0cc51e9-56f8-4cee-817e-1f613d95c3a2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9acb7a'},body:JSON.stringify({sessionId:'9acb7a',location:'verify-email/+page.server.ts:load',message:'Verify-email page hit with code+uid',data:{isMobile,hypothesisId:'E'},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
         const correctCode = await prisma.emailVerificationCodes.findFirst({
             where: { user_id: userId }
         });

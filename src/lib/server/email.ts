@@ -26,6 +26,10 @@ async function sendEmailViaSendGrid(to: string, subject: string, html: string): 
         .replace(/<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '$2 ($1)')
         .replace(/<[^>]*>?/gm, '')
         .trim();
+    // #region agent log
+    const plainContainsVerify = plainText.includes('jobcamp.org/verify-email');
+    fetch('http://127.0.0.1:7806/ingest/a0cc51e9-56f8-4cee-817e-1f613d95c3a2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9acb7a'},body:JSON.stringify({sessionId:'9acb7a',location:'email.ts:sendEmailViaSendGrid',message:'Plain-text fallback for verification link',data:{plainContainsVerifyLink:plainContainsVerify,plainLength:plainText.length,hypothesisId:'D'},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
 
     const payload = {
         personalizations: [{
@@ -209,10 +213,15 @@ export async function sendEmailVerificationEmail(uid: string, email: string, cod
         ? `Action Required: Verify your JobCamp account for ${schoolName}` 
         : "Action Required: Verify your JobCamp account";
     try {
+        const html = renderEmailTemplate(verificationEmail, {uid, code});
+        // #region agent log
+        const verifyUrl = `https://jobcamp.org/verify-email?code=${code}&uid=${uid}`;
+        fetch('http://127.0.0.1:7806/ingest/a0cc51e9-56f8-4cee-817e-1f613d95c3a2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9acb7a'},body:JSON.stringify({sessionId:'9acb7a',location:'email.ts:sendEmailVerificationEmail',message:'Verification email URL info',data:{urlLength:verifyUrl.length,urlPrefix:verifyUrl.slice(0,45),hypothesisId:'A'},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
         await sendEmailViaSendGrid(
             email,
             subject,
-            renderEmailTemplate(verificationEmail, {uid, code})
+            html
         );
     } catch (error) {
         console.warn('Email service not configured or failed to send verification email:', error);
