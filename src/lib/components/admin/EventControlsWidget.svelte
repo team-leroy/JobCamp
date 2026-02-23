@@ -132,7 +132,7 @@
                   )}
               />
               <Label class="text-base font-medium"
-                >Enable company account logins</Label
+                >Companies can create accounts and login</Label
               >
             </div>
             <span class="text-sm text-gray-500">
@@ -153,7 +153,7 @@
                   handleControlChange("companySignups", companySignupsEnabled)}
               />
               <Label class="text-base font-medium"
-                >Enable company position management</Label
+                >Companies can create new positions</Label
               >
             </div>
             <span class="text-sm text-gray-500">
@@ -183,7 +183,7 @@
                   )}
               />
               <Label class="text-base font-medium"
-                >Enable student account logins</Label
+                >Students can create accounts and login</Label
               >
             </div>
             <span class="text-sm text-gray-500">
@@ -204,7 +204,7 @@
                   handleControlChange("studentSignups", studentSignupsEnabled)}
               />
               <Label class="text-base font-medium"
-                >Allow students to pick jobs</Label
+                >Students can choose positions</Label
               >
             </div>
             <span class="text-sm text-gray-500">
@@ -257,7 +257,7 @@
                 )}
             />
             <Label class="text-base font-medium"
-              >Publish company directory</Label
+              >Publish companies and positions to website</Label
             >
           </div>
           <span class="text-sm text-gray-500">
