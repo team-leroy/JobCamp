@@ -22,6 +22,7 @@ describe('sendBulkEmail', () => {
 		interface SendGridPayload {
 			personalizations: Array<{
 				to: Array<{ email: string; name?: string }>;
+				bcc?: Array<{ email: string; name?: string }>;
 				subject: string;
 			}>;
 		}
@@ -61,10 +62,14 @@ describe('sendBulkEmail', () => {
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 
 		const payload = bodies[0];
-		expect(payload.personalizations[0].to).toHaveLength(2);
-		expect(payload.personalizations[0].to).toEqual([
+		// Group sends use BCC so recipients are not exposed to each other
+		expect(payload.personalizations[0].bcc).toHaveLength(2);
+		expect(payload.personalizations[0].bcc).toEqual([
 			{ email: 'student@example.com', name: 'Student' },
 			{ email: 'parent@example.com', name: 'Parent One' }
+		]);
+		expect(payload.personalizations[0].to).toEqual([
+			{ email: 'noreply@jobcamp.org', name: 'JobCamp' }
 		]);
 	});
 });

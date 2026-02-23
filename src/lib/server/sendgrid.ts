@@ -67,19 +67,27 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
 			};
 		}
 
+		const fromEmail = env.SENDGRID_FROM_EMAIL || 'admin@jobcamp.org';
+		const fromName = env.SENDGRID_FROM_NAME || 'JobCamp Administration';
+		// Group sends: use BCC so recipients don't see each other's addresses (standard practice)
+		const useBcc = recipients.length > 1;
 		const payload = {
       personalizations: [
         {
-					to: recipients.map((r) => ({
-            email: r.email, 
-						name: r.name
-          })),
+					...(useBcc
+						? {
+								to: [{ email: fromEmail, name: fromName }],
+								bcc: recipients.map((r) => ({ email: r.email, name: r.name }))
+							}
+						: {
+								to: recipients.map((r) => ({ email: r.email, name: r.name }))
+							}),
           subject: options.subject
         }
       ],
       from: {
-        email: env.SENDGRID_FROM_EMAIL || 'admin@jobcamp.org',
-        name: env.SENDGRID_FROM_NAME || 'JobCamp Administration'
+        email: fromEmail,
+        name: fromName
       },
       // Add robust headers to reduce spaminess
       headers: {
