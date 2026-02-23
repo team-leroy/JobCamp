@@ -40,23 +40,7 @@
   Positions for {data.eventName}: {formatDate(data.eventDate)}
 </h1>
 
-{#if !data.companySignupsEnabled}
-  <div
-    class="mx-10 mb-5 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg"
-  >
-    <div class="flex">
-      <div class="ml-3">
-        <h3 class="text-lg font-medium text-yellow-800">
-          Position Management Disabled
-        </h3>
-        <p class="mt-2 text-sm text-yellow-700">
-          Position management is currently disabled. Come back soon to
-          create/edit positions for {data.eventName}.
-        </p>
-      </div>
-    </div>
-  </div>
-{:else}
+{#if data.companySignupsEnabled}
   {#if data.hasUnpublishedPositions}
     <div
       class="mx-10 mb-5 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg"
@@ -110,13 +94,13 @@
         </div>
       </Accordion.Trigger>
       <Accordion.Content class="px-5">
-        {#if data.companySignupsEnabled}
+        {#if data.companySignupsEnabled || position.isPublished}
           <div class="flex gap-5">
             <a
               href={"/dashboard/editPosition?posId=" + position.id}
               class="flex gap-1 items-center align-middle text-lg mt-2"
               ><Edit class="z-50" size={24} />
-              {position.isPublished ? "Edit" : "Edit & Publish"}</a
+              {data.companySignupsEnabled ? (position.isPublished ? "Edit" : "Edit & Publish") : "Edit"}</a
             >
             <AlertDialog.Root>
               <AlertDialog.Trigger

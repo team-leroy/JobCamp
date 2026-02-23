@@ -56,10 +56,6 @@ export const load: PageServerLoad = async (event) => {
     const userId = props.get("uid")?.toString();
 
     if (code && userId) {
-        // Cloud Run: search "JobCamp:VerifyEmail" to find verification-email logs
-        const ua = event.request.headers.get('user-agent') || '';
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
-        console.log('[JobCamp:VerifyEmail] verify-email page hit', JSON.stringify({ isMobile }));
         const correctCode = await prisma.emailVerificationCodes.findFirst({
             where: { user_id: userId }
         });

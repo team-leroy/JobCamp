@@ -26,9 +26,6 @@ async function sendEmailViaSendGrid(to: string, subject: string, html: string): 
         .replace(/<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '$2 ($1)')
         .replace(/<[^>]*>?/gm, '')
         .trim();
-    // Cloud Run: search "JobCamp:VerifyEmail" to find verification-email logs
-    const plainContainsVerify = plainText.includes('jobcamp.org/verify-email');
-    console.log('[JobCamp:VerifyEmail] plainText', JSON.stringify({ plainContainsVerifyLink: plainContainsVerify, plainLength: plainText.length }));
 
     const payload = {
         personalizations: [{
@@ -213,9 +210,6 @@ export async function sendEmailVerificationEmail(uid: string, email: string, cod
         : "Action Required: Verify your JobCamp account";
     try {
         const html = renderEmailTemplate(verificationEmail, {uid, code});
-        // Cloud Run: search "JobCamp:VerifyEmail" to find verification-email logs
-        const verifyUrl = `https://jobcamp.org/verify-email?code=${code}&uid=${uid}`;
-        console.log('[JobCamp:VerifyEmail] send', JSON.stringify({ urlLength: verifyUrl.length, urlPrefix: verifyUrl.slice(0, 45) }));
         await sendEmailViaSendGrid(
             email,
             subject,

@@ -21,7 +21,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     if (!positionId) {
         redirect(302, "/lghs")
     }
-    const positionInfo = await prisma.position.findFirst({ where: { id: positionId }, include: { attachments : true } });
+    const positionInfo = await prisma.position.findFirst({
+        where: { id: positionId },
+        include: { attachments: true, event: true }
+    });
     if (!positionInfo) {
         redirect(302, "/lghs")
     }
@@ -38,6 +41,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     });
 
     if (!host || !host.positions.find(p => p.id === positionId)) {
+        redirect(302, "/dashboard");
+    }
+
+    // When position management is disabled, only allow editing already-published positions
+    if (!positionInfo.event.companySignupsEnabled && !positionInfo.isPublished) {
         redirect(302, "/dashboard");
     }
 
@@ -81,9 +89,25 @@ export const actions: Actions = {
         }
         console.log(form.data.slots)
 
-        const positionOriginal = await prisma.position.findFirst({ where: { id: positionId }, include: { attachments: true } });
+        const positionOriginal = await prisma.position.findFirst({
+            where: { id: positionId },
+            include: { attachments: true, event: true }
+        });
         if (!positionOriginal) {
             redirect(302, "/host-tips");
+        }
+
+        // When position management is disabled, only allow saving edits to already-published positions (no publishing drafts)
+        if (!positionOriginal.event.companySignupsEnabled && !positionOriginal.isPublished) {
+            const formDataWithoutFiles = {
+                ...form.data,
+                attachment1: undefined,
+                attachment2: undefined
+            };
+            return fail(403, {
+                form: { ...form, data: formDataWithoutFiles },
+                message: "Position management is currently disabled. You cannot publish draft positions."
+            });
         }
 
         // Enforce 2-attachment limit (existing + new)

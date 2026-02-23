@@ -40,6 +40,21 @@ export const load: PageServerLoad = async ({ locals }) => {
     }
 
     const { userInfo, hostInfo } = await grabUserData(locals);
+    const hostWithSchool = await prisma.host.findFirst({
+        where: { userId: locals.user!.id },
+        include: { company: { include: { school: true } } }
+    });
+    const schoolId = hostWithSchool?.company?.schoolId;
+    if (!schoolId) {
+        redirect(302, "/dashboard");
+    }
+    const activeEvent = await prisma.event.findFirst({
+        where: { schoolId, isActive: true }
+    });
+    if (!activeEvent?.companySignupsEnabled) {
+        redirect(302, "/dashboard");
+    }
+
     const form = await superValidate(zod(createNewPositionSchema(hostInfo.name, userInfo.email)));
 
     return { form };
@@ -93,6 +108,18 @@ export const actions: Actions = {
         
         if (!activeEvent) {
             throw new Error('No active event found for this school');
+        }
+
+        if (!activeEvent.companySignupsEnabled) {
+            const formDataWithoutFiles = {
+                ...form.data,
+                attachment1: undefined,
+                attachment2: undefined
+            };
+            return fail(403, {
+                form: { ...form, data: formDataWithoutFiles },
+                message: "Position management is currently disabled. You cannot create new positions."
+            });
         }
 
         // Enforce 2-attachment limit
