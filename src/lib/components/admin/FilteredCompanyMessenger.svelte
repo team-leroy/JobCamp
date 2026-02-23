@@ -89,7 +89,7 @@
   <div class="flex items-center gap-2 text-sm text-gray-600">
     <Building2 class="h-4 w-4" />
     <span class="font-medium"
-      >{companyCount} company{companyCount !== 1 ? "ies" : ""} selected</span
+      >{companyCount} {companyCount !== 1 ? "companies" : "company"} selected</span
     >
   </div>
 

@@ -1519,7 +1519,7 @@
           </Dialog.Title>
           <Dialog.Description>
             Send emails to all host and position contacts for the {filteredCompanies.length}
-            company{filteredCompanies.length !== 1 ? "ies" : ""} in your current
+            {filteredCompanies.length !== 1 ? "companies" : "company"} in your current
             search results.
           </Dialog.Description>
         </Dialog.Header>
