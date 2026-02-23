@@ -6,6 +6,7 @@
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { enhance } from "$app/forms";
   import { Loader2 } from "lucide-svelte";
+  import { formatTimeTo12h } from "$lib/timeUtils";
 
   let { data } = $props();
 
@@ -184,9 +185,9 @@
 
         <hr class="my-2" />
 
-        <p class="">Arrival: {position.arrival}</p>
-        <p class="">Start: {position.start}</p>
-        <p class="">End: {position.end}</p>
+        <p class="">Arrival: {formatTimeTo12h(position.arrival)}</p>
+        <p class="">Start: {formatTimeTo12h(position.start)}</p>
+        <p class="">End: {formatTimeTo12h(position.end)}</p>
 
         <hr class="my-2" />
 

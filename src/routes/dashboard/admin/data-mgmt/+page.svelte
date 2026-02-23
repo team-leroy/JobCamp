@@ -34,6 +34,7 @@
   import FilterSelect from "$lib/components/ui/filter-select/FilterSelect.svelte";
   import FilteredStudentMessenger from "$lib/components/admin/FilteredStudentMessenger.svelte";
   import FilteredCompanyMessenger from "$lib/components/admin/FilteredCompanyMessenger.svelte";
+  import { formatTimeTo12h } from "$lib/timeUtils";
   import { MessageSquare } from "lucide-svelte";
   import * as Dialog from "$lib/components/ui/dialog";
 
@@ -1291,8 +1292,8 @@
                                       >
                                         <Clock class="h-3 w-3" />
                                         <span
-                                          >{position.arrival} arrival • {position.start}
-                                          - {position.end}</span
+                                          >{formatTimeTo12h(position.arrival)} arrival • {formatTimeTo12h(position.start)}
+                                          - {formatTimeTo12h(position.end)}</span
                                         >
                                       </div>
                                       <div

@@ -7,6 +7,7 @@
   import Label from "$lib/components/ui/label/label.svelte";
   import { Loader2 } from "lucide-svelte";
   import { goto } from "$app/navigation";
+  import { formatTimeTo12h } from "$lib/timeUtils";
 
   let { data, form } = $props();
 
@@ -455,9 +456,9 @@
 
                   <hr class="my-2" />
 
-                  <p class="">Arrival: {position.arrival}</p>
-                  <p class="">Start: {position.start}</p>
-                  <p class="">End: {position.end}</p>
+                  <p class="">Arrival: {formatTimeTo12h(position.arrival)}</p>
+                  <p class="">Start: {formatTimeTo12h(position.start)}</p>
+                  <p class="">End: {formatTimeTo12h(position.end)}</p>
 
                   {#if position.attachments && Array.isArray(position.attachments) && position.attachments.length > 0}
                     <hr class="my-2" />
@@ -600,9 +601,9 @@
 
               <hr class="my-2" />
 
-              <p class="">Arrival: {position.arrival}</p>
-              <p class="">Start: {position.start}</p>
-              <p class="">End: {position.end}</p>
+              <p class="">Arrival: {formatTimeTo12h(position.arrival)}</p>
+              <p class="">Start: {formatTimeTo12h(position.start)}</p>
+              <p class="">End: {formatTimeTo12h(position.end)}</p>
 
               {#if position.attachments && Array.isArray(position.attachments) && position.attachments.length > 0}
                 <hr class="my-2" />

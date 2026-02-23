@@ -2,6 +2,7 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import Button from "$lib/components/ui/button/button.svelte";
   import * as Accordion from "$lib/components/ui/accordion/index.js";
+  import { formatTimeTo12h } from "$lib/timeUtils";
 
   let { data } = $props();
 
@@ -165,9 +166,9 @@
 
                     <hr class="my-2" />
 
-                    <p class="">Arrival: {position.arrival}</p>
-                    <p class="">Start: {position.start}</p>
-                    <p class="">End: {position.end}</p>
+                    <p class="">Arrival: {formatTimeTo12h(position.arrival)}</p>
+                    <p class="">Start: {formatTimeTo12h(position.start)}</p>
+                    <p class="">End: {formatTimeTo12h(position.end)}</p>
                   </Accordion.Content>
                 </Accordion.Item>
               {/each}
@@ -221,9 +222,9 @@
 
                 <hr class="my-2" />
 
-                <p class="">Arrival: {position.arrival}</p>
-                <p class="">Start: {position.start}</p>
-                <p class="">End: {position.end}</p>
+                <p class="">Arrival: {formatTimeTo12h(position.arrival)}</p>
+                <p class="">Start: {formatTimeTo12h(position.start)}</p>
+                <p class="">End: {formatTimeTo12h(position.end)}</p>
               </Accordion.Content>
             </Accordion.Item>
           {/each}

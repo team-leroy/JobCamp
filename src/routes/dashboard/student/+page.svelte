@@ -7,6 +7,7 @@
   import { enhance } from "$app/forms";
   import Button from "$lib/components/ui/button/button.svelte";
   import { goto } from "$app/navigation";
+  import { formatTimeTo12h } from "$lib/timeUtils";
 
   let { data, form } = $props();
 
@@ -507,9 +508,9 @@
 
             <hr class="my-2" />
 
-            <p class=" font-bold">Arrival: {data.lotteryResult.arrival}</p>
-            <p class="font-bold">Start: {data.lotteryResult.start}</p>
-            <p class="font-bold">End: {data.lotteryResult.end}</p>
+            <p class=" font-bold">Arrival: {formatTimeTo12h(data.lotteryResult.arrival)}</p>
+            <p class="font-bold">Start: {formatTimeTo12h(data.lotteryResult.start)}</p>
+            <p class="font-bold">End: {formatTimeTo12h(data.lotteryResult.end)}</p>
 
             <hr class="my-2" />
 
@@ -746,9 +747,9 @@
 
               <hr class="my-2" />
 
-              <p class="">Arrival: {position.arrival}</p>
-              <p class="">Start: {position.start}</p>
-              <p class="">End: {position.end}</p>
+              <p class="">Arrival: {formatTimeTo12h(position.arrival)}</p>
+              <p class="">Start: {formatTimeTo12h(position.start)}</p>
+              <p class="">End: {formatTimeTo12h(position.end)}</p>
 
               {#if position.attachments && position.attachments.length > 0}
                 <hr class="my-2" />
