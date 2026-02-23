@@ -519,24 +519,19 @@
                   </p>
                   {#if previewData.preview && previewData.preview.length > 0}
                     <div class="mt-2 text-sm text-gray-600">
-                      <p class="font-medium">Preview (first 10):</p>
-                      <ul class="list-disc list-inside mt-1">
+                      <p class="font-medium">Recipients:</p>
+                      <div class="max-h-48 overflow-y-auto space-y-1 mt-1">
                         {#each previewData.preview as recipient}
-                          <li>
+                          <div>
                             {recipient.name}
                             {#if messageType === "email"}
                               ({recipient.email})
                             {:else}
                               ({recipient.phone})
                             {/if}
-                          </li>
+                          </div>
                         {/each}
-                      </ul>
-                      {#if previewData.count > 10}
-                        <p class="mt-1 italic">
-                          ...and {previewData.count - 10} more
-                        </p>
-                      {/if}
+                      </div>
                     </div>
                   {/if}
                 </div>
@@ -635,19 +630,14 @@
                   </p>
                   {#if companyPreviewData.preview && companyPreviewData.preview.length > 0}
                     <div class="mt-2 text-sm text-gray-600">
-                      <p class="font-medium">Preview (first 10):</p>
-                      <ul class="list-disc list-inside mt-1">
+                      <p class="font-medium">Recipients:</p>
+                      <div class="max-h-48 overflow-y-auto space-y-1 mt-1">
                         {#each companyPreviewData.preview as recipient}
-                          <li>
+                          <div>
                             {recipient.name} ({recipient.email})
-                          </li>
+                          </div>
                         {/each}
-                      </ul>
-                      {#if companyPreviewData.count > 10}
-                        <p class="mt-1 italic">
-                          ...and {companyPreviewData.count - 10} more
-                        </p>
-                      {/if}
+                      </div>
                     </div>
                   {/if}
                 </div>

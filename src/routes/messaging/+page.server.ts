@@ -156,8 +156,8 @@ export const actions: Actions = {
                     return { success: false, message: 'Invalid recipient type' };
             }
 
-            // Map recipients to preview format
-            const preview = recipients.slice(0, 10).map(r => {
+            // Map all recipients to preview format (scrollable list, same as edit/search tab)
+            const preview = recipients.map(r => {
                 // StudentRecipient has firstName/lastName
                 if ('firstName' in r && 'lastName' in r) {
                     return {

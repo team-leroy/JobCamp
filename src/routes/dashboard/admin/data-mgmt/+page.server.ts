@@ -1790,39 +1790,41 @@ export const actions: Actions = {
                 return { success: false, message: "No active event found" };
             }
 
-            // Fetch hosts and positions for these companies
+            // Fetch companies and only published positions for the active event (align with messaging "Companies with Published Positions")
             const companies = await prisma.company.findMany({
                 where: { id: { in: companyIds } },
                 include: {
                     hosts: {
                         include: { user: { select: { email: true } } }
-                    },
-                    prefillSettings: {
-                        where: { position: { eventId: activeEvent.id } },
-                        include: { position: true }
                     }
                 }
             });
 
-            // We also need to get positions directly because some might not have prefill settings
             const positions = await prisma.position.findMany({
                 where: {
                     eventId: activeEvent.id,
+                    isPublished: true,
                     host: { companyId: { in: companyIds } }
                 },
                 include: { host: true }
             });
 
+            // Only hosts that have at least one published position in this event
+            const hostIdsWithPublished = new Set(positions.map((p) => p.hostId));
+
             const recipientsMap = new Map<string, { name: string, email: string, role: string }>();
 
             for (const company of companies) {
                 for (const host of company.hosts) {
-                    if (host.user?.email) {
-                        recipientsMap.set(host.user.email.toLowerCase(), {
-                            name: host.name,
-                            email: host.user.email,
-                            role: 'Host'
-                        });
+                    if (host.user?.email && hostIdsWithPublished.has(host.id)) {
+                        const email = host.user.email.toLowerCase();
+                        if (!recipientsMap.has(email)) {
+                            recipientsMap.set(email, {
+                                name: host.name,
+                                email: host.user.email,
+                                role: 'Host'
+                            });
+                        }
                     }
                 }
             }
@@ -1892,7 +1894,7 @@ export const actions: Actions = {
                 return { success: false, message: "No active event found" };
             }
 
-            // Fetch hosts and positions for these companies
+            // Same recipient logic as preview: only published positions, only hosts with published positions (align with messaging tab)
             const companies = await prisma.company.findMany({
                 where: { id: { in: companyIds } },
                 include: {
@@ -1905,19 +1907,25 @@ export const actions: Actions = {
             const positions = await prisma.position.findMany({
                 where: {
                     eventId: activeEvent.id,
+                    isPublished: true,
                     host: { companyId: { in: companyIds } }
-                }
+                },
+                include: { host: true }
             });
 
+            const hostIdsWithPublished = new Set(positions.map((p) => p.hostId));
             const emailRecipientsMap = new Map<string, { name: string, email: string }>();
 
             for (const company of companies) {
                 for (const host of company.hosts) {
-                    if (host.user?.email) {
-                        emailRecipientsMap.set(host.user.email.toLowerCase(), {
-                            email: host.user.email,
-                            name: host.name
-                        });
+                    if (host.user?.email && hostIdsWithPublished.has(host.id)) {
+                        const email = host.user.email.toLowerCase();
+                        if (!emailRecipientsMap.has(email)) {
+                            emailRecipientsMap.set(email, {
+                                email: host.user.email,
+                                name: host.name
+                            });
+                        }
                     }
                 }
             }
