@@ -1,11 +1,13 @@
 import type { Actions, PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { createPasswordResetToken, login } from '$lib/server/auth';
+import { createPasswordResetToken, login, verifyPasswordResetToken } from '$lib/server/auth';
 import { sendPasswordResetEmail } from '$lib/server/email';
 import { generateRandomString } from 'oslo/crypto';
 import { passwordSaltCharacters } from '$lib/server/authConstants';
 import { scrypt } from '$lib/server/hash';
 import { prisma } from '$lib/server/prisma';
+
+const INVALID_LINK_MSG = 'Invalid or expired reset link. Please request a new password reset.';
 
 
 export const load: PageServerLoad = async (event) => {
@@ -40,26 +42,44 @@ export const actions: Actions = {
         }
 
         const userId = form.get("uid")?.toString();
-        if (!userId) { redirect(302, "/signup"); }
+        if (!userId) {
+            redirect(302, "/signup");
+        }
 
         const password = form.get("password")?.toString();
-        if (!password) { return { waiting: 2, msg: "Password must be at least 8 characters", code, userId }; }
-        if (password.length < 8) { return { waiting: 2, msg: "Password must be at least 8 characters", code, userId }; }
+        if (!password || password.length < 8) {
+            return { waiting: 2, msg: "Password must be at least 8 characters", code, userId };
+        }
 
-        const passwordSalt = generateRandomString(16, passwordSaltCharacters); // 128bit salt
-        const passwordHash = await scrypt.hash(password, passwordSalt);
+        const validToken = await verifyPasswordResetToken(userId, code);
+        if (!validToken) {
+            console.warn("[ResetPassword] Invalid or expired token for uid:", userId);
+            return { waiting: 2, msg: INVALID_LINK_MSG, code: "", userId: "" };
+        }
 
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: {
-                passwordSalt,
-                passwordHash
-            }
-        });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            console.warn("[ResetPassword] User not found:", userId);
+            return { waiting: 2, msg: INVALID_LINK_MSG, code: "", userId: "" };
+        }
 
-        await login(user.email, password, event);
+        try {
+            const passwordSalt = generateRandomString(16, passwordSaltCharacters);
+            const passwordHash = await scrypt.hash(password, passwordSalt);
 
-        redirect(302, "/dashboard");
+            await prisma.user.update({
+                where: { id: userId },
+                data: { passwordSalt, passwordHash }
+            });
+
+            await prisma.passwordResetTokens.deleteMany({ where: { user_id: userId } });
+
+            await login(user.email, password, event);
+            redirect(302, "/dashboard");
+        } catch (err) {
+            console.warn("[ResetPassword] Error during submit:", err);
+            return { waiting: 2, msg: "Something went wrong. Please try again or request a new reset link.", code, userId };
+        }
     },
     send: async (event) => {
         const form = await event.request.formData();

@@ -35,6 +35,18 @@ export async function createPasswordResetToken(userId: string): Promise<string> 
 	return tokenId;
 }
 
+/** Verify reset token for user; returns true if valid and not expired. */
+export async function verifyPasswordResetToken(userId: string, rawToken: string): Promise<boolean> {
+	if (!rawToken?.trim()) return false;
+	const tokenHash = encodeHex(await sha256(new TextEncoder().encode(rawToken)));
+	const row = await prisma.passwordResetTokens.findUnique({
+		where: { user_id: userId }
+	});
+	if (!row || row.token_hash !== tokenHash) return false;
+	if (row.expires_at < new Date()) return false;
+	return true;
+}
+
 export async function generateEmailVerificationCode(userId: string, email: string): Promise<string> {
 	await prisma.emailVerificationCodes.deleteMany({ where: { user_id: userId } });
 
