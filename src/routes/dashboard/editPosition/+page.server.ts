@@ -70,6 +70,7 @@ export const actions: Actions = {
         
         const form = await superValidate(request, zod(editPositionSchema(positionInfo)));
         if (!form.valid) {
+            console.warn("[EditPosition] Form validation failed:", form.errors);
             // Remove File objects from form data before returning (they can't be serialized)
             const formDataWithoutFiles = {
                 ...form.data,

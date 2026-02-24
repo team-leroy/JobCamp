@@ -57,7 +57,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     const form = await superValidate(zod(createNewPositionSchema(hostInfo.name, userInfo.email)));
 
-    return { form };
+    return { form, hostName: hostInfo.name, hostEmail: userInfo.email };
 };
 
 export const actions: Actions = {
@@ -67,7 +67,7 @@ export const actions: Actions = {
         const form = await superValidate(request, zod(createNewPositionSchema(hostInfo.name, userInfo.email)));
 
         if (!form.valid) {
-            console.log("[CreatePosition] Form validation failed:", JSON.stringify(form.errors, null, 2));
+            console.warn("[CreatePosition] Form validation failed:", form.errors);
             // Remove File objects from form data before returning (they can't be serialized)
             const formDataWithoutFiles = {
                 ...form.data,

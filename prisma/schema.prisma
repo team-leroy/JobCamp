@@ -51,12 +51,12 @@ model Position {
   title              String
   career             String
   slots              Int
-  summary            String                @db.VarChar(1024)
+  summary            String                @db.VarChar(2048)
   contact_name       String
   contact_email      String
-  address            String                @db.VarChar(1024)
-  instructions       String                @db.VarChar(1024)
-  attire             String                @db.VarChar(1024)
+  address            String                @db.VarChar(2048)
+  instructions       String                @db.VarChar(2048)
+  attire             String                @db.VarChar(2048)
   createdAt          DateTime              @default(now())
   arrival            String
   start              String

@@ -181,8 +181,10 @@
     }, 1000);
   }
 
-  function handleError() {
-    error = "Failed to update position";
+  function handleError(msg?: string) {
+    const displayMsg = msg ?? "Failed to update position";
+    console.warn("[PositionEditModal] Update failed:", displayMsg);
+    error = displayMsg;
     message = null;
   }
 
@@ -236,7 +238,12 @@
       use:enhance={() => {
         handleSubmit();
         return async ({ result }) => {
-          if (result.type === "success") {
+          if (result.type === "success" && result.data) {
+            const data = result.data as { success?: boolean; message?: string };
+            if (data.success === false) {
+              handleError(data.message);
+              return;
+            }
             handleSuccess();
           } else {
             handleError();
@@ -245,19 +252,6 @@
       }}
     >
       <input type="hidden" name="positionId" value={position.id} />
-
-      {#if message}
-        <div
-          class="p-3 rounded bg-green-50 text-green-700 border border-green-200"
-        >
-          {message}
-        </div>
-      {/if}
-      {#if error}
-        <div class="p-3 rounded bg-red-50 text-red-700 border border-red-200">
-          {error}
-        </div>
-      {/if}
 
       <!-- Basic Information -->
       <div>
@@ -596,6 +590,20 @@
           </div>
         </div>
       </div>
+
+      <!-- Message and error at bottom so visible when user clicks Save -->
+      {#if message}
+        <div
+          class="p-3 rounded bg-green-50 text-green-700 border border-green-200"
+        >
+          {message}
+        </div>
+      {/if}
+      {#if error}
+        <div class="p-3 rounded bg-red-50 text-red-700 border border-red-200">
+          {error}
+        </div>
+      {/if}
 
       <!-- Action Buttons -->
       <div class="flex justify-between items-center pt-4 border-t">

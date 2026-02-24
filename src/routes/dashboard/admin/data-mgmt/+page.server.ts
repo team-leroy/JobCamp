@@ -1043,6 +1043,7 @@ export const actions: Actions = {
 
     updatePosition: async ({ request, locals }) => {
         if (!locals.user) {
+            console.warn("[UpdatePosition] Not authenticated");
             return { success: false, message: "Not authenticated" };
         }
 
@@ -1052,6 +1053,7 @@ export const actions: Actions = {
         });
 
         if (!canWriteAdminData(userInfo!)) {
+            console.warn("[UpdatePosition] Permission denied");
             return { success: false, message: "You do not have permission to edit data" };
         }
 
@@ -1080,14 +1082,71 @@ export const actions: Actions = {
             });
 
             if (!positionId || !title || !career || !slotsStr) {
-                console.log("[UpdatePosition] Validation failed - missing fields");
+                console.warn("[UpdatePosition] Validation failed - missing required fields");
                 return { success: false, message: "Missing required fields" };
             }
 
             const slots = parseInt(slotsStr);
-            if (isNaN(slots)) {
-                console.log("[UpdatePosition] Validation failed - invalid slots:", slotsStr);
-                return { success: false, message: "Invalid number of slots" };
+            if (isNaN(slots) || slots < 1 || slots > 1000) {
+                console.warn("[UpdatePosition] Validation failed - invalid slots:", slotsStr);
+                return { success: false, message: "Slots must be a number between 1 and 1000" };
+            }
+
+            // Position field length limits (match Prisma schema and company form validation)
+            const MAX_SUMMARY = 2048;
+            const MAX_ADDRESS = 2048;
+            const MAX_INSTRUCTIONS = 2048;
+            const MAX_ATTIRE = 2048;
+            const MAX_TITLE = 512;
+            const MAX_CAREER = 512;
+            const MAX_CONTACT_NAME = 256;
+            const MAX_EMAIL = 255;
+            const MAX_TIME = 64;
+
+            if ((summary?.length ?? 0) > MAX_SUMMARY) {
+                const msg = `Summary must be ${MAX_SUMMARY} characters or less (currently ${summary?.length ?? 0})`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
+            }
+            if ((address?.length ?? 0) > MAX_ADDRESS) {
+                const msg = `Address must be ${MAX_ADDRESS} characters or less (currently ${address?.length ?? 0})`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
+            }
+            if ((instructions?.length ?? 0) > MAX_INSTRUCTIONS) {
+                const msg = `Instructions must be ${MAX_INSTRUCTIONS} characters or less (currently ${instructions?.length ?? 0})`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
+            }
+            if ((attire?.length ?? 0) > MAX_ATTIRE) {
+                const msg = `Attire must be ${MAX_ATTIRE} characters or less (currently ${attire?.length ?? 0})`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
+            }
+            if ((title?.length ?? 0) > MAX_TITLE) {
+                const msg = `Title must be ${MAX_TITLE} characters or less`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
+            }
+            if ((career?.length ?? 0) > MAX_CAREER) {
+                const msg = `Career must be ${MAX_CAREER} characters or less`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
+            }
+            if ((contactName?.length ?? 0) > MAX_CONTACT_NAME) {
+                const msg = `Contact name must be ${MAX_CONTACT_NAME} characters or less`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
+            }
+            if ((contactEmail?.length ?? 0) > MAX_EMAIL) {
+                const msg = `Contact email must be ${MAX_EMAIL} characters or less`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
+            }
+            if ((arrival?.length ?? 0) > MAX_TIME || (start?.length ?? 0) > MAX_TIME || (end?.length ?? 0) > MAX_TIME) {
+                const msg = `Arrival, start, and end time must be ${MAX_TIME} characters or less`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
             }
 
             // Enforce 2-attachment limit (existing + new)
@@ -1097,6 +1156,7 @@ export const actions: Actions = {
             });
 
             if (!positionOriginal) {
+                console.warn("[UpdatePosition] Position not found:", positionId);
                 return { success: false, message: "Position not found" };
             }
 
@@ -1104,10 +1164,9 @@ export const actions: Actions = {
             const newAttachmentCount = (attachment1 && attachment1.size > 0 ? 1 : 0) + (attachment2 && attachment2.size > 0 ? 1 : 0);
             
             if (existingAttachmentCount + newAttachmentCount > 2) {
-                return { 
-                    success: false, 
-                    message: `Maximum 2 attachments allowed per position. You have ${existingAttachmentCount} existing attachment(s) and are trying to add ${newAttachmentCount} new one(s).`
-                };
+                const msg = `Maximum 2 attachments allowed per position. You have ${existingAttachmentCount} existing attachment(s) and are trying to add ${newAttachmentCount} new one(s).`;
+                console.warn("[UpdatePosition]", msg);
+                return { success: false, message: msg };
             }
 
             const attachments = [];
@@ -1187,7 +1246,7 @@ export const actions: Actions = {
 
             return { success: true, message: "Position updated successfully" };
         } catch (error) {
-            console.error('[UpdatePosition] Error:', error);
+            console.warn("[UpdatePosition] Error:", error);
             return { success: false, message: "Failed to update position" };
         }
     },

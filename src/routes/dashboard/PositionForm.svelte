@@ -119,14 +119,6 @@
   >
     <h1 class="text-xl">{formTitle}</h1>
 
-    {#if data.error || data.form?.error}
-      <div
-        class="w-full max-w-sm p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-md"
-      >
-        {data.error || data.form?.error}
-      </div>
-    {/if}
-
     {#if $form.positionId}<input
         name="positionId"
         class="hidden"
@@ -445,6 +437,29 @@
           {/each}
         </div>
       </div>
+    {/if}
+
+    <!-- Validation summary at bottom so it's visible when user clicks Submit -->
+    {#if data.error || data.form?.error}
+      <div
+        class="w-full max-w-sm p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-md"
+      >
+        {data.error || data.form?.error}
+      </div>
+    {:else}
+      {@const errorEntries = Object.entries($errors).filter(([, v]) => v != null && v !== '' && (Array.isArray(v) ? v.length > 0 : true))}
+      {#if errorEntries.length > 0}
+        <div
+          class="w-full max-w-sm p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-md"
+        >
+          <p class="font-medium mb-1">Please correct the following:</p>
+          <ul class="list-disc list-inside space-y-0.5">
+            {#each errorEntries as [, msg]}
+              <li>{Array.isArray(msg) ? msg[0] : msg}</li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
     {/if}
 
     <div class="w-full flex justify-center gap-4">

@@ -137,7 +137,11 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     const messageId = response.headers.get('X-Message-Id');
 
 		if (isSandbox) {
-			console.log('📧 [SANDBOX MODE] Email would be sent to:', recipients.map((r) => r.email).join(', '));
+			console.log(
+				'📧 [SANDBOX MODE] Email would be sent to:',
+				recipients.map((r) => r.email).join(', '),
+				useBcc ? '(recipients in BCC)' : ''
+			);
 			console.log('📧 Subject:', options.subject);
 		}
 
