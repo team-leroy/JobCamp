@@ -332,87 +332,99 @@ export const actions: Actions = {
         }
     },
     deletePosition: async({ request, locals }) => {
-        const data = await request.formData();
+        // #region agent log
+        fetch('http://127.0.0.1:7806/ingest/a0cc51e9-56f8-4cee-817e-1f613d95c3a2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9acb7a'},body:JSON.stringify({sessionId:'9acb7a',location:'+page.server.ts:deletePosition',message:'deletePosition started',data:{hasUser:!!locals.user?.id},timestamp:Date.now(),hypothesisId:'entry'})}).catch(()=>{});
+        // #endregion
+        try {
+            const data = await request.formData();
 
-        const posId = data.get("id")?.toString();
-        if (!posId) {
-            redirect(302, "/about");
-        }
-
-        const id = locals.user?.id;
-        if (!id) {
-            redirect(302, "/login");
-        }
-
-        const student = await prisma.student.findFirst({where: {userId: id}});
-        const studentId = student?.id;
-        if (!studentId) {
-            redirect(302, "/login");
-        }
-
-        // Check permission slip status
-        const permissionSlipStatus = await getPermissionSlipStatus(studentId, student.schoolId || "");
-        if (!permissionSlipStatus.hasPermissionSlip) {
-            return { success: false, message: "Permission slip is required to modify your list." };
-        }
-
-        // Check if lottery is published - if so, prevent edits
-        if (await isLotteryPublished(student.schoolId)) {
-            return;
-        }
-
-        // Check if the record exists before trying to delete (makes it idempotent)
-        const existingRecord = await prisma.positionsOnStudents.findUnique({
-            where: {
-                positionId_studentId: {
-                    positionId: posId,
-                    studentId: studentId
-                }
+            const posId = data.get("id")?.toString();
+            if (!posId) {
+                redirect(302, "/about");
             }
-        });
 
-        // If record doesn't exist, nothing to delete - return early
-        if (!existingRecord) {
-            return;
-        }
-
-        await prisma.positionsOnStudents.delete({
-            where: {
-                positionId_studentId: {
-                    positionId: posId,
-                    studentId: studentId
-                }
+            const id = locals.user?.id;
+            if (!id) {
+                redirect(302, "/login");
             }
-        });
 
-        // Update ranks
-        const activeEventId = await getActiveEventIdForSchool(student.schoolId || "");
-        if (!activeEventId) return;
+            const student = await prisma.student.findFirst({where: {userId: id}});
+            const studentId = student?.id;
+            if (!studentId) {
+                redirect(302, "/login");
+            }
 
-        const remainingPositions = await prisma.positionsOnStudents.findMany({
-            where: { 
-                studentId: studentId,
-                position: {
-                    eventId: activeEventId
+            // Check permission slip status
+            const permissionSlipStatus = await getPermissionSlipStatus(studentId, student.schoolId || "");
+            if (!permissionSlipStatus.hasPermissionSlip) {
+                return { success: false, message: "Permission slip is required to modify your list." };
+            }
+
+            // Check if lottery is published - if so, prevent edits
+            if (await isLotteryPublished(student.schoolId)) {
+                return;
+            }
+
+            // Check if the record exists before trying to delete (makes it idempotent)
+            const existingRecord = await prisma.positionsOnStudents.findUnique({
+                where: {
+                    positionId_studentId: {
+                        positionId: posId,
+                        studentId: studentId
+                    }
                 }
-            },
-            orderBy: { rank: "asc" }
-        });
+            });
 
-        if (remainingPositions.length > 0) {
-            await prisma.$transaction(
-                remainingPositions.map((pos, index) =>
-                    prisma.positionsOnStudents.update({
-                        where: {
-                            positionId_studentId: {
-                                positionId: pos.positionId,
-                                studentId: studentId
-                            }
-                        },
-                        data: { rank: index }
-                    })
-                )
-            );
+            // If record doesn't exist, nothing to delete - return early
+            if (!existingRecord) {
+                return;
+            }
+
+            await prisma.positionsOnStudents.delete({
+                where: {
+                    positionId_studentId: {
+                        positionId: posId,
+                        studentId: studentId
+                    }
+                }
+            });
+
+            // Update ranks
+            const activeEventId = await getActiveEventIdForSchool(student.schoolId || "");
+            if (!activeEventId) return;
+
+            const remainingPositions = await prisma.positionsOnStudents.findMany({
+                where: { 
+                    studentId: studentId,
+                    position: {
+                        eventId: activeEventId
+                    }
+                },
+                orderBy: { rank: "asc" }
+            });
+
+            if (remainingPositions.length > 0) {
+                await prisma.$transaction(
+                    remainingPositions.map((pos, index) =>
+                        prisma.positionsOnStudents.update({
+                            where: {
+                                positionId_studentId: {
+                                    positionId: pos.positionId,
+                                    studentId: studentId
+                                }
+                            },
+                            data: { rank: index }
+                        })
+                    )
+                );
+            }
+        } catch (err) {
+            // #region agent log
+            const e = err as Error;
+            fetch('http://127.0.0.1:7806/ingest/a0cc51e9-56f8-4cee-817e-1f613d95c3a2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9acb7a'},body:JSON.stringify({sessionId:'9acb7a',location:'+page.server.ts:deletePosition',message:'deletePosition error',data:{name:e?.name,message:e?.message,stack:e?.stack},timestamp:Date.now(),hypothesisId:'catch'})}).catch(()=>{});
+            // #endregion
+            console.error('[deletePosition]', e?.message ?? err, e?.stack);
+            throw err;
         }
     },
     move: async({ request, locals }) => {
