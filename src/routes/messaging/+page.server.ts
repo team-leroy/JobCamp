@@ -421,12 +421,16 @@ export const actions: Actions = {
                     return { success: false, message: 'No positions with assigned students found for the active event.' };
                 }
 
-                const eventDate = activeEvent ? new Date(activeEvent.date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric'
-                }) : '{date}';
+                const eventDate = activeEvent ? (() => {
+                    const d = new Date(activeEvent.date);
+                    return d.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                        timeZone: 'UTC'
+                    });
+                })() : '{date}';
 
                 for (const pos of positionsWithStudents) {
                     const numStudentsInPos = pos.lotteryAssignments.length;
@@ -446,6 +450,7 @@ export const actions: Actions = {
                     const personalizedMessage = message
                         .replace(/{contact_name}/g, pos.contact_name || 'Partner')
                         .replace(/{event_date}/g, eventDate)
+                        .replace(/{event _date}/g, eventDate)
                         .replace(/{num_students}/g, numStudentsInPos.toString())
                         .replace(/{student_list}/g, studentListHtml);
 
