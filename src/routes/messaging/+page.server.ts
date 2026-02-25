@@ -166,7 +166,7 @@ export const actions: Actions = {
                         phone: r.phone
                     };
                 }
-                // Company/Host contacts have name property
+                // Company/Host contacts have name property (and may have companyId)
                 return {
                     name: r.name || 'Unknown',
                     email: r.email,
@@ -174,11 +174,28 @@ export const actions: Actions = {
                 };
             });
 
-            return {
+            const result: { success: boolean; count: number; preview: typeof preview; companyCount?: number; positionCount?: number } = {
                 success: true,
                 count: recipients.length,
                 preview
             };
+            // For "Companies with Students Attending" we send one email per position; expose position count for clarity
+            if (recipientType === 'students_attending') {
+                const activeEventForPreview = await prisma.event.findFirst({
+                    where: { schoolId, isActive: true }
+                });
+                if (activeEventForPreview) {
+                    const positionCount = await prisma.position.count({
+                        where: {
+                            eventId: activeEventForPreview.id,
+                            host: { company: { schoolId } },
+                            lotteryAssignments: { some: {} }
+                        }
+                    });
+                    result.positionCount = positionCount;
+                }
+            }
+            return result;
         } catch (error) {
             console.error('Error previewing recipients:', error);
             return { success: false, message: 'Failed to preview recipients' };
@@ -359,10 +376,14 @@ export const actions: Actions = {
             const recipientType = formData.get('recipientType')?.toString() || 'all_companies';
             const subject = formData.get('subject')?.toString();
             const message = formData.get('message')?.toString();
+            const testMode = formData.get('testMode') === 'true';
 
             if (!subject || !message) {
                 return { success: false, message: 'Subject and message are required' };
             }
+
+            const testModeRecipient = [{ email: 'admin@jobcamp.org', name: 'Admin (Test)' }];
+            const subjectWithTestPrefix = testMode ? `[TEST] ${subject}` : subject;
 
             // Get recipients based on group
             const contacts = await getCompanyRecipientsByGroup(schoolId, recipientType);
@@ -378,113 +399,90 @@ export const actions: Actions = {
             let successCount = 0;
 
             if (recipientType === 'students_attending' && message.includes('{student_list}')) {
-                // Personalization required
-                const companies = new Set(contacts.map(c => c.companyId).filter(Boolean));
-                
-                for (const companyId of companies) {
-                    const companyContacts = contacts.filter(c => c.companyId === companyId);
-                    if (companyContacts.length === 0) continue;
-
-                    // Generate personalization data for this company
-                    const personalizationData = await prisma.company.findUnique({
-                        where: { id: companyId! },
-                        include: {
-                            hosts: {
-                                include: {
-                                    positions: {
-                                        where: { eventId: activeEvent?.id },
-                                        include: {
-                                            lotteryAssignments: {
-                                                include: {
-                                                    student: {
-                                                        include: {
-                                                            user: { select: { email: true } }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                // One email per position: to position contact only, content = only students for that position
+                const positionsWithStudents = await prisma.position.findMany({
+                    where: {
+                        eventId: activeEvent?.id,
+                        host: { company: { schoolId } },
+                        lotteryAssignments: { some: {} }
+                    },
+                    include: {
+                        lotteryAssignments: {
+                            include: {
+                                student: {
+                                    include: { user: { select: { email: true } } }
                                 }
                             }
                         }
+                    }
+                });
+
+                if (positionsWithStudents.length === 0) {
+                    return { success: false, message: 'No positions with assigned students found for the active event.' };
+                }
+
+                const eventDate = activeEvent ? new Date(activeEvent.date).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                }) : '{date}';
+
+                for (const pos of positionsWithStudents) {
+                    const numStudentsInPos = pos.lotteryAssignments.length;
+                    let studentListHtml = `The following ${numStudentsInPos} student${numStudentsInPos === 1 ? '' : 's'} ${numStudentsInPos === 1 ? 'has' : 'have'} been selected to attend your JobCamp session for "${pos.title}" on ${eventDate}:<br><br>`;
+                    pos.lotteryAssignments.forEach(assignment => {
+                        const s = assignment.student;
+                        const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent!.date) : 'N/A';
+                        studentListHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})<br><br>`;
                     });
-
-                    if (!personalizationData) continue;
-
-                    const eventDate = activeEvent ? new Date(activeEvent.date).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric'
-                    }) : '{date}';
-
-                    let groupedContentHtml = '';
-                    let totalNumStudents = 0;
-                    personalizationData.hosts.forEach(h => {
-                        h.positions.forEach(pos => {
-                            if (pos.lotteryAssignments.length > 0) {
-                                const numStudentsInPos = pos.lotteryAssignments.length;
-                                totalNumStudents += numStudentsInPos;
-                                groupedContentHtml += `&nbsp;&nbsp;&nbsp;&nbsp;The following ${numStudentsInPos} student${numStudentsInPos === 1 ? '' : 's'} ${numStudentsInPos === 1 ? 'has' : 'have'} been selected to attend your JobCamp session for "${pos.title}" on ${eventDate}:<br><br>`;
-                                
-                                // Build student list for this position
-                                pos.lotteryAssignments.forEach(assignment => {
-                                    const s = assignment.student;
-                                    const grade = s.graduatingClassYear ? getCurrentGrade(s.graduatingClassYear, activeEvent!.date) : 'N/A';
-                                    groupedContentHtml += `${s.firstName} ${s.lastName}, Grade ${grade} (${s.user?.email || 'No Email'}${s.phone ? `, ${s.phone}` : ''})<br><br>`;
-                                });
-
-                                // Build position details for this position
-                                groupedContentHtml += `<strong>Position Details for "${pos.title}":</strong><br>`;
-                                groupedContentHtml += `Address: ${pos.address}<br>`;
-                                groupedContentHtml += `Arrival: ${pos.arrival}<br>`;
-                                groupedContentHtml += `Time: ${pos.start} - ${pos.end}<br>`;
-                                if (pos.attire) groupedContentHtml += `Attire: ${pos.attire}<br>`;
-                                if (pos.instructions) groupedContentHtml += `Instructions: ${pos.instructions}<br>`;
-                                groupedContentHtml += `<hr>`;
-                            }
-                        });
-                    });
+                    studentListHtml += `<strong>Position Details for "${pos.title}":</strong><br>`;
+                    studentListHtml += `Address: ${pos.address}<br>`;
+                    studentListHtml += `Arrival: ${pos.arrival}<br>`;
+                    studentListHtml += `Time: ${pos.start} - ${pos.end}<br>`;
+                    if (pos.attire) studentListHtml += `Attire: ${pos.attire}<br>`;
+                    if (pos.instructions) studentListHtml += `Instructions: ${pos.instructions}<br>`;
 
                     const personalizedMessage = message
-                        .replace(/{host_name}/g, personalizationData.hosts[0]?.name || 'Partner')
+                        .replace(/{contact_name}/g, pos.contact_name || 'Partner')
                         .replace(/{event_date}/g, eventDate)
-                        .replace(/{num_students}/g, totalNumStudents.toString())
-                        .replace(/{student_list}/g, groupedContentHtml);
+                        .replace(/{num_students}/g, numStudentsInPos.toString())
+                        .replace(/{student_list}/g, studentListHtml);
 
-                    const emailRecipients = companyContacts.map(c => ({
-                        email: c.email,
-                        name: c.name
-                    }));
+                    const emailRecipients = testMode
+                        ? testModeRecipient
+                        : (pos.contact_email
+                            ? [{ email: pos.contact_email, name: pos.contact_name }]
+                            : []);
+
+                    if (emailRecipients.length === 0) continue;
 
                     const result = await sendBulkEmail({
                         to: emailRecipients,
-                        subject,
+                        subject: subjectWithTestPrefix,
                         html: personalizedMessage.replace(/\n/g, '<br>')
                     });
 
                     if (result.success) {
-                        successCount += emailRecipients.length;
+                        successCount += 1; // one email per position
                     }
                 }
             } else {
                 // Regular bulk email
-            const emailRecipients = contacts.map(c => ({
-                email: c.email,
-                name: c.name
-            }));
+                const emailRecipients = testMode
+                    ? testModeRecipient
+                    : contacts.map(c => ({ email: c.email, name: c.name }));
 
-            const result = await sendBulkEmail({
-                to: emailRecipients,
-                subject,
-                html: message.replace(/\n/g, '<br>')
-            });
+                const result = await sendBulkEmail({
+                    to: emailRecipients,
+                    subject: subjectWithTestPrefix,
+                    html: message.replace(/\n/g, '<br>')
+                });
 
                 if (result.success) {
                     successCount = emailRecipients.length;
                 } else {
-                return { success: false, message: result.error || 'Failed to send emails' };
+                    return { success: false, message: result.error || 'Failed to send emails' };
                 }
             }
 
@@ -512,9 +510,16 @@ export const actions: Actions = {
                 }
             });
 
+            const successMessage = recipientType === 'students_attending'
+                ? (testMode
+                    ? `Test mode: sent ${successCount} email(s) to admin@jobcamp.org (1 per position). No companies were emailed.`
+                    : `Successfully sent ${successCount} email(s) (1 per position) to position contact(s).`)
+                : (testMode
+                    ? `Test mode: sent ${successCount} email(s) to admin@jobcamp.org. No companies were emailed.`
+                    : `Successfully sent email to ${successCount} company contact(s)`);
             return {
                 success: true,
-                message: `Successfully sent email to ${successCount} company contact(s)`
+                message: successMessage
             };
         } catch (error) {
             console.error('Error sending company message:', error);
@@ -541,7 +546,7 @@ export const actions: Actions = {
             const group = formData.get('group')?.toString();
 
             if (group === 'students_attending') {
-                const template = `Dear {host_name},\n\n{student_list}\nJobCamp Team\nadmin@jobcamp.org`;
+                const template = `Dear {contact_name},\n\n{student_list}\nJobCamp Team\nadmin@jobcamp.org`;
                 return { success: true, data: template };
             }
 

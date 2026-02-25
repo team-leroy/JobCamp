@@ -660,38 +660,28 @@ export async function getCompanyRecipientsByGroup(schoolId: string, group: strin
     }
 
     case 'students_attending': {
-      const companies = await prisma.company.findMany({
+      // One email per position, to position contact only (no hosts)
+      const positions = await prisma.position.findMany({
         where: {
-          schoolId,
-          hosts: {
-            some: {
-              positions: {
-                some: {
-                  eventId: activeEvent.id,
-                  lotteryAssignments: { some: {} }
-                }
-              }
-            }
-          }
+          eventId: activeEvent.id,
+          host: { company: { schoolId } },
+          lotteryAssignments: { some: {} }
         },
         include: {
-          hosts: {
-            include: {
-              user: { select: { email: true } },
-              positions: {
-                where: { 
-                  eventId: activeEvent.id,
-                  lotteryAssignments: { some: {} }
-                }
-              }
-            }
-          }
+          host: { include: { company: { select: { id: true, companyName: true } } } }
         }
       });
-
-      companies.forEach(company => {
-        const positions = company.hosts.flatMap(h => h.positions);
-        addCompanyContacts(company, positions);
+      positions.forEach((pos) => {
+        if (pos.contact_email && !emailSet.has(pos.contact_email)) {
+          emailSet.add(pos.contact_email);
+          contacts.push({
+            email: pos.contact_email,
+            name: pos.contact_name,
+            companyName: pos.host.company?.companyName ?? 'Unknown',
+            type: "host_contact",
+            companyId: pos.host.company?.id
+          });
+        }
       });
       break;
     }

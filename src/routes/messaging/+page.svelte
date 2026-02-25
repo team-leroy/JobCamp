@@ -30,6 +30,8 @@
     success?: boolean;
     message?: string;
     count?: number;
+    companyCount?: number;
+    positionCount?: number;
     preview?: Array<{ name: string; email?: string; phone?: string }>;
     data?: string;
   }
@@ -67,6 +69,7 @@
   let companyMessage = $state("");
   let companyPreviewData = $state<FormResult | null>(null);
   let lastLoadedCompanyGroup = $state("");
+  let companyTestMode = $state(false);
 
   const studentRecipientOptions = [
     { value: "all_students", label: "All Students with Accounts" },
@@ -572,7 +575,7 @@
                 <div class="p-3 bg-purple-50 rounded-md text-xs border border-purple-200">
                   <p class="font-medium text-purple-800">Mail Merge Template:</p>
                   <p class="mt-1">
-                    The tags <code>&#123;host_name&#125;</code>, <code>&#123;event_date&#125;</code>, <code>&#123;num_students&#125;</code>, and <code>&#123;student_list&#125;</code> will be automatically replaced for each company.
+                    The tags <code>&#123;contact_name&#125;</code>, <code>&#123;event_date&#125;</code>, <code>&#123;num_students&#125;</code>, and <code>&#123;student_list&#125;</code> will be automatically replaced for each position.
                   </p>
                 </div>
               {/if}
@@ -598,6 +601,20 @@
                   rows={10}
                   placeholder="Email message..."
                 />
+              </div>
+
+              <div class="flex items-center gap-2 p-3 bg-amber-50 rounded-md border border-amber-200">
+                <input
+                  type="checkbox"
+                  id="company-test-mode"
+                  name="testMode"
+                  value="true"
+                  bind:checked={companyTestMode}
+                  class="h-4 w-4 rounded"
+                />
+                <Label for="company-test-mode" class="text-sm font-medium text-amber-900 cursor-pointer">
+                  Test mode: send only to admin@jobcamp.org (one email per company; no companies receive email)
+                </Label>
               </div>
 
               <!-- Preview Recipients Button -->
@@ -627,7 +644,15 @@
                 <div class="mt-4 p-4 bg-gray-50 rounded-lg">
                   <p class="font-medium">
                     Will send to {companyPreviewData.count} recipient(s)
+                    {#if companyPreviewData.positionCount !== undefined}
+                      <span class="text-gray-600 font-normal">(1 email per position × {companyPreviewData.positionCount} positions)</span>
+                    {/if}
                   </p>
+                  {#if companyRecipientType === "students_attending"}
+                    <p class="text-xs text-gray-500 mt-1">
+                      Each position gets one email to its position contact only, listing the students assigned to that position.
+                    </p>
+                  {/if}
                   {#if companyPreviewData.preview && companyPreviewData.preview.length > 0}
                     <div class="mt-2 text-sm text-gray-600">
                       <p class="font-medium">Recipients:</p>
