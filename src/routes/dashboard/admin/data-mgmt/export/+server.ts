@@ -657,97 +657,105 @@ async function exportPositions(schoolIds: string[], url: URL) {
     });
 }
 
+function escapeCsv(s: string): string {
+    const quoted = s.replace(/"/g, '""');
+    return `"${quoted}"`;
+}
+
 async function exportLotteryResults(schoolIds: string[], activeEvent: { id: string; date: Date }) {
-    // Find the most recent lottery job for this event
+    // Find the most recent lottery job for this event (may be null if no lottery run yet)
     const latestJob = await prisma.lotteryJob.findFirst({
-        where: { 
+        where: {
             status: 'COMPLETED',
             eventId: activeEvent.id
         },
         orderBy: { completedAt: 'desc' }
     });
 
-    if (!latestJob) {
-        return new Response("No completed lottery found for the active event", { status: 404 });
-    }
-
-    // Get all results for this job
-    const results = await prisma.lotteryResults.findMany({
-        where: {
-            lotteryJobId: latestJob.id
-        },
-        include: {
-            student: {
-                include: {
-                    positionsSignedUpFor: {
-                        where: {
-                            position: {
-                                eventId: activeEvent.id
-                            }
-                        },
-                        orderBy: { rank: 'asc' }
+    // Map studentId -> assigned position string "Company - Position" for latest job
+    const assignmentByStudentId = new Map<string, string>();
+    if (latestJob) {
+        const results = await prisma.lotteryResults.findMany({
+            where: { lotteryJobId: latestJob.id },
+            include: {
+                position: {
+                    include: {
+                        host: { include: { company: true } }
                     }
                 }
+            }
+        });
+        for (const r of results) {
+            const company = r.position.host?.company?.companyName ?? 'Unknown';
+            assignmentByStudentId.set(r.studentId, `${company} - ${r.position.title}`);
+        }
+    }
+
+    // All students who made at least one pick for this event (same school filter as lottery page)
+    const students = await prisma.student.findMany({
+        where: {
+            schoolId: { in: schoolIds },
+            positionsSignedUpFor: {
+                some: {
+                    position: { eventId: activeEvent.id }
+                }
             },
-            position: {
+            user: {
+                OR: [
+                    { role: null },
+                    { role: { not: 'INTERNAL_TESTER' } }
+                ]
+            }
+        },
+        include: {
+            positionsSignedUpFor: {
+                where: { position: { eventId: activeEvent.id } },
+                orderBy: { rank: 'asc' },
                 include: {
-                    host: {
+                    position: {
                         include: {
-                            company: true
+                            host: { include: { company: true } }
                         }
                     }
                 }
             }
-        }
+        },
+        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
     });
 
-    // Format for CSV
-    const csvData = results.map(result => {
-        const grade = result.student.graduatingClassYear 
-            ? getCurrentGrade(result.student.graduatingClassYear, activeEvent.date)
+    if (students.length === 0) {
+        return new Response("No students with picks found for the active event", { status: 404 });
+    }
+
+    const maxChoices = Math.max(1, ...students.map(s => s.positionsSignedUpFor.length));
+    const choiceHeaders = Array.from({ length: maxChoices }, (_, i) => [`Choice ${i + 1} Company`, `Choice ${i + 1} Position`]).flat();
+    const headers = ['First Name', 'Last Name', 'Grade', 'Assigned', ...choiceHeaders];
+
+    const csvRows = students.map(student => {
+        const grade = student.graduatingClassYear
+            ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
             : 'N/A';
-
-        // Find the rank of this position in the student's favorites
-        const favoriteRecord = result.student.positionsSignedUpFor?.find(p => p.positionId === result.positionId);
-        const rank = favoriteRecord ? (favoriteRecord.rank + 1).toString() : 'Manual';
-
-        return {
-            firstName: result.student.firstName,
-            lastName: result.student.lastName,
-            grade: grade,
-            choice: rank,
-            company: result.position.host.company?.companyName || 'Unknown',
-            position: result.position.title,
-            contactName: result.position.contact_name,
-            contactEmail: result.position.contact_email,
-            address: result.position.address
-        };
+        const assigned = assignmentByStudentId.get(student.id) ?? 'Not assigned';
+        const choices = student.positionsSignedUpFor;
+        const row: string[] = [
+            escapeCsv(student.firstName),
+            escapeCsv(student.lastName),
+            String(grade),
+            escapeCsv(assigned)
+        ];
+        for (let i = 0; i < maxChoices; i++) {
+            const c = choices[i];
+            if (c) {
+                const company = c.position.host?.company?.companyName ?? 'Unknown';
+                row.push(escapeCsv(company), escapeCsv(c.position.title));
+            } else {
+                row.push('', '');
+            }
+        }
+        return row.join(',');
     });
 
-    // Sort by company then last name
-    csvData.sort((a, b) => 
-        a.company.localeCompare(b.company) || 
-        a.lastName.localeCompare(b.lastName)
-    );
-
-    // Generate CSV
-    const headers = ['First Name', 'Last Name', 'Grade', 'Choice', 'Company', 'Position', 'Contact Name', 'Contact Email', 'Address'];
-    const csvRows = [
-        headers.join(','),
-        ...csvData.map(row => [
-            `"${row.firstName}"`,
-            `"${row.lastName}"`,
-            row.grade,
-            `"${row.choice}"`,
-            `"${row.company}"`,
-            `"${row.position}"`,
-            `"${row.contactName}"`,
-            `"${row.contactEmail}"`,
-            `"${row.address.replace(/"/g, '""')}"`
-        ].join(','))
-    ];
-
-    const csvContent = csvRows.join('\n');
+    const csvContent = [headers.join(','), ...csvRows].join('\n');
 
     return new Response(csvContent, {
         headers: {
