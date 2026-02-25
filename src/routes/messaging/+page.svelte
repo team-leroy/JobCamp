@@ -73,13 +73,9 @@
 
   const studentRecipientOptions = [
     { value: "all_students", label: "All Students with Accounts" },
-    {
-      value: "incomplete_permission_slip",
-      label: "Students - Incomplete Permission Slip",
-    },
-    { value: "no_job_picks", label: "Students - No Job Picks" },
-    { value: "few_picks", label: "Students - Fewer Than 3 Picks" },
-    { value: "few_slots", label: "Students - Total Slots < 5" },
+    { value: "email_unverified", label: "Email unverified" },
+    { value: "email_verified_no_permission_slip", label: "Email verified, no permission slip" },
+    { value: "permission_slip_complete_no_picks", label: "Permission slip complete, no picks" },
   ];
 
   const companyRecipientOptions = [

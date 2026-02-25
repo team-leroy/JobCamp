@@ -7,10 +7,9 @@ import { sendBulkEmail } from '$lib/server/sendgrid';
 import { sendBulkSMS } from '$lib/server/twilio';
 import {
     getAllStudents,
-    getStudentsWithIncompletePermissionSlip,
-    getStudentsWithNoJobPicks,
-    getStudentsWithFewPicks,
-    getStudentsWithFewSlots,
+    getStudentsEmailUnverified,
+    getStudentsEmailVerifiedNoPermissionSlip,
+    getStudentsPermissionSlipCompleteNoPicks,
     getStudentsAssignedInLottery,
     getStudentsUnassignedInLottery,
     getCompanyRecipientsByGroup,
@@ -126,17 +125,14 @@ export const actions: Actions = {
                 case 'all_students':
                     recipients = await getAllStudents(schoolId);
                     break;
-                case 'incomplete_permission_slip':
-                    recipients = await getStudentsWithIncompletePermissionSlip(schoolId);
+                case 'email_unverified':
+                    recipients = await getStudentsEmailUnverified(schoolId);
                     break;
-                case 'no_job_picks':
-                    recipients = await getStudentsWithNoJobPicks(schoolId);
+                case 'email_verified_no_permission_slip':
+                    recipients = await getStudentsEmailVerifiedNoPermissionSlip(schoolId);
                     break;
-                case 'few_picks':
-                    recipients = await getStudentsWithFewPicks(schoolId, 3);
-                    break;
-                case 'few_slots':
-                    recipients = await getStudentsWithFewSlots(schoolId, 5);
+                case 'permission_slip_complete_no_picks':
+                    recipients = await getStudentsPermissionSlipCompleteNoPicks(schoolId);
                     break;
                 case 'lottery_assigned':
                     recipients = await getStudentsAssignedInLottery(schoolId);
@@ -241,17 +237,20 @@ export const actions: Actions = {
                 case 'all_students':
                     students = await getAllStudents(schoolId);
                     break;
-                case 'incomplete_permission_slip':
-                    students = await getStudentsWithIncompletePermissionSlip(schoolId);
+                case 'email_unverified':
+                    students = await getStudentsEmailUnverified(schoolId);
                     break;
-                case 'no_job_picks':
-                    students = await getStudentsWithNoJobPicks(schoolId);
+                case 'email_verified_no_permission_slip':
+                    students = await getStudentsEmailVerifiedNoPermissionSlip(schoolId);
                     break;
-                case 'few_picks':
-                    students = await getStudentsWithFewPicks(schoolId, 3);
+                case 'permission_slip_complete_no_picks':
+                    students = await getStudentsPermissionSlipCompleteNoPicks(schoolId);
                     break;
-                case 'few_slots':
-                    students = await getStudentsWithFewSlots(schoolId, 5);
+                case 'lottery_assigned':
+                    students = await getStudentsAssignedInLottery(schoolId);
+                    break;
+                case 'lottery_unassigned':
+                    students = await getStudentsUnassignedInLottery(schoolId);
                     break;
                 default:
                     return { success: false, message: 'Invalid recipient type' };
@@ -322,10 +321,9 @@ export const actions: Actions = {
 
             const recipientTypeMapping: Record<string, string> = {
                 'all_students': 'STUDENTS',
-                'incomplete_permission_slip': 'STUDENTS_INCOMPLETE_PERMISSION_SLIP',
-                'no_job_picks': 'STUDENTS_NO_PICKS',
-                'few_picks': 'STUDENTS_FEW_PICKS',
-                'few_slots': 'STUDENTS_FEW_SLOTS',
+                'email_unverified': 'STUDENTS_EMAIL_UNVERIFIED',
+                'email_verified_no_permission_slip': 'STUDENTS_EMAIL_VERIFIED_NO_PERMISSION_SLIP',
+                'permission_slip_complete_no_picks': 'STUDENTS_PERMISSION_SLIP_COMPLETE_NO_PICKS',
                 'lottery_assigned': 'POST_LOTTERY_ASSIGNED',
                 'lottery_unassigned': 'POST_LOTTERY_UNASSIGNED'
             };

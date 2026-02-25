@@ -39,7 +39,7 @@ export interface RecipientPreview {
 }
 
 /**
- * Get all students with accounts for the active event
+ * Get all students with accounts who have participated (logged in) for the active event
  */
 export async function getAllStudents(schoolId: string): Promise<StudentRecipient[]> {
   const activeEvent = await prisma.event.findFirst({
@@ -56,7 +56,12 @@ export async function getAllStudents(schoolId: string): Promise<StudentRecipient
   const students = await prisma.student.findMany({
     where: {
       schoolId,
-      isActive: true
+      isActive: true,
+      eventParticipation: {
+        some: {
+          eventId: activeEvent.id
+        }
+      }
     },
     include: {
       user: {
@@ -67,10 +72,102 @@ export async function getAllStudents(schoolId: string): Promise<StudentRecipient
     }
   });
 
-  // Filter out students without user accounts to prevent crashes
   const studentsWithAccounts = students.filter(s => s.user !== null);
 
   return studentsWithAccounts.map(s => ({
+    id: s.id,
+    firstName: s.firstName,
+    lastName: s.lastName,
+    email: s.user!.email,
+    phone: s.phone,
+    parentEmail: s.parentEmail
+  }));
+}
+
+/**
+ * Students who have event participation but have not verified their email
+ */
+export async function getStudentsEmailUnverified(schoolId: string): Promise<StudentRecipient[]> {
+  const activeEvent = await prisma.event.findFirst({
+    where: { schoolId, isActive: true }
+  });
+  if (!activeEvent) return [];
+
+  const students = await prisma.student.findMany({
+    where: {
+      schoolId,
+      isActive: true,
+      eventParticipation: { some: { eventId: activeEvent.id } },
+      user: { emailVerified: false }
+    },
+    include: { user: { select: { email: true } } }
+  });
+
+  return students.filter(s => s.user).map(s => ({
+    id: s.id,
+    firstName: s.firstName,
+    lastName: s.lastName,
+    email: s.user!.email,
+    phone: s.phone,
+    parentEmail: s.parentEmail
+  }));
+}
+
+/**
+ * Students who have verified email but have no permission slip for the active event
+ */
+export async function getStudentsEmailVerifiedNoPermissionSlip(schoolId: string): Promise<StudentRecipient[]> {
+  const activeEvent = await prisma.event.findFirst({
+    where: { schoolId, isActive: true }
+  });
+  if (!activeEvent) return [];
+
+  const students = await prisma.student.findMany({
+    where: {
+      schoolId,
+      isActive: true,
+      eventParticipation: { some: { eventId: activeEvent.id } },
+      user: { emailVerified: true },
+      permissionSlips: { none: { eventId: activeEvent.id } }
+    },
+    include: { user: { select: { email: true } } }
+  });
+
+  return students.filter(s => s.user).map(s => ({
+    id: s.id,
+    firstName: s.firstName,
+    lastName: s.lastName,
+    email: s.user!.email,
+    phone: s.phone,
+    parentEmail: s.parentEmail
+  }));
+}
+
+/**
+ * Students who have completed permission slip for the active event but have no position picks
+ */
+export async function getStudentsPermissionSlipCompleteNoPicks(schoolId: string): Promise<StudentRecipient[]> {
+  const activeEvent = await prisma.event.findFirst({
+    where: { schoolId, isActive: true }
+  });
+  if (!activeEvent) return [];
+
+  const students = await prisma.student.findMany({
+    where: {
+      schoolId,
+      isActive: true,
+      eventParticipation: { some: { eventId: activeEvent.id } },
+      permissionSlips: { some: { eventId: activeEvent.id } },
+      positionsSignedUpFor: {
+        none: {
+          position: { eventId: activeEvent.id }
+        }
+      }
+    },
+    include: { user: { select: { email: true } } }
+  });
+
+  return students.filter(s => s.user).map(s => ({
     id: s.id,
     firstName: s.firstName,
     lastName: s.lastName,
