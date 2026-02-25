@@ -178,6 +178,41 @@ export async function getStudentsPermissionSlipCompleteNoPicks(schoolId: string)
 }
 
 /**
+ * Students who have made at least one job pick for the active event (email verified, permission slip complete)
+ */
+export async function getStudentsWithPicks(schoolId: string): Promise<StudentRecipient[]> {
+  const activeEvent = await prisma.event.findFirst({
+    where: { schoolId, isActive: true }
+  });
+  if (!activeEvent) return [];
+
+  const students = await prisma.student.findMany({
+    where: {
+      schoolId,
+      isActive: true,
+      eventParticipation: { some: { eventId: activeEvent.id } },
+      user: { emailVerified: true },
+      permissionSlips: { some: { eventId: activeEvent.id } },
+      positionsSignedUpFor: {
+        some: {
+          position: { eventId: activeEvent.id }
+        }
+      }
+    },
+    include: { user: { select: { email: true } } }
+  });
+
+  return students.filter(s => s.user).map(s => ({
+    id: s.id,
+    firstName: s.firstName,
+    lastName: s.lastName,
+    email: s.user!.email,
+    phone: s.phone,
+    parentEmail: s.parentEmail
+  }));
+}
+
+/**
  * Get students with incomplete permission slips
  */
 export async function getStudentsWithIncompletePermissionSlip(schoolId: string): Promise<StudentRecipient[]> {

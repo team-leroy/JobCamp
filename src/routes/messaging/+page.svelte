@@ -76,6 +76,7 @@
     { value: "email_unverified", label: "Email unverified" },
     { value: "email_verified_no_permission_slip", label: "Email verified, no permission slip" },
     { value: "permission_slip_complete_no_picks", label: "Permission slip complete, no picks" },
+    { value: "with_picks", label: "Students with existing picks" },
   ];
 
   const companyRecipientOptions = [

@@ -10,6 +10,7 @@ import {
     getStudentsEmailUnverified,
     getStudentsEmailVerifiedNoPermissionSlip,
     getStudentsPermissionSlipCompleteNoPicks,
+    getStudentsWithPicks,
     getStudentsAssignedInLottery,
     getStudentsUnassignedInLottery,
     getCompanyRecipientsByGroup,
@@ -134,6 +135,9 @@ export const actions: Actions = {
                 case 'permission_slip_complete_no_picks':
                     recipients = await getStudentsPermissionSlipCompleteNoPicks(schoolId);
                     break;
+                case 'with_picks':
+                    recipients = await getStudentsWithPicks(schoolId);
+                    break;
                 case 'lottery_assigned':
                     recipients = await getStudentsAssignedInLottery(schoolId);
                     break;
@@ -246,6 +250,9 @@ export const actions: Actions = {
                 case 'permission_slip_complete_no_picks':
                     students = await getStudentsPermissionSlipCompleteNoPicks(schoolId);
                     break;
+                case 'with_picks':
+                    students = await getStudentsWithPicks(schoolId);
+                    break;
                 case 'lottery_assigned':
                     students = await getStudentsAssignedInLottery(schoolId);
                     break;
@@ -324,6 +331,7 @@ export const actions: Actions = {
                 'email_unverified': 'STUDENTS_EMAIL_UNVERIFIED',
                 'email_verified_no_permission_slip': 'STUDENTS_EMAIL_VERIFIED_NO_PERMISSION_SLIP',
                 'permission_slip_complete_no_picks': 'STUDENTS_PERMISSION_SLIP_COMPLETE_NO_PICKS',
+                'with_picks': 'STUDENTS_WITH_PICKS',
                 'lottery_assigned': 'POST_LOTTERY_ASSIGNED',
                 'lottery_unassigned': 'POST_LOTTERY_UNASSIGNED'
             };
