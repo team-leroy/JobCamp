@@ -423,7 +423,10 @@ export const actions: Actions = {
             const e = err as Error;
             fetch('http://127.0.0.1:7806/ingest/a0cc51e9-56f8-4cee-817e-1f613d95c3a2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9acb7a'},body:JSON.stringify({sessionId:'9acb7a',location:'+page.server.ts:deletePosition',message:'deletePosition error',data:{name:e?.name,message:e?.message,stack:e?.stack},timestamp:Date.now(),hypothesisId:'catch'})}).catch(()=>{});
             // #endregion
-            console.error('[deletePosition]', e?.message ?? err, e?.stack);
+            const msg = err instanceof Error
+                ? `${err.message}${err.stack ? `\n${err.stack}` : ''}`
+                : (typeof err === 'object' && err !== null ? JSON.stringify(err).slice(0, 500) : String(err));
+            console.error(`[deletePosition] ${msg}`);
             throw err;
         }
     },
