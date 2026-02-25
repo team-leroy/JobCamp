@@ -672,8 +672,9 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
         orderBy: { completedAt: 'desc' }
     });
 
-    // Map studentId -> assigned position string "Company - Position" for latest job
+    // Map studentId -> assigned position string and positionId for latest job
     const assignmentByStudentId = new Map<string, string>();
+    const assignmentPositionIdByStudentId = new Map<string, string>();
     if (latestJob) {
         const results = await prisma.lotteryResults.findMany({
             where: { lotteryJobId: latestJob.id },
@@ -688,6 +689,7 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
         for (const r of results) {
             const company = r.position.host?.company?.companyName ?? 'Unknown';
             assignmentByStudentId.set(r.studentId, `${company} - ${r.position.title}`);
+            assignmentPositionIdByStudentId.set(r.studentId, r.positionId);
         }
     }
 
@@ -729,18 +731,22 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
 
     const maxChoices = Math.max(1, ...students.map(s => s.positionsSignedUpFor.length));
     const choiceHeaders = Array.from({ length: maxChoices }, (_, i) => [`Choice ${i + 1} Company`, `Choice ${i + 1} Position`]).flat();
-    const headers = ['First Name', 'Last Name', 'Grade', 'Assigned', ...choiceHeaders];
+    const headers = ['First Name', 'Last Name', 'Grade', 'Choice Assigned', 'Assigned', ...choiceHeaders];
 
     const csvRows = students.map(student => {
         const grade = student.graduatingClassYear
             ? getCurrentGrade(student.graduatingClassYear, activeEvent.date)
             : 'N/A';
+        const assignedPosId = assignmentPositionIdByStudentId.get(student.id);
+        const choiceIndex = assignedPosId ? student.positionsSignedUpFor.findIndex(p => p.positionId === assignedPosId) : -1;
+        const choiceAssigned = choiceIndex >= 0 ? String(choiceIndex + 1) : '';
         const assigned = assignmentByStudentId.get(student.id) ?? 'Not assigned';
         const choices = student.positionsSignedUpFor;
         const row: string[] = [
             escapeCsv(student.firstName),
             escapeCsv(student.lastName),
             String(grade),
+            choiceAssigned,
             escapeCsv(assigned)
         ];
         for (let i = 0; i < maxChoices; i++) {
