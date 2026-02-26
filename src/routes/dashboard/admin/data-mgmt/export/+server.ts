@@ -61,9 +61,17 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
     const gradeFilter = url.searchParams.get('grade') || 'All';
     const permissionSlipFilter = url.searchParams.get('permissionSlip') || 'All';
     const lotteryStatusFilter = url.searchParams.get('lotteryStatus') || 'All';
+    const assignmentSourceFilter = url.searchParams.get('assignmentSource') || 'All';
     const emailVerifiedFilter = url.searchParams.get('emailVerified') || 'All';
     const eventIdFilter = url.searchParams.get('eventId') || 'All';
     const showTesters = url.searchParams.get('showTesters') === 'true';
+
+    const ASSIGNMENT_SOURCE_WINDOW_MS = 2 * 60 * 1000;
+    function getAssignmentSource(result: { createdAt: Date; lotteryJob: { completedAt: Date | null } }): 'Lottery' | 'First come first serve' {
+        const resultCreated = new Date(result.createdAt).getTime();
+        const jobCompleted = result.lotteryJob.completedAt ? new Date(result.lotteryJob.completedAt).getTime() : 0;
+        return Math.abs(resultCreated - jobCompleted) <= ASSIGNMENT_SOURCE_WINDOW_MS ? 'Lottery' : 'First come first serve';
+    }
 
         // Get students with same logic as load function
         const students = await prisma.student.findMany({
@@ -191,8 +199,11 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
             
             const lotteryResult = lotteryMap.get(student.id);
             const lotteryStatus = lotteryResult ? 'Assigned' : (student.positionsSignedUpFor.length > 0 ? 'Unassigned' : 'No Picks');
-                const matchesLotteryStatus = lotteryStatusFilter === "All" || 
+            const assignmentSource = lotteryResult ? getAssignmentSource(lotteryResult) : null;
+                const matchesLotteryStatus = lotteryStatusFilter === "All" ||
                     lotteryStatus === lotteryStatusFilter;
+                const matchesAssignmentSource = assignmentSourceFilter === "All" ||
+                    assignmentSource === assignmentSourceFilter;
                 
                 const matchesEmailVerified = emailVerifiedFilter === "All" || 
                     (emailVerifiedFilter === "Verified" && student.user?.emailVerified) || 
@@ -203,7 +214,7 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
 
                 const matchesTester = showTesters || student.user?.role !== 'INTERNAL_TESTER';
 
-                return matchesLastName && matchesGrade && matchesPermissionSlip && matchesLotteryStatus && matchesEmailVerified && matchesEvent && matchesTester;
+                return matchesLastName && matchesGrade && matchesPermissionSlip && matchesLotteryStatus && matchesAssignmentSource && matchesEmailVerified && matchesEvent && matchesTester;
             }).map(student => {
             const permissionSlip = student.permissionSlips[0];
             const lotteryResult = lotteryMap.get(student.id);
@@ -216,6 +227,7 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
             const hasSlip = !!permissionSlip;
             const slipCode = student.userId ? slipCodeMap.get(student.userId) : null;
             const permissionSlipStatus = hasSlip ? 'Complete' : (slipCode ? 'Pending' : 'Not Started');
+            const assignmentSource = lotteryResult ? getAssignmentSource(lotteryResult) : null;
 
             return {
                 firstName: student.firstName,
@@ -233,12 +245,13 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
                 ).join('; '),
                 lotteryAssignment: lotteryResult 
                     ? `${lotteryResult.position.host.company.companyName} - ${lotteryResult.position.title}`
-                    : 'None'
+                    : 'None',
+                assignmentSource: assignmentSource ?? ''
             };
         });
 
         // Generate CSV
-        const headers = ['First Name', 'Last Name', 'Grade', 'Phone', 'Email', 'Email Verified', 'Parent Email', 'Permission Slip Status', 'Last Login', 'Student Picks', 'Lottery Assignment'];
+        const headers = ['First Name', 'Last Name', 'Grade', 'Phone', 'Email', 'Email Verified', 'Parent Email', 'Permission Slip Status', 'Last Login', 'Student Picks', 'Lottery Assignment', 'Assignment Source'];
         const csvRows = [
             headers.join(','),
             ...filteredStudents.map(student => [
@@ -252,7 +265,8 @@ async function exportStudents(schoolIds: string[], activeEvent: { id: string; da
                 `"${student.permissionSlipStatus}"`,
                 `"${student.lastLogin}"`,
                 `"${student.studentPicks}"`,
-                `"${student.lotteryAssignment}"`
+                `"${student.lotteryAssignment}"`,
+                `"${student.assignmentSource}"`
             ].join(','))
         ];
 

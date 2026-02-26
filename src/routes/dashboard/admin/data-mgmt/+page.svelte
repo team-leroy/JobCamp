@@ -68,6 +68,8 @@
       assignedAt: Date;
     } | null;
     lotteryStatus: string;
+    /** 'Lottery' | 'First come first serve' when assigned; null otherwise */
+    assignmentSource: string | null;
     isInternalTester: boolean;
     eventIds: string[];
   }
@@ -198,6 +200,7 @@
   let gradeFilter = $state("All");
   let permissionSlipFilter = $state("All");
   let lotteryStatusFilter = $state("All");
+  let assignmentSourceFilter = $state("All");
   let emailVerifiedFilter = $state("All");
   let studentEventFilter = $state(data.activeEvent?.id || "All");
 
@@ -247,6 +250,10 @@
         lotteryStatusFilter === "All" ||
         student.lotteryStatus === lotteryStatusFilter;
 
+      const matchesAssignmentSource =
+        assignmentSourceFilter === "All" ||
+        student.assignmentSource === assignmentSourceFilter;
+
       const matchesEmailVerified =
         emailVerifiedFilter === "All" ||
         (emailVerifiedFilter === "Verified" && student.emailVerified) ||
@@ -263,6 +270,7 @@
         matchesGrade &&
         matchesPermissionSlip &&
         matchesLotteryStatus &&
+        matchesAssignmentSource &&
         matchesEmailVerified &&
         matchesEvent &&
         matchesTester
@@ -368,6 +376,7 @@
     void gradeFilter;
     void permissionSlipFilter;
     void lotteryStatusFilter;
+    void assignmentSourceFilter;
     void studentEventFilter;
     studentPage = 1;
   });
@@ -425,6 +434,7 @@
       gradeFilter = "All";
       permissionSlipFilter = "All";
       lotteryStatusFilter = "All";
+      assignmentSourceFilter = "All";
       emailVerifiedFilter = "All";
       studentEventFilter = data.activeEvent?.id || "All";
     } else if (selectedTab === "Company") {
@@ -589,6 +599,17 @@
                 />
 
                 <FilterSelect
+                  label="Assignment Source"
+                  bind:value={assignmentSourceFilter}
+                  placeholder="All"
+                  options={[
+                    { value: "All", label: "All" },
+                    { value: "Lottery", label: "Lottery" },
+                    { value: "First come first serve", label: "First come first serve" },
+                  ]}
+                />
+
+                <FilterSelect
                   label="Email Verified"
                   bind:value={emailVerifiedFilter}
                   placeholder="All"
@@ -636,6 +657,8 @@
                       params.set("permissionSlip", permissionSlipFilter);
                     if (lotteryStatusFilter !== "All")
                       params.set("lotteryStatus", lotteryStatusFilter);
+                    if (assignmentSourceFilter !== "All")
+                      params.set("assignmentSource", assignmentSourceFilter);
                     if (emailVerifiedFilter !== "All")
                       params.set("emailVerified", emailVerifiedFilter);
                     if (studentEventFilter !== "All")
@@ -764,14 +787,14 @@
 
                   <!-- Status Information -->
                   <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4">
-                    {#each [{ status: student.permissionSlipStatus, label: "Permission Slip" }, { status: student.lotteryStatus, label: "Lottery" }] as statusInfo}
-                      {@const Icon = getStatusIcon(statusInfo.status)}
+                    {#each [{ status: student.permissionSlipStatus, label: "Permission Slip" }, { status: student.lotteryStatus + (student.assignmentSource ? ` (${student.assignmentSource})` : ''), label: "Lottery" }] as statusInfo}
+                      {@const Icon = getStatusIcon(student.lotteryStatus)}
                       <div class="flex items-center space-x-2">
                         <Icon
-                          class="h-4 w-4 {getStatusColor(statusInfo.status)}"
+                          class="h-4 w-4 {getStatusColor(student.lotteryStatus)}"
                         />
                         <span
-                          class="text-sm {getStatusColor(statusInfo.status)}"
+                          class="text-sm {getStatusColor(student.lotteryStatus)}"
                         >
                           {statusInfo.label}: {statusInfo.status}
                         </span>
@@ -880,6 +903,11 @@
                                   student.lotteryAssignment.assignedAt,
                                 )}
                               </p>
+                              {#if student.assignmentSource}
+                                <p class="text-sm text-gray-600">
+                                  Source: {student.assignmentSource}
+                                </p>
+                              {/if}
                             </div>
                           </div>
                         </div>

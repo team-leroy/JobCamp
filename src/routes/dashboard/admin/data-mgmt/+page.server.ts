@@ -183,6 +183,14 @@ export const load: PageServerLoad = async ({ locals }) => {
         }
     });
 
+    // Heuristic: result created within 2 min of job completion = Lottery; else First come first serve (scramble)
+    const ASSIGNMENT_SOURCE_WINDOW_MS = 2 * 60 * 1000;
+    function getAssignmentSource(result: { createdAt: Date; lotteryJob: { completedAt: Date | null } }): 'Lottery' | 'First come first serve' {
+        const resultCreated = new Date(result.createdAt).getTime();
+        const jobCompleted = result.lotteryJob.completedAt ? new Date(result.lotteryJob.completedAt).getTime() : 0;
+        return Math.abs(resultCreated - jobCompleted) <= ASSIGNMENT_SOURCE_WINDOW_MS ? 'Lottery' : 'First come first serve';
+    }
+
     // Transform student data for the UI
     // Convert graduatingClassYear to grade for display
     const transformedStudents = students.map(student => {
@@ -231,6 +239,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                 assignedAt: lotteryResult.lotteryJob.completedAt ? new Date(lotteryResult.lotteryJob.completedAt).toISOString() : null
             } : null,
             lotteryStatus: lotteryResult ? 'Assigned' : (student.positionsSignedUpFor.length > 0 ? 'Unassigned' : 'No Picks'),
+            assignmentSource: lotteryResult ? getAssignmentSource(lotteryResult) : null,
             eventIds: student.eventParticipation.map(p => p.eventId)
         };
     }).sort((a, b) => {
