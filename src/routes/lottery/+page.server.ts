@@ -133,10 +133,10 @@ export const load: PageServerLoad = async ({ locals }) => {
     );
 
     // Find unassigned students (students who made choices but didn't get a result in latestJob)
-    let unassignedStudents: Array<{ 
-        id: string, 
-        firstName: string, 
-        lastName: string, 
+    let unassignedStudents: Array<{
+        id: string,
+        firstName: string,
+        lastName: string,
         grade: number | null,
         choices: Array<{
             positionId: string,
@@ -144,11 +144,34 @@ export const load: PageServerLoad = async ({ locals }) => {
             companyName: string,
             slots: number,
             filled: number,
-            rank: number
+            rank: number,
+            /** Oversubscription rate (top-3 choices / slots), consistent with Company Subscription Rates */
+            oversubscriptionRate: number
         }>
     }> = [];
 
     if (activeEvent && latestJob) {
+        // Oversubscription per position using top-3 choices only (same as Company Subscription Rates in visualizations)
+        const eventPositions = await prisma.position.findMany({
+            where: { eventId: activeEvent.id },
+            select: { id: true, slots: true }
+        });
+        const allChoices = await prisma.positionsOnStudents.findMany({
+            where: { positionId: { in: eventPositions.map(p => p.id) } },
+            select: { positionId: true, rank: true }
+        });
+        const top3CountByPosition = new Map<string, number>();
+        for (const c of allChoices) {
+            if (c.rank <= 2) {
+                top3CountByPosition.set(c.positionId, (top3CountByPosition.get(c.positionId) ?? 0) + 1);
+            }
+        }
+        const oversubscriptionByPosition = new Map<string, number>();
+        for (const p of eventPositions) {
+            const top3 = top3CountByPosition.get(p.id) ?? 0;
+            oversubscriptionByPosition.set(p.id, p.slots > 0 ? top3 / p.slots : 0);
+        }
+
         const assignedStudentIds = latestJob.results.map(r => r.studentId);
         const unassignedStudentsRaw = await prisma.student.findMany({
             where: {
@@ -210,7 +233,8 @@ export const load: PageServerLoad = async ({ locals }) => {
                 companyName: choice.position.host.company?.companyName || 'Unknown',
                 slots: choice.position.slots,
                 filled: choice.position.lotteryAssignments.length,
-                rank: choice.rank + 1
+                rank: choice.rank + 1,
+                oversubscriptionRate: oversubscriptionByPosition.get(choice.positionId) ?? 0
             }))
         }));
     }

@@ -35,6 +35,8 @@
       slots: number;
       filled: number;
       rank: number;
+      /** Oversubscription rate (top-3 choices / slots), same as Company Subscription Rates */
+      oversubscriptionRate: number;
     }>;
   }
 
@@ -105,6 +107,9 @@
                           </div>
                           <span class="text-xs font-bold truncate" title={choice.companyName}>{choice.companyName}</span>
                           <span class="text-[10px] text-slate-500 truncate" title={choice.title}>{choice.title}</span>
+                          <p class="text-[10px] mt-1 {choice.oversubscriptionRate > 1 ? 'text-amber-700 font-medium' : 'text-slate-500'}" title="Top 3 choices / slots (same as Company Subscription Rates)">
+                            Subscription rate (top 3): {(choice.oversubscriptionRate * 100).toFixed(0)}%
+                          </p>
                         </div>
                       {/each}
                     </div>
