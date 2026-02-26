@@ -561,7 +561,7 @@ export async function getStudentsUnassignedInLottery(schoolId: string): Promise<
     whereClause.id = { notIn: assignedIds };
   }
 
-  // Get students who made picks but have no lottery result
+  // Get students who made picks but have no lottery result (only those with user accounts)
   const students = await prisma.student.findMany({
     where: whereClause,
     include: {
@@ -573,14 +573,16 @@ export async function getStudentsUnassignedInLottery(schoolId: string): Promise<
     }
   });
 
-  return students.map(s => ({
-    id: s.id,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    email: s.user!.email,
-    phone: s.phone,
-    parentEmail: s.parentEmail
-  }));
+  return students
+    .filter((s): s is typeof s & { user: NonNullable<typeof s.user> } => s.user != null)
+    .map(s => ({
+      id: s.id,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      email: s.user.email,
+      phone: s.phone,
+      parentEmail: s.parentEmail
+    }));
 }
 
 /**

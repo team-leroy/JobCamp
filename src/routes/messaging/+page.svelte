@@ -70,6 +70,8 @@
   let companyPreviewData = $state<FormResult | null>(null);
   let lastLoadedCompanyGroup = $state("");
   let companyTestMode = $state(false);
+  let lotteryAssignedPreviewData = $state<FormResult | null>(null);
+  let lotteryUnassignedPreviewData = $state<FormResult | null>(null);
 
   const studentRecipientOptions = [
     { value: "all_students", label: "All Students with Accounts" },
@@ -110,6 +112,8 @@
     // Reset form when changing tabs
     previewData = null;
     companyPreviewData = null;
+    lotteryAssignedPreviewData = null;
+    lotteryUnassignedPreviewData = null;
   }
 
   async function handlePreview(formElement: HTMLFormElement) {
@@ -202,6 +206,48 @@
     } catch (error) {
       console.error("Error fetching company preview:", error);
       companyPreviewData = null;
+    }
+  }
+
+  async function handleLotteryPreview(formElement: HTMLFormElement) {
+    const formData = new FormData(formElement);
+    const recipientType = formData.get("recipientType")?.toString() || "";
+    try {
+      const response = await fetch("/messaging?/previewRecipients", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "x-sveltekit-action": "true",
+        },
+      });
+      const result = await response.json();
+      if (result.type === "success" && result.data) {
+        const { deserialize } = await import("$app/forms");
+        const deserialized = deserialize(JSON.stringify(result));
+        if (deserialized.type === "success" && deserialized.data) {
+          const actionResult = deserialized.data;
+          if (actionResult.success) {
+            const previewResult: FormResult = {
+              count: actionResult.count as number,
+              preview: (actionResult.preview ?? []) as Array<{ name: string; email?: string; phone?: string }>,
+            };
+            if (recipientType === "lottery_assigned") {
+              lotteryAssignedPreviewData = previewResult;
+              lotteryUnassignedPreviewData = null;
+            } else {
+              lotteryUnassignedPreviewData = previewResult;
+              lotteryAssignedPreviewData = null;
+            }
+            return;
+          }
+        }
+      }
+      if (recipientType === "lottery_assigned") lotteryAssignedPreviewData = null;
+      else lotteryUnassignedPreviewData = null;
+    } catch (error) {
+      console.error("Error fetching lottery preview:", error);
+      lotteryAssignedPreviewData = null;
+      lotteryUnassignedPreviewData = null;
     }
   }
 
@@ -674,12 +720,19 @@
         <Card>
           <CardHeader>
             <CardTitle>Post-Lottery Messages</CardTitle>
+            <p class="text-sm text-gray-600 mt-1">
+              <strong>Assigned</strong> = students who received a position in the lottery run or in the first-come-first-serve phase.
+              <strong> Unassigned</strong> = students who made at least one pick but did not receive a position (only students with accounts who had picks).
+            </p>
           </CardHeader>
           <CardContent>
             <div class="space-y-6">
               <!-- Assigned Students -->
               <div class="border rounded-lg p-4">
                 <h3 class="font-medium mb-3">Students Assigned to Positions</h3>
+                <p class="text-xs text-gray-500 mb-3">
+                  Sends to both lottery-assigned and first-come-first-serve assigned students.
+                </p>
                 <form
                   method="POST"
                   action="?/sendStudentMessage"
@@ -731,13 +784,46 @@
                     </p>
                   </div>
 
-                  <Button type="submit">Send to Assigned Students</Button>
+                  <div class="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onclick={(e: MouseEvent) => {
+                        const form = (e.currentTarget as HTMLElement).closest("form");
+                        if (form) handleLotteryPreview(form);
+                      }}
+                    >
+                      <Eye class="h-4 w-4 mr-2" />
+                      Preview Recipients
+                    </Button>
+                    <Button type="submit">Send to Assigned Students</Button>
+                  </div>
+                  {#if lotteryAssignedPreviewData && lotteryAssignedPreviewData.count !== undefined}
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <p class="font-medium">
+                        Will send to {lotteryAssignedPreviewData.count} recipient(s)
+                      </p>
+                      {#if lotteryAssignedPreviewData.preview && lotteryAssignedPreviewData.preview.length > 0}
+                        <div class="mt-2 text-sm text-gray-600">
+                          <p class="font-medium">Recipients:</p>
+                          <div class="max-h-48 overflow-y-auto space-y-1 mt-1">
+                            {#each lotteryAssignedPreviewData.preview as recipient}
+                              <div>{recipient.name} {#if recipient.email}({recipient.email}){/if}</div>
+                            {/each}
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
                 </form>
               </div>
 
               <!-- Unassigned Students -->
               <div class="border rounded-lg p-4">
                 <h3 class="font-medium mb-3">Students Not Assigned</h3>
+                <p class="text-xs text-gray-500 mb-3">
+                  Sends only to students who made at least one pick but did not receive a position. Does not include students who made no picks. Only students with user accounts (and thus an email) are included.
+                </p>
                 <form
                   method="POST"
                   action="?/sendStudentMessage"
@@ -785,7 +871,37 @@
                     />
                   </div>
 
-                  <Button type="submit">Send to Unassigned Students</Button>
+                  <div class="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onclick={(e: MouseEvent) => {
+                        const form = (e.currentTarget as HTMLElement).closest("form");
+                        if (form) handleLotteryPreview(form);
+                      }}
+                    >
+                      <Eye class="h-4 w-4 mr-2" />
+                      Preview Recipients
+                    </Button>
+                    <Button type="submit">Send to Unassigned Students</Button>
+                  </div>
+                  {#if lotteryUnassignedPreviewData && lotteryUnassignedPreviewData.count !== undefined}
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <p class="font-medium">
+                        Will send to {lotteryUnassignedPreviewData.count} recipient(s)
+                      </p>
+                      {#if lotteryUnassignedPreviewData.preview && lotteryUnassignedPreviewData.preview.length > 0}
+                        <div class="mt-2 text-sm text-gray-600">
+                          <p class="font-medium">Recipients:</p>
+                          <div class="max-h-48 overflow-y-auto space-y-1 mt-1">
+                            {#each lotteryUnassignedPreviewData.preview as recipient}
+                              <div>{recipient.name} {#if recipient.email}({recipient.email}){/if}</div>
+                            {/each}
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
                 </form>
               </div>
             </div>
