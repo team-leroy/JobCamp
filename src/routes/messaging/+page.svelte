@@ -869,7 +869,14 @@
                           <p class="font-medium">Recipients:</p>
                           <div class="max-h-48 overflow-y-auto space-y-1 mt-1">
                             {#each lotteryAssignedPreviewData.preview as recipient}
-                              <div>{recipient.name} {#if recipient.email}({recipient.email}){/if}</div>
+                              <div>
+                                {recipient.name}
+                                {#if lotteryAssignedMessageType === "email"}
+                                  {#if recipient.email}({recipient.email}){/if}
+                                {:else}
+                                  {#if recipient.phone}({recipient.phone}){/if}
+                                {/if}
+                              </div>
                             {/each}
                           </div>
                         </div>
@@ -1002,7 +1009,14 @@
                           <p class="font-medium">Recipients:</p>
                           <div class="max-h-48 overflow-y-auto space-y-1 mt-1">
                             {#each lotteryUnassignedPreviewData.preview as recipient}
-                              <div>{recipient.name} {#if recipient.email}({recipient.email}){/if}</div>
+                              <div>
+                                {recipient.name}
+                                {#if lotteryUnassignedMessageType === "email"}
+                                  {#if recipient.email}({recipient.email}){/if}
+                                {:else}
+                                  {#if recipient.phone}({recipient.phone}){/if}
+                                {/if}
+                              </div>
                             {/each}
                           </div>
                         </div>
