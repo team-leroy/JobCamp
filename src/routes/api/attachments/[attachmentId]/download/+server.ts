@@ -71,19 +71,33 @@ export const GET: RequestHandler = async ({ locals, params }) => {
         }
     }
 
-    // Prefer signed URL when IAM allows (e.g. local dev); otherwise stream from GCS.
-    // Cloud Run's default SA often lacks signBlob, so streaming is the reliable path.
+    // Prefer signed URL when IAM allows; otherwise stream from GCS.
+    // Don't call redirect() inside try - it throws and would be caught, breaking the redirect.
+    let signedUrl: string | null = null;
     try {
-        const signedUrl = await getSignedUrl(attachment.storagePath, 60);
-        redirect(302, signedUrl);
+        signedUrl = await getSignedUrl(attachment.storagePath, 60);
     } catch {
-        // Fallback: stream file through our server (no signBlob required)
-        const file = getFile(attachment.storagePath);
-        const [exists] = await file.exists().catch(() => [false]);
-        if (!exists) {
-            error(404, 'Attachment file not found in storage');
-        }
-        const nodeStream = file.createReadStream();
+        // getSignedUrl failed (e.g. missing signBlob on Cloud Run); will stream below
+    }
+    if (signedUrl) {
+        redirect(302, signedUrl);
+    }
+
+    // Stream file through our server (no signBlob required)
+    const file = getFile(attachment.storagePath);
+    let exists = false;
+    try {
+        [exists] = await file.exists();
+    } catch (err) {
+        console.error('[attachment download] file.exists failed:', err);
+        error(500, 'Storage unavailable');
+    }
+    if (!exists) {
+        error(404, 'Attachment file not found in storage');
+    }
+    let nodeStream;
+    try {
+        nodeStream = file.createReadStream();
         const webStream = Readable.toWeb(nodeStream) as ReadableStream;
         const filename = attachment.fileName.replace(/"/g, '\\"');
         return new Response(webStream, {
@@ -92,6 +106,9 @@ export const GET: RequestHandler = async ({ locals, params }) => {
                 'Content-Type': 'application/octet-stream'
             }
         });
+    } catch (err) {
+        console.error('[attachment download] stream failed:', err);
+        error(500, 'Download failed');
     }
 };
 
