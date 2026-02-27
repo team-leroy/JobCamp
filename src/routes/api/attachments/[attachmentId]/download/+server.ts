@@ -5,7 +5,7 @@ import { getSignedUrl } from '../../../../dashboard/storage';
 
 /**
  * Secure download endpoint for attachments
- * Verifies that the authenticated student is assigned to the position that owns the attachment
+ * Allows: (1) students assigned to the position, or (2) admins of the position's school
  */
 export const GET: RequestHandler = async ({ locals, params }) => {
     // Check authentication
@@ -18,7 +18,7 @@ export const GET: RequestHandler = async ({ locals, params }) => {
         error(400, 'Attachment ID required');
     }
 
-    // Get the attachment with position information
+    // Get the attachment with position and event (for schoolId)
     const attachment = await prisma.attachment.findUnique({
         where: { id: attachmentId },
         include: {
@@ -34,21 +34,39 @@ export const GET: RequestHandler = async ({ locals, params }) => {
         error(404, 'Attachment not found');
     }
 
-    // Check if user is a student
+    const schoolId = attachment.position.event.schoolId;
+
+    // Allow admins of this school to download any position attachment
+    const userWithAdmin = await prisma.user.findUnique({
+        where: { id: locals.user.id },
+        select: { adminOfSchools: { select: { id: true } } }
+    });
+    const isAdminOfSchool = userWithAdmin?.adminOfSchools?.some((s) => s.id === schoolId) ?? false;
+    if (isAdminOfSchool) {
+        // Admin path: generate signed URL and redirect
+        let signedUrl: string;
+        try {
+            signedUrl = await getSignedUrl(attachment.storagePath, 60);
+        } catch (err) {
+            console.error('Error generating signed URL:', err);
+            error(500, 'Failed to generate download link');
+        }
+        redirect(302, signedUrl!);
+    }
+
+    // Student path: must be assigned to this position
     const student = await prisma.student.findFirst({
         where: { userId: locals.user.id }
     });
 
     if (!student) {
-        error(403, 'Only students can download attachments');
+        error(403, 'Only students or school admins can download attachments');
     }
 
-    // Verify that the lottery is published for this event
     if (!attachment.position.event.lotteryPublished) {
         error(403, 'Attachments are only available after the lottery is published');
     }
 
-    // Check if student is assigned to this position via lottery result
     const lotteryJob = await prisma.lotteryJob.findFirst({
         where: { 
             eventId: attachment.position.event.id 

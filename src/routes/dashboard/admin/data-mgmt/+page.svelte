@@ -25,6 +25,7 @@
     XCircle,
     AlertTriangle,
     Briefcase,
+    Download,
   } from "lucide-svelte";
   import StudentEditModal from "./StudentEditModal.svelte";
   import CompanyEditModal from "./CompanyEditModal.svelte";
@@ -1435,14 +1436,15 @@
                                         >
                                         <div class="flex flex-col gap-1">
                                           {#each position.attachments as attachment}
-                                            <div
-                                              class="text-sm text-gray-700 flex items-center gap-2"
+                                            <a
+                                              href="/api/attachments/{attachment.id}/download"
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              class="text-sm flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
                                             >
-                                              <span
-                                                class="w-1.5 h-1.5 rounded-full bg-gray-400"
-                                              ></span>
+                                              <Download class="shrink-0" size={14} />
                                               {attachment.fileName}
-                                            </div>
+                                            </a>
                                           {/each}
                                         </div>
                                       </div>
