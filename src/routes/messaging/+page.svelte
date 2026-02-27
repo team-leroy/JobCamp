@@ -72,6 +72,19 @@
   let companyTestMode = $state(false);
   let lotteryAssignedPreviewData = $state<FormResult | null>(null);
   let lotteryUnassignedPreviewData = $state<FormResult | null>(null);
+  let lotteryAssignedMessageType = $state<'email' | 'sms'>('email');
+  let lotteryAssignedSubject = $state('');
+  let lotteryAssignedMessage = $state('');
+  let lotteryAssignedIncludeParents = $state(false);
+  let lotteryUnassignedMessageType = $state<'email' | 'sms'>('email');
+  let lotteryUnassignedSubject = $state('');
+  let lotteryUnassignedMessage = $state('');
+  let lotteryUnassignedIncludeParents = $state(false);
+
+  const lotteryAssignedSmsCharCount = $derived(lotteryAssignedMessage.length);
+  const lotteryAssignedSmsWarning = $derived(lotteryAssignedSmsCharCount > 160);
+  const lotteryUnassignedSmsCharCount = $derived(lotteryUnassignedMessage.length);
+  const lotteryUnassignedSmsWarning = $derived(lotteryUnassignedSmsCharCount > 160);
 
   const studentRecipientOptions = [
     { value: "all_students", label: "All Students with Accounts" },
@@ -744,44 +757,90 @@
                     name="recipientType"
                     value="lottery_assigned"
                   />
-                  <input type="hidden" name="messageType" value="email" />
-
-                  <div class="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="includeParentsAssigned"
-                      name="includeParents"
-                      value="true"
-                      class="h-4 w-4 rounded"
-                    />
-                    <Label for="includeParentsAssigned"
-                      >Also send to parent emails</Label
-                    >
-                  </div>
+                  <input type="hidden" name="messageType" value={lotteryAssignedMessageType} />
 
                   <div>
-                    <Label for="assigned-subject">Subject</Label>
-                    <Input
-                      id="assigned-subject"
-                      name="subject"
-                      required
-                      placeholder="Congratulations! Your job assignment is ready"
-                    />
+                    <Label>Message Type</Label>
+                    <div class="flex gap-4 mt-1">
+                      <label class="flex items-center">
+                        <input
+                          type="radio"
+                          name="lotteryAssignedMessageType"
+                          value="email"
+                          bind:group={lotteryAssignedMessageType}
+                          class="mr-2"
+                        />
+                        Email
+                      </label>
+                      <label class="flex items-center">
+                        <input
+                          type="radio"
+                          name="lotteryAssignedMessageType"
+                          value="sms"
+                          bind:group={lotteryAssignedMessageType}
+                          class="mr-2"
+                        />
+                        SMS
+                      </label>
+                    </div>
                   </div>
+
+                  {#if lotteryAssignedMessageType === "email"}
+                    <div class="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="includeParentsAssigned"
+                        name="includeParents"
+                        value="true"
+                        bind:checked={lotteryAssignedIncludeParents}
+                        class="h-4 w-4 rounded"
+                      />
+                      <Label for="includeParentsAssigned"
+                        >Also send to parent emails</Label
+                      >
+                    </div>
+                    <div>
+                      <Label for="assigned-subject">Subject</Label>
+                      <Input
+                        id="assigned-subject"
+                        name="subject"
+                        required
+                        bind:value={lotteryAssignedSubject}
+                        placeholder="Congratulations! Your job assignment is ready"
+                      />
+                    </div>
+                  {:else}
+                    <input type="hidden" name="subject" value="" />
+                    <p class="text-xs text-gray-500">SMS will be sent to student phone numbers only.</p>
+                  {/if}
 
                   <div>
                     <Label for="assigned-message">Message</Label>
+                    {#if lotteryAssignedMessageType === "sms"}
+                      <span
+                        class="text-xs ml-2 {lotteryAssignedSmsWarning
+                          ? 'text-red-600'
+                          : 'text-gray-500'}"
+                      >
+                        ({lotteryAssignedSmsCharCount}/160 characters)
+                      </span>
+                    {/if}
                     <Textarea
                       id="assigned-message"
                       name="message"
                       required
-                      rows={6}
-                      placeholder="Message for students who were assigned..."
+                      bind:value={lotteryAssignedMessage}
+                      rows={lotteryAssignedMessageType === "sms" ? 4 : 6}
+                      placeholder={lotteryAssignedMessageType === "sms"
+                        ? "SMS message (keep under 160 characters)..."
+                        : "Message for students who were assigned..."}
                     />
-                    <p class="text-xs text-gray-500 mt-1">
-                      You can include position details manually or students can
-                      view them on their dashboard
-                    </p>
+                    {#if lotteryAssignedMessageType === "email"}
+                      <p class="text-xs text-gray-500 mt-1">
+                        You can include position details manually or students can
+                        view them on their dashboard
+                      </p>
+                    {/if}
                   </div>
 
                   <div class="flex gap-2">
@@ -796,7 +855,9 @@
                       <Eye class="h-4 w-4 mr-2" />
                       Preview Recipients
                     </Button>
-                    <Button type="submit">Send to Assigned Students</Button>
+                    <Button type="submit">
+                      {lotteryAssignedMessageType === "email" ? "Send Email to Assigned Students" : "Send SMS to Assigned Students"}
+                    </Button>
                   </div>
                   {#if lotteryAssignedPreviewData && lotteryAssignedPreviewData.count !== undefined}
                     <div class="mt-4 p-4 bg-gray-50 rounded-lg">
@@ -835,39 +896,83 @@
                     name="recipientType"
                     value="lottery_unassigned"
                   />
-                  <input type="hidden" name="messageType" value="email" />
-
-                  <div class="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="includeParentsUnassigned"
-                      name="includeParents"
-                      value="true"
-                      class="h-4 w-4 rounded"
-                    />
-                    <Label for="includeParentsUnassigned"
-                      >Also send to parent emails</Label
-                    >
-                  </div>
+                  <input type="hidden" name="messageType" value={lotteryUnassignedMessageType} />
 
                   <div>
-                    <Label for="unassigned-subject">Subject</Label>
-                    <Input
-                      id="unassigned-subject"
-                      name="subject"
-                      required
-                      placeholder="Job Shadow Day - Available Positions"
-                    />
+                    <Label>Message Type</Label>
+                    <div class="flex gap-4 mt-1">
+                      <label class="flex items-center">
+                        <input
+                          type="radio"
+                          name="lotteryUnassignedMessageType"
+                          value="email"
+                          bind:group={lotteryUnassignedMessageType}
+                          class="mr-2"
+                        />
+                        Email
+                      </label>
+                      <label class="flex items-center">
+                        <input
+                          type="radio"
+                          name="lotteryUnassignedMessageType"
+                          value="sms"
+                          bind:group={lotteryUnassignedMessageType}
+                          class="mr-2"
+                        />
+                        SMS
+                      </label>
+                    </div>
                   </div>
+
+                  {#if lotteryUnassignedMessageType === "email"}
+                    <div class="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="includeParentsUnassigned"
+                        name="includeParents"
+                        value="true"
+                        bind:checked={lotteryUnassignedIncludeParents}
+                        class="h-4 w-4 rounded"
+                      />
+                      <Label for="includeParentsUnassigned"
+                        >Also send to parent emails</Label
+                      >
+                    </div>
+                    <div>
+                      <Label for="unassigned-subject">Subject</Label>
+                      <Input
+                        id="unassigned-subject"
+                        name="subject"
+                        required
+                        bind:value={lotteryUnassignedSubject}
+                        placeholder="Job Shadow Day - Available Positions"
+                      />
+                    </div>
+                  {:else}
+                    <input type="hidden" name="subject" value="" />
+                    <p class="text-xs text-gray-500">SMS will be sent to student phone numbers only.</p>
+                  {/if}
 
                   <div>
                     <Label for="unassigned-message">Message</Label>
+                    {#if lotteryUnassignedMessageType === "sms"}
+                      <span
+                        class="text-xs ml-2 {lotteryUnassignedSmsWarning
+                          ? 'text-red-600'
+                          : 'text-gray-500'}"
+                      >
+                        ({lotteryUnassignedSmsCharCount}/160 characters)
+                      </span>
+                    {/if}
                     <Textarea
                       id="unassigned-message"
                       name="message"
                       required
-                      rows={6}
-                      placeholder="Message for students who were not assigned (e.g., link to available positions)..."
+                      bind:value={lotteryUnassignedMessage}
+                      rows={lotteryUnassignedMessageType === "sms" ? 4 : 6}
+                      placeholder={lotteryUnassignedMessageType === "sms"
+                        ? "SMS message (keep under 160 characters)..."
+                        : "Message for students who were not assigned (e.g., link to available positions)..."}
                     />
                   </div>
 
@@ -883,7 +988,9 @@
                       <Eye class="h-4 w-4 mr-2" />
                       Preview Recipients
                     </Button>
-                    <Button type="submit">Send to Unassigned Students</Button>
+                    <Button type="submit">
+                      {lotteryUnassignedMessageType === "email" ? "Send Email to Unassigned Students" : "Send SMS to Unassigned Students"}
+                    </Button>
                   </div>
                   {#if lotteryUnassignedPreviewData && lotteryUnassignedPreviewData.count !== undefined}
                     <div class="mt-4 p-4 bg-gray-50 rounded-lg">
