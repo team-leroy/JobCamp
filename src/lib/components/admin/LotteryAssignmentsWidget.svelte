@@ -125,34 +125,29 @@
 
   <!-- Current Assignments Table -->
   <Accordion.Item value="assignments" class="bg-white rounded-lg shadow border overflow-hidden">
-    <Accordion.Trigger class="px-6 py-4 hover:bg-slate-50 transition-colors w-full">
-      <div class="flex justify-between items-center w-full pr-6">
-        <div class="flex flex-col items-start text-left">
+    <div class="flex items-center gap-4 px-6 py-4">
+      <Accordion.Trigger class="flex-1 hover:bg-slate-50 transition-colors rounded -m-2 p-2 text-left">
+        <div class="flex flex-col items-start">
           <h2 class="text-xl font-bold">Current Assignments</h2>
           <p class="text-sm text-slate-500 mt-1">
             Review and manage student assignments from the latest lottery and manual claims.
           </p>
         </div>
-        <div class="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onclick={(e) => {
-              e.stopPropagation();
-              downloadCsv();
-            }}
-            disabled={assignments.length === 0}
-            class="flex gap-2 items-center"
-          >
-            <Download size={16} />
-            Export CSV
-          </Button>
-          <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-bold">
-            {assignments.reduce((acc, g) => acc + g.students.length, 0)} Assignments
-          </span>
-        </div>
-      </div>
-    </Accordion.Trigger>
+      </Accordion.Trigger>
+      <Button
+        variant="outline"
+        size="sm"
+        onclick={() => downloadCsv()}
+        disabled={assignments.length === 0}
+        class="flex gap-2 items-center shrink-0"
+      >
+        <Download size={16} />
+        Export CSV
+      </Button>
+      <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-bold shrink-0">
+        {assignments.reduce((acc, g) => acc + g.students.length, 0)} Assignments
+      </span>
+    </div>
     <Accordion.Content class="p-6 border-t">
       {#if assignments.length === 0}
         <div class="text-center py-12 border-2 border-dashed rounded-lg">
