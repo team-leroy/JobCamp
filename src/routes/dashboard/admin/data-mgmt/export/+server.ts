@@ -724,6 +724,7 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
             }
         },
         include: {
+            user: { select: { email: true } },
             positionsSignedUpFor: {
                 where: { position: { eventId: activeEvent.id } },
                 orderBy: { rank: 'asc' },
@@ -745,7 +746,7 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
 
     const maxChoices = Math.max(1, ...students.map(s => s.positionsSignedUpFor.length));
     const choiceHeaders = Array.from({ length: maxChoices }, (_, i) => [`Choice ${i + 1} Company`, `Choice ${i + 1} Position`]).flat();
-    const headers = ['First Name', 'Last Name', 'Grade', 'Choice Assigned', 'Assigned', ...choiceHeaders];
+    const headers = ['First Name', 'Last Name', 'Email', 'Phone', 'Parent Email', 'Grade', 'Choice Assigned', 'Assigned', ...choiceHeaders];
 
     const csvRows = students.map(student => {
         const grade = student.graduatingClassYear
@@ -756,9 +757,13 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
         const choiceAssigned = choiceIndex >= 0 ? String(choiceIndex + 1) : '';
         const assigned = assignmentByStudentId.get(student.id) ?? 'Not assigned';
         const choices = student.positionsSignedUpFor;
+        const email = student.user?.email ?? '';
         const row: string[] = [
             escapeCsv(student.firstName),
             escapeCsv(student.lastName),
+            escapeCsv(email),
+            escapeCsv(student.phone),
+            escapeCsv(student.parentEmail),
             String(grade),
             choiceAssigned,
             escapeCsv(assigned)
