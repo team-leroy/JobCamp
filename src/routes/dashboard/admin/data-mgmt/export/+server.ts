@@ -707,15 +707,22 @@ async function exportLotteryResults(schoolIds: string[], activeEvent: { id: stri
         }
     }
 
-    // All students who made at least one pick for this event (same school filter as lottery page)
+    const assignedStudentIds = new Set(assignmentByStudentId.keys());
+
+    // Students who made at least one pick OR have an assignment in the latest job (include FCFS-only students)
     const students = await prisma.student.findMany({
         where: {
             schoolId: { in: schoolIds },
-            positionsSignedUpFor: {
-                some: {
-                    position: { eventId: activeEvent.id }
-                }
-            },
+            OR: [
+                {
+                    positionsSignedUpFor: {
+                        some: {
+                            position: { eventId: activeEvent.id }
+                        }
+                    }
+                },
+                ...(assignedStudentIds.size > 0 ? [{ id: { in: Array.from(assignedStudentIds) } }] : [])
+            ],
             user: {
                 OR: [
                     { role: null },

@@ -236,7 +236,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                 title: lotteryResult.position.title,
                 companyName: lotteryResult.position.host?.company?.companyName || 'No Company',
                 career: lotteryResult.position.career,
-                assignedAt: lotteryResult.lotteryJob.completedAt ? new Date(lotteryResult.lotteryJob.completedAt).toISOString() : null
+                assignedAt: lotteryResult.createdAt ? new Date(lotteryResult.createdAt).toISOString() : null
             } : null,
             lotteryStatus: lotteryResult ? 'Assigned' : (student.positionsSignedUpFor.length > 0 ? 'Unassigned' : 'No Picks'),
             assignmentSource: lotteryResult ? getAssignmentSource(lotteryResult) : null,
