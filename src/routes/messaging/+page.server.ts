@@ -404,7 +404,7 @@ export const actions: Actions = {
 
             let successCount = 0;
 
-            if (recipientType === 'students_attending' && message.includes('{student_list}')) {
+            if (recipientType === 'students_attending') {
                 // One email per position: to position contact only, content = only students for that position
                 const positionsWithStudents = await prisma.position.findMany({
                     where: {
