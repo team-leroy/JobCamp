@@ -1,3 +1,7 @@
+# DISABLED: Production now uses self-hosted workflow (production-docker.yml).
+# This workflow only runs on branch "cloudrun". To roll back to Cloud Run,
+# push to cloudrun or add "main" back under branches.
+#
 # This workflow build and push a Docker container to Google Artifact Registry
 # and deploy it on Cloud Run when a commit is pushed to the "main"
 # branch.
@@ -32,7 +36,7 @@ name: "Build and Deploy to Cloud Run"
 on:
   push:
     branches:
-      - main
+      - cloudrun
 
 env:
   PROJECT_ID: "deep-voyage-436902-b3"
