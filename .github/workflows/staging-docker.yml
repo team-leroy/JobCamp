@@ -70,8 +70,7 @@ jobs:
     needs: test # Only run if tests pass
 
     permissions:
-      contents: "read"
-      id-token: "write"
+      contents: read
 
     steps:
       - name: "Checkout"
