@@ -87,6 +87,4 @@ jobs:
         run: |-
           DOCKER_TAG_LATEST="ghcr.io/rylero/jobcamp:latest"
           DOCKER_TAG_SHA="ghcr.io/rylero/jobcamp:${{ github.sha }}"
-          docker buildx build -f production.Dockerfile --tag "${DOCKER_TAG_LATEST}" --tag "${DOCKER_TAG_SHA}" .
-          docker push "${DOCKER_TAG_LATEST}"
-          docker push "${DOCKER_TAG_SHA}"
+          docker buildx build -f production.Dockerfile --tag "${DOCKER_TAG_LATEST}" --tag "${DOCKER_TAG_SHA}" --push .
