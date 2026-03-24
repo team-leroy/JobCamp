@@ -87,3 +87,9 @@ jobs:
           DOCKER_TAG_LATEST="ghcr.io/rylero/jobcamp:latest"
           DOCKER_TAG_SHA="ghcr.io/rylero/jobcamp:${{ github.sha }}"
           docker buildx build -f production.Dockerfile --tag "${DOCKER_TAG_LATEST}" --tag "${DOCKER_TAG_SHA}" --push .
+
+      # Prove the image is in GHCR (packages pushed with CR_PAT are often private and may not show on profile Packages list)
+      - name: "Verify image in registry"
+        run: |
+          docker pull ghcr.io/rylero/jobcamp:latest
+          docker image inspect ghcr.io/rylero/jobcamp:latest --format 'Pushed image ID: {{.Id}}'
