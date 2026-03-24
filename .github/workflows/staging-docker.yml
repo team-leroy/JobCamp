@@ -3,8 +3,7 @@ name: "Generate Staging Docker Container"
 on:
   push:
     branches:
-      - main
-      - stage
+      - dev
 
 jobs:
   test:
