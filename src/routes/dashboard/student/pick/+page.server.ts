@@ -11,7 +11,6 @@ export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
         redirect(302, "/login");
     }
-
     const schoolWebAddr = "lghs";
 
     const school = await prisma.school.findFirst({ where: { webAddr: schoolWebAddr } });
@@ -313,7 +312,6 @@ export const actions: Actions = {
     sendPermissionSlip: async({ request, locals }) => {
         const data = await request.formData();
         console.log(data);
-        
         const parentEmail = await data.get("parent-email");
         if (!parentEmail) {
             return { sent: false, err: true };
@@ -421,7 +419,6 @@ export const actions: Actions = {
         if (!studentId) {
             redirect(302, "/login");
         }
-
         // Check permission slip status before allowing selection
         const permissionSlipStatus = await getPermissionSlipStatus(studentId, student.schoolId || "");
         if (!permissionSlipStatus.hasPermissionSlip) {
