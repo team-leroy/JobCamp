@@ -19,7 +19,7 @@ const config = {
       },
     }),
     csrf: {
-      trustedOrigins: []
+      trustedOrigins: ['http://192.168.1.20:34040']
     },
   },
 };
