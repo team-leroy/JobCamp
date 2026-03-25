@@ -37,6 +37,11 @@ RUN npx prisma generate
 # Build the SvelteKit app
 RUN pnpm run build
 
+# Local file storage — mount a persistent volume at /app/uploads
+# docker run ... -v /mnt/<pool>/<dataset>:/app/uploads
+ENV UPLOAD_DIR=/app/uploads
+RUN mkdir -p /app/uploads
+
 # Expose the port for production (e.g. reverse proxy)
 ENV PORT=8080
 ENV BODY_SIZE_LIMIT=20971520

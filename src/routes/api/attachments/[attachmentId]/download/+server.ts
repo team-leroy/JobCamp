@@ -1,13 +1,12 @@
-import { redirect, error } from '@sveltejs/kit';
-import { Readable } from 'node:stream';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { prisma } from '$lib/server/prisma';
-import { getSignedUrl, getFile } from '../../../../dashboard/storage';
+import { getFile } from '../../../../dashboard/storage';
 
 /**
- * Secure download endpoint for attachments
- * Allows: (1) students assigned to the position, or (2) admins of the position's school
- * Streams file from GCS so it works on Cloud Run without signBlob IAM.
+ * Secure download endpoint for attachments.
+ * Allows: (1) students assigned to the position, or (2) admins of the position's school.
+ * Streams file from local storage.
  */
 export const GET: RequestHandler = async ({ locals, params }) => {
     if (!locals.user) {
@@ -71,19 +70,6 @@ export const GET: RequestHandler = async ({ locals, params }) => {
         }
     }
 
-    // Prefer signed URL when IAM allows; otherwise stream from GCS.
-    // Don't call redirect() inside try - it throws and would be caught, breaking the redirect.
-    let signedUrl: string | null = null;
-    try {
-        signedUrl = await getSignedUrl(attachment.storagePath, 60);
-    } catch {
-        // getSignedUrl failed (e.g. missing signBlob on Cloud Run); will stream below
-    }
-    if (signedUrl) {
-        redirect(302, signedUrl);
-    }
-
-    // Stream file through our server (no signBlob required)
     const file = getFile(attachment.storagePath);
     let exists = false;
     try {
@@ -95,10 +81,10 @@ export const GET: RequestHandler = async ({ locals, params }) => {
     if (!exists) {
         error(404, 'Attachment file not found in storage');
     }
-    let nodeStream;
     try {
-        nodeStream = file.createReadStream();
-        const webStream = Readable.toWeb(nodeStream) as ReadableStream;
+        const stream = file.createReadStream();
+        const { Readable } = await import('node:stream');
+        const webStream = Readable.toWeb(stream) as ReadableStream;
         const filename = attachment.fileName.replace(/"/g, '\\"');
         return new Response(webStream, {
             headers: {
@@ -111,4 +97,3 @@ export const GET: RequestHandler = async ({ locals, params }) => {
         error(500, 'Download failed');
     }
 };
-
