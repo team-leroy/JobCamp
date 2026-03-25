@@ -163,7 +163,7 @@
           <div class="text-2xl font-bold text-blue-600">
             {data.stats.totalStudents}
           </div>
-          <div class="text-sm text-gray-600">Total Students</div>
+          <div class="text-sm text-gray-600">Students in Lottery</div>
         </div>
 
         {#if data.stats.firstChoice > 0}
