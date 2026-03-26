@@ -12,6 +12,7 @@
     CardTitle,
   } from "$lib/components/ui/card";
   import type { EventWithStats } from "$lib/server/eventManagement";
+  import { TIMEZONE_OPTIONS } from "$lib/dateUtils";
 
   interface ImportantDate {
     id: string;
@@ -192,6 +193,24 @@
                     required
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
+                </div>
+
+                <div>
+                  <label
+                    for="eventTimezone"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    School Timezone *
+                  </label>
+                  <select
+                    id="eventTimezone"
+                    name="eventTimezone"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    {#each TIMEZONE_OPTIONS as tz}
+                      <option value={tz.value}>{tz.label}</option>
+                    {/each}
+                  </select>
                 </div>
               </div>
 

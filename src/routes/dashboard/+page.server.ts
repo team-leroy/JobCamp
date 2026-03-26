@@ -166,6 +166,7 @@ export const load: PageServerLoad = async ({ locals }) => {
         companySignupsEnabled,
         eventName: activeEvent?.name || "JobCamp",
         eventDate: activeEvent?.date?.toISOString() || null,
+        eventTimezone: activeEvent?.timezone ?? 'UTC',
         hasUnpublishedPositions,
         companyName
     };

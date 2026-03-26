@@ -2,6 +2,7 @@
   import { Switch } from "$lib/components/ui/switch";
   import { Label } from "$lib/components/ui/label";
   import type { EventWithStats } from "$lib/server/eventManagement";
+  import { formatEventDate } from "$lib/dateUtils";
 
   interface Props {
     upcomingEvent?: EventWithStats | null;
@@ -96,12 +97,7 @@
       <p class="text-sm text-blue-700">
         {#if upcomingEvent}
           <strong>Active Event:</strong>
-          {upcomingEvent.name} ({upcomingEvent.date.toLocaleDateString(
-            "en-US",
-            {
-              timeZone: "UTC",
-            },
-          )})
+          {upcomingEvent.name} ({formatEventDate(upcomingEvent.date, upcomingEvent.timezone)})
         {/if}
         <br />
         <strong>Event Controls:</strong> These access controls determine what users

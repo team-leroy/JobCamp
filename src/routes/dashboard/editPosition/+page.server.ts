@@ -201,7 +201,7 @@ export const actions: Actions = {
 
         const eventData: EventEmailData = {
             eventName: position.event.name || 'JobCamp',
-            eventDate: formatEmailDate(position.event.date),
+            eventDate: formatEmailDate(position.event.date, position.event.timezone),
             schoolName: position.event.school.name,
             schoolId: position.event.school.id
         };

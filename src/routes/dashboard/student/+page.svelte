@@ -8,21 +8,16 @@
   import Button from "$lib/components/ui/button/button.svelte";
   import { goto } from "$app/navigation";
   import { formatTimeTo12h } from "$lib/timeUtils";
+  import { formatEventDate } from "$lib/dateUtils";
 
   let { data, form } = $props();
 
   let parentEmail = $state(data.parentEmail);
 
-  // Format date for display
+  const eventTimezone = $derived(data.activeEventTimezone ?? 'UTC');
+
   function formatDate(date: string | Date | null): string {
-    if (!date) return "";
-    return new Date(date).toLocaleDateString("en-US", {
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      timeZone: "UTC",
-    });
+    return formatEventDate(date, eventTimezone);
   }
 
   let positions = $state({ posList: [] as typeof data.positions });

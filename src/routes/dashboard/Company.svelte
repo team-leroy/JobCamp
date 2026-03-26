@@ -7,20 +7,21 @@
   import { enhance } from "$app/forms";
   import { Loader2 } from "lucide-svelte";
   import { formatTimeTo12h } from "$lib/timeUtils";
+  import { formatEventDate } from "$lib/dateUtils";
 
   let { data } = $props();
 
   let deletingPositionId = $state<string | null>(null);
 
-  // Format date for display
+  const eventTimezone = $derived(data.eventTimezone ?? 'UTC');
+
   function formatDate(date: string | Date | null): string {
     if (!date) return "TBD";
-    return new Date(date).toLocaleDateString("en-US", {
+    return formatEventDate(date, eventTimezone, {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-      timeZone: "UTC",
     });
   }
 </script>

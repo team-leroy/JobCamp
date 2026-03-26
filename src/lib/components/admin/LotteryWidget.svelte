@@ -153,7 +153,7 @@
         <h3 class="font-semibold">Lottery Results</h3>
         {#if data.stats.completedAt && data.stats.adminEmail}
           <div class="text-sm text-gray-500">
-            Last run: {new Date(data.stats.completedAt).toLocaleString()} by {data
+            Last run: {new Date(data.stats.completedAt).toLocaleString("en-US")} by {data
               .stats.adminEmail}
           </div>
         {/if}

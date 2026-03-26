@@ -105,7 +105,7 @@ export const load: PageServerLoad = async (event) => {
                 if (!existingSubmission && student.parentEmail) {
                     const eventData: EventEmailData = {
                         eventName: activeEvent.name || 'JobCamp',
-                        eventDate: formatEmailDate(activeEvent.date),
+                        eventDate: formatEmailDate(activeEvent.date, activeEvent.timezone),
                         schoolName: student.school?.name || 'School',
                         schoolId: student.schoolId
                     };

@@ -69,6 +69,7 @@ describe('Event Timestamps', () => {
                     schoolId: mockSchoolId,
                     name: mockEventData.name,
                     date: mockEventData.date,
+                    timezone: 'America/Los_Angeles',
                     displayLotteryResults: mockEventData.displayLotteryResults,
                     isActive: false,
                     isArchived: false,

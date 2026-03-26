@@ -323,6 +323,7 @@ export const actions: Actions = {
             const formData = await request.formData();
             const eventName = formData.get('eventName')?.toString();
             const eventDate = formData.get('eventDate')?.toString();
+            const eventTimezone = formData.get('eventTimezone')?.toString() || 'America/Los_Angeles';
             const carryForwardData = formData.get('carryForwardData') === 'on';
 
             // Validate required fields
@@ -337,11 +338,16 @@ export const actions: Actions = {
             // Create the event (displayLotteryResults removed, defaulting to false)
             // Parse the date as UTC to avoid timezone issues
             const [year, month, day] = eventDate.split('-').map(Number);
-            const utcDate = new Date(Date.UTC(year, month - 1, day)); // month is 0-indexed, use UTC
-            
+            // Store at noon UTC so the date displays correctly in all US timezones.
+            // Midnight UTC = afternoon/evening the previous day in US western timezones,
+            // which would display the wrong calendar date. Noon UTC is safely within
+            // "the same day" for every US timezone (even Hawaii at UTC-10 sees noon UTC as 2 AM).
+            const utcDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+
             const eventData = {
                 name: eventName.trim(),
                 date: utcDate,
+                timezone: eventTimezone,
                 displayLotteryResults: false, // Always false - controlled by Event Controls
                 carryForwardData
             };
@@ -537,9 +543,9 @@ export const actions: Actions = {
                 return { success: false, message: "Date, title, and description are required" };
             }
 
-            // Parse the date as UTC
+            // Store at noon UTC — see event date parsing above for rationale
             const [year, month, day] = date.split('-').map(Number);
-            const utcDate = new Date(Date.UTC(year, month - 1, day));
+            const utcDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 
             // Create the important date
             await prisma.importantDate.create({
@@ -592,9 +598,9 @@ export const actions: Actions = {
                 return { success: false, message: "All required fields must be provided" };
             }
 
-            // Parse the date as UTC
+            // Store at noon UTC — see event date parsing above for rationale
             const [year, month, day] = date.split('-').map(Number);
-            const utcDate = new Date(Date.UTC(year, month - 1, day));
+            const utcDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 
             // Update the important date
             await prisma.importantDate.update({

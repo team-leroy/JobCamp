@@ -51,6 +51,7 @@ export const load: PageServerLoad = async (event) => {
         activeEvent: activeEvent ? {
             name: activeEvent.name || 'JobCamp',
             date: activeEvent.date,
+            timezone: activeEvent.timezone,
             importantDates: activeEvent.importantDates
         } : null,
         schoolName: student.school.name

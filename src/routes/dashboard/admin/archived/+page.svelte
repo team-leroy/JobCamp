@@ -1,6 +1,7 @@
 <script lang="ts">
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import { goto } from "$app/navigation";
+  import { formatEventDate } from "$lib/dateUtils";
 
   export let data;
   const {
@@ -12,16 +13,6 @@
     selectedEvent,
     selectedEventStats,
   } = data;
-
-  function formatDate(dateString: string | Date) {
-    const date =
-      typeof dateString === "string" ? new Date(dateString) : dateString;
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
 
   function selectEvent(eventId: string) {
     // Force full page reload to ensure fresh data
@@ -70,7 +61,7 @@
               >
                 <div class="font-medium">{event.name || "Unnamed Event"}</div>
                 <div class="text-sm text-gray-500">
-                  {formatDate(event.date)}
+                  {formatEventDate(event.date, event.timezone, { year: "numeric", month: "long", day: "numeric" })}
                 </div>
                 <div class="text-xs text-gray-400 mt-1">
                   {event.isActive ? "Active" : "Archived"} •
@@ -90,7 +81,7 @@
               {selectedEvent.name || "Unnamed Event"}
             </h2>
             <div class="text-sm text-gray-500 mb-6">
-              {formatDate(selectedEvent.date)}
+              {formatEventDate(selectedEvent.date, selectedEvent.timezone, { year: "numeric", month: "long", day: "numeric" })}
             </div>
 
             <!-- Event Statistics -->

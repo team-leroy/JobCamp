@@ -41,6 +41,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             id: true,
             name: true,
             date: true,
+            timezone: true,
             isActive: true,
             createdAt: true
         }
@@ -57,6 +58,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                 id: e.id,
                 name: e.name,
                 date: e.date.toISOString(),
+                timezone: e.timezone,
                 isActive: e.isActive
             })),
             students: [],
@@ -540,6 +542,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             id: e.id,
             name: e.name,
             date: e.date.toISOString(),
+            timezone: e.timezone,
             isActive: e.isActive
         })),
         students: transformedStudents,
@@ -1412,7 +1415,7 @@ export const actions: Actions = {
             // 3. Send confirmation emails
             const eventData = {
                 eventName: position.event.name || 'JobCamp',
-                eventDate: formatEmailDate(position.event.date),
+                eventDate: formatEmailDate(position.event.date, position.event.timezone),
                 schoolName: position.event.school.name,
                 schoolId: position.event.school.id
             };

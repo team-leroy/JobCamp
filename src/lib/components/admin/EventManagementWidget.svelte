@@ -9,6 +9,7 @@
   } from "$lib/components/ui/card";
   import { goto } from "$app/navigation";
   import type { EventWithStats } from "$lib/server/eventManagement";
+  import { formatEventDate } from "$lib/dateUtils";
 
   interface FormResult {
     success?: boolean;
@@ -58,25 +59,24 @@
     }
   }
 
-  // Format date for display (fix timezone issue)
-  function formatDate(date: Date | string) {
-    // Ensure we're working with a proper Date object
-    const d = date instanceof Date ? date : new Date(date);
-
-    // Extract the UTC components to avoid timezone conversion issues
-    const year = d.getUTCFullYear();
-    const month = d.getUTCMonth();
-    const day = d.getUTCDate();
-
-    // Create a new date with the UTC components
-    const utcDate = new Date(Date.UTC(year, month, day));
-
-    return utcDate.toLocaleDateString("en-US", {
+  // Format an event's date using the event's own timezone
+  function formatEventDateLong(date: Date | string, timezone: string): string {
+    return formatEventDate(date, timezone, {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-      timeZone: "UTC",
+    });
+  }
+
+  // Format system timestamps (createdAt, activatedAt) in browser-local time
+  function formatSystemDate(date: Date | string | null): string {
+    if (!date) return "—";
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   }
 
@@ -168,7 +168,7 @@
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-3">
                 <h3 class="font-semibold">
-                  {event.name || `Event ${formatDate(event.date)}`}
+                  {event.name || `Event ${formatEventDateLong(event.date, event.timezone)}`}
                 </h3>
                 <Badge variant={getEnhancedEventStatus(event).variant}>
                   {getEnhancedEventStatus(event).text}
@@ -223,7 +223,7 @@
               <div>
                 <span class="font-medium">Date:</span>
                 <br />
-                {formatDate(event.date)}
+                {formatEventDateLong(event.date, event.timezone)}
               </div>
               <div>
                 <span class="font-medium">Positions:</span>
@@ -251,7 +251,7 @@
                 <div class="text-sm text-gray-700 mb-3">
                   Type <strong>DELETE</strong> to permanently remove
                   <strong
-                    >{event.name || `Event ${formatDate(event.date)}`}</strong
+                    >{event.name || `Event ${formatEventDateLong(event.date, event.timezone)}`}</strong
                   >
                   and ALL related data (signups, assignments, lottery history, positions,
                   attachments, permission slips, participation, important dates).
@@ -315,16 +315,16 @@
                   </div>
                   <div class="flex justify-between">
                     <span class="text-gray-600">Event Date:</span>
-                    <span>{formatDate(event.date)}</span>
+                    <span>{formatEventDateLong(event.date, event.timezone)}</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-gray-600">Created:</span>
-                    <span>{formatDate(event.createdAt)}</span>
+                    <span>{formatSystemDate(event.createdAt)}</span>
                   </div>
                   {#if event.activatedAt}
                     <div class="flex justify-between">
                       <span class="text-gray-600">Activated:</span>
-                      <span>{formatDate(event.activatedAt)}</span>
+                      <span>{formatSystemDate(event.activatedAt)}</span>
                     </div>
                   {/if}
                 </div>

@@ -180,7 +180,7 @@ export const actions: Actions = {
         if (student.school) {
             const eventData: EventEmailData = {
                 eventName: activeEvent.name || 'JobCamp',
-                eventDate: formatEmailDate(activeEvent.date),
+                eventDate: formatEmailDate(activeEvent.date, activeEvent.timezone),
                 schoolName: student.school.name,
                 schoolId: student.school.id
             };

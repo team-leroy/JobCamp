@@ -115,23 +115,23 @@ export function renderEmailTemplate(emailHtml: string, params: EmailParams) {
 /**
  * Format a date for display in emails
  */
-export function formatEmailDate(date: Date): string {
+export function formatEmailDate(date: Date, timezone = 'UTC'): string {
     return new Date(date).toLocaleDateString("en-US", {
         weekday: "short",
         year: "numeric",
         month: "short",
         day: "numeric",
-        timeZone: "UTC",
+        timeZone: timezone,
     });
 }
 
 /**
  * Calculate date relative to event date (e.g., "2 weeks before")
  */
-export function calculateRelativeDate(eventDate: Date, weeksBefore: number): string {
+export function calculateRelativeDate(eventDate: Date, weeksBefore: number, timezone = 'UTC'): string {
     const date = new Date(eventDate);
     date.setDate(date.getDate() - (weeksBefore * 7));
-    return formatEmailDate(date);
+    return formatEmailDate(date, timezone);
 }
 
 /**

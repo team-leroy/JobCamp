@@ -2,6 +2,7 @@
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import StudentStatsWidget from "$lib/components/admin/StudentStatsWidget.svelte";
   import CompanyStatsWidget from "$lib/components/admin/CompanyStatsWidget.svelte";
+  import { formatEventDate } from "$lib/dateUtils";
 
   export let data;
   const {
@@ -35,21 +36,19 @@
           <div>
             <h3 class="text-lg font-medium text-gray-900">
               {upcomingEvent.name ||
-                `Event ${upcomingEvent.date.toLocaleDateString("en-US", {
+                `Event ${formatEventDate(upcomingEvent.date, upcomingEvent.timezone, {
                   weekday: "long",
                   year: "numeric",
                   month: "long",
                   day: "numeric",
-                  timeZone: "UTC",
                 })}`}
             </h3>
             <p class="text-sm text-gray-600">
-              {upcomingEvent.date.toLocaleDateString("en-US", {
+              {formatEventDate(upcomingEvent.date, upcomingEvent.timezone, {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
                 day: "numeric",
-                timeZone: "UTC",
               })}
             </p>
           </div>

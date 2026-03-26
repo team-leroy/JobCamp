@@ -2,6 +2,7 @@
   import { Button } from "$lib/components/ui/button";
   import JobCampBanner from "$lib/assets/jobcampbanner.jpg";
   import Navbar from "$lib/components/navbar/Navbar.svelte";
+  import { formatEventDate } from "$lib/dateUtils";
 
   const { data } = $props();
   const isHost = $derived(data.isHost);
@@ -11,20 +12,10 @@
   const hasActiveEvent = $derived(data.hasActiveEvent);
   const eventName = $derived(data.eventName);
   const eventDate = $derived(data.eventDate);
+  const eventTimezone = $derived(data.eventTimezone ?? 'UTC');
   const studentAccountsEnabled = $derived(data.studentAccountsEnabled);
   const companyAccountsEnabled = $derived(data.companyAccountsEnabled);
   const showSignupLogin = $derived(data.showSignupLogin);
-
-  function formatEventDate(date: string | Date | null): string {
-    if (!date) return "";
-    return new Date(date).toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-      timeZone: "UTC",
-    });
-  }
 </script>
 
 <Navbar
@@ -44,7 +35,7 @@
     <h1 class="text-7xl md:text-9xl text-black px-4">JobCamp</h1>
     {#if eventDate}
       <p class="text-2xl md:text-4xl text-black font-medium mt-4">
-        {formatEventDate(eventDate)}
+        {formatEventDate(eventDate, eventTimezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
       </p>
     {/if}
   </div>
@@ -72,7 +63,7 @@
       {:else if !showSignupLogin}
         <h2 class="text-2xl font-bold text-gray-800 mb-3">
           Coming Soon{eventDate
-            ? ` on ${new Date(eventDate).toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric", timeZone: "UTC" })}`
+            ? ` on ${formatEventDate(eventDate, eventTimezone, { month: "numeric", day: "numeric", year: "numeric" })}`
             : ""}
         </h2>
         <p class="text-lg font-semibold text-blue-600">

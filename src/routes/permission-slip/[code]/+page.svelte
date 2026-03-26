@@ -4,6 +4,7 @@
   import type { PageData } from "./$types";
   import { Label } from "$lib/components/ui/label";
   import { Input } from "$lib/components/ui/input";
+  import { formatEventDate } from "$lib/dateUtils";
 
   interface Props {
     data: PageData;
@@ -19,13 +20,14 @@
     }
   );
 
-  // Format date for display
+  const eventTimezone = $derived(data.activeEvent?.timezone ?? 'UTC');
+
+  // Format date for display using the event's timezone
   function formatDate(date: Date | string): string {
-    return new Date(date).toLocaleDateString("en-US", {
+    return formatEventDate(date, eventTimezone, {
       month: "short",
       day: "numeric",
       year: "numeric",
-      timeZone: "UTC",
     });
   }
 

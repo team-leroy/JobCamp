@@ -4,6 +4,7 @@ import { getCurrentGrade } from './gradeUtils.js';
 export interface EventData {
   name?: string;
   date: Date;
+  timezone?: string;
   displayLotteryResults?: boolean;
   carryForwardData?: boolean; // Default to true - carry forward existing data
   // Event Controls
@@ -19,6 +20,7 @@ export interface EventWithStats {
   id: string;
   name: string | null;
   date: Date;
+  timezone: string;
   isActive: boolean;
   isArchived: boolean;
   displayLotteryResults: boolean;
@@ -69,6 +71,7 @@ export async function getSchoolEvents(
     id: event.id,
     name: event.name,
     date: event.date,
+    timezone: event.timezone,
     isActive: event.isActive,
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
@@ -122,6 +125,7 @@ export async function getActiveEvent(schoolId: string): Promise<EventWithStats |
     id: event.id,
     name: event.name,
     date: event.date,
+    timezone: event.timezone,
     isActive: event.isActive,
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
@@ -162,6 +166,7 @@ export async function createEvent(
       schoolId,
       name: eventData.name,
       date: eventData.date,
+      timezone: eventData.timezone ?? 'America/Los_Angeles',
       displayLotteryResults: eventData.displayLotteryResults ?? false,
       isActive: false,
       isArchived: false,
@@ -244,6 +249,7 @@ export async function createEvent(
     id: eventWithStats!.id,
     name: eventWithStats!.name,
     date: eventWithStats!.date,
+    timezone: eventWithStats!.timezone,
     isActive: eventWithStats!.isActive,
     isArchived: eventWithStats!.isArchived,
     displayLotteryResults: eventWithStats!.displayLotteryResults,
@@ -308,6 +314,7 @@ export async function activateEvent(eventId: string, schoolId: string): Promise<
     id: event.id,
     name: event.name,
     date: event.date,
+    timezone: event.timezone,
     isActive: event.isActive,
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
@@ -360,6 +367,7 @@ export async function archiveEvent(eventId: string): Promise<EventWithStats> {
     id: event.id,
     name: event.name,
     date: event.date,
+    timezone: event.timezone,
     isActive: event.isActive,
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,
@@ -397,8 +405,8 @@ export async function updateEvent(
     data: {
       ...(eventData.name !== undefined && { name: eventData.name }),
       ...(eventData.date !== undefined && { date: eventData.date }),
-      ...(eventData.displayLotteryResults !== undefined && { 
-        displayLotteryResults: eventData.displayLotteryResults 
+      ...(eventData.displayLotteryResults !== undefined && {
+        displayLotteryResults: eventData.displayLotteryResults
       })
     },
     include: {
@@ -418,6 +426,7 @@ export async function updateEvent(
     id: event.id,
     name: event.name,
     date: event.date,
+    timezone: event.timezone,
     isActive: event.isActive,
     isArchived: event.isArchived,
     displayLotteryResults: event.displayLotteryResults,

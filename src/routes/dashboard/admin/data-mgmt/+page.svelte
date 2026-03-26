@@ -36,6 +36,7 @@
   import FilteredStudentMessenger from "$lib/components/admin/FilteredStudentMessenger.svelte";
   import FilteredCompanyMessenger from "$lib/components/admin/FilteredCompanyMessenger.svelte";
   import { formatTimeTo12h } from "$lib/timeUtils";
+  import { formatEventDate } from "$lib/dateUtils";
   import { MessageSquare } from "lucide-svelte";
   import * as Dialog from "$lib/components/ui/dialog";
 
@@ -192,7 +193,7 @@
     { value: "All", label: "All Events" },
     ...data.allEvents.map((event) => ({
       value: event.id,
-      label: event.name || `Event ${new Date(event.date).toLocaleDateString()}`,
+      label: event.name || `Event ${formatEventDate(new Date(event.date), event.timezone)}`,
     })),
   ]);
 

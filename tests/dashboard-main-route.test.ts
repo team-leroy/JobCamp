@@ -58,7 +58,8 @@ describe('Dashboard Main Route', () => {
         id: 'event-123',
         isActive: true,
         studentAccountsEnabled: true,
-        companyAccountsEnabled: true
+        companyAccountsEnabled: true,
+        timezone: 'America/Los_Angeles'
     };
 
     const mockInactiveEvent = {
@@ -256,10 +257,11 @@ describe('Dashboard Main Route', () => {
                 companySignupsEnabled: false,
                 eventName: "Test Event",
                 eventDate: mockEventDate.toISOString(),
+                eventTimezone: 'America/Los_Angeles',
                 hasUnpublishedPositions: true,
                 companyName: mockCompanyName
             });
-            
+
             expect(prisma.position.findMany).toHaveBeenCalledWith({
                 where: { 
                     hostId: mockHostInfo.id,
@@ -577,6 +579,7 @@ describe('Dashboard Main Route', () => {
                 companySignupsEnabled: false,
                 eventName: "Test Event",
                 eventDate: mockEventDate.toISOString(),
+                eventTimezone: 'America/Los_Angeles',
                 hasUnpublishedPositions: true,
                 companyName: mockCompanyName
             });

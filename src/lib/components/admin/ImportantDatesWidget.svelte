@@ -5,6 +5,7 @@
   import { Textarea } from "$lib/components/ui/textarea";
   import { Trash2, Edit2, Plus, X } from "lucide-svelte";
   import type { EventWithStats } from "$lib/server/eventManagement";
+  import { formatEventDate } from "$lib/dateUtils";
 
   interface ImportantDate {
     id: string;
@@ -98,14 +99,10 @@
     }
   }
 
+  const eventTimezone = $derived(upcomingEvent?.timezone ?? 'UTC');
+
   function formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString("en-US", {
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      timeZone: "UTC",
-    });
+    return formatEventDate(date, eventTimezone);
   }
 </script>
 
@@ -150,9 +147,7 @@
       <p class="text-sm text-blue-700">
       {#if upcomingEvent}
         <strong>Active Event:</strong>
-        {upcomingEvent.name} ({upcomingEvent.date.toLocaleDateString("en-US", {
-          timeZone: "UTC",
-        })})
+        {upcomingEvent.name} ({formatEventDate(upcomingEvent.date, eventTimezone)})
       {/if}
         <br />
         Managing important dates for students to see on their dashboard.

@@ -174,6 +174,7 @@ export const load: PageServerLoad = async (event) => {
         showLotteryResult,
         activeEventName: permissionSlipStatus.eventName,
         activeEventDate: activeEvent?.date ? activeEvent.date.toISOString() : null,
+        activeEventTimezone: activeEvent?.timezone ?? 'UTC',
         hasActiveEvent: permissionSlipStatus.hasActiveEvent,
         positions,
         importantDates
@@ -254,7 +255,7 @@ export const actions: Actions = {
 
             const eventData: EventEmailData = {
                 eventName: activeEvent.name || 'JobCamp',
-                eventDate: formatEmailDate(activeEvent.date),
+                eventDate: formatEmailDate(activeEvent.date, activeEvent.timezone),
                 schoolName: school.name,
                 schoolId: school.id
             };
