@@ -1291,28 +1291,28 @@
                                   <div
                                     class="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8"
                                   >
-                                    <div class="space-y-1">
+                                    <div class="space-y-1 min-w-0">
                                       <span
                                         class="text-xs font-bold text-gray-400 uppercase tracking-tight"
                                         >Summary</span
                                       >
-                                      <p class="text-sm text-gray-700">
+                                      <p class="text-sm text-gray-700 break-words">
                                         {position.summary}
                                       </p>
                                     </div>
-                                    <div class="space-y-1">
+                                    <div class="space-y-1 min-w-0">
                                       <span
                                         class="text-xs font-bold text-gray-400 uppercase tracking-tight"
                                         >Contact Information</span
                                       >
-                                      <p class="text-sm text-gray-700">
+                                      <p class="text-sm text-gray-700 break-words">
                                         {position.contactName}
                                       </p>
-                                      <p class="text-sm text-gray-500">
+                                      <p class="text-sm text-gray-500 break-words">
                                         {position.contactEmail}
                                       </p>
                                     </div>
-                                    <div class="space-y-1">
+                                    <div class="space-y-1 min-w-0">
                                       <span
                                         class="text-xs font-bold text-gray-400 uppercase tracking-tight"
                                         >Logistics</span
@@ -1320,7 +1320,7 @@
                                       <div
                                         class="flex items-center space-x-2 text-sm text-gray-700"
                                       >
-                                        <Clock class="h-3 w-3" />
+                                        <Clock class="h-3 w-3 shrink-0" />
                                         <span
                                           >{formatTimeTo12h(position.arrival)} arrival • {formatTimeTo12h(position.start)}
                                           - {formatTimeTo12h(position.end)}</span
@@ -1329,20 +1329,20 @@
                                       <div
                                         class="flex items-start space-x-2 text-sm text-gray-700 mt-1"
                                       >
-                                        <Target class="h-3 w-3 mt-1" />
-                                        <span>{position.address}</span>
+                                        <Target class="h-3 w-3 mt-1 shrink-0" />
+                                        <span class="break-words min-w-0">{position.address}</span>
                                       </div>
                                     </div>
-                                    <div class="space-y-1">
+                                    <div class="space-y-1 min-w-0">
                                       <span
                                         class="text-xs font-bold text-gray-400 uppercase tracking-tight"
                                         >Requirements</span
                                       >
-                                      <p class="text-sm text-gray-700">
+                                      <p class="text-sm text-gray-700 break-words">
                                         <span class="font-medium">Attire:</span>
                                         {position.attire || "None specified"}
                                       </p>
-                                      <p class="text-sm text-gray-700 mt-1">
+                                      <p class="text-sm text-gray-700 mt-1 whitespace-pre-line break-words">
                                         <span class="font-medium"
                                           >Instructions:</span
                                         >

@@ -150,7 +150,7 @@
 
                     <hr class="my-2" />
 
-                    <p class=" whitespace-pre-line">
+                    <p class="whitespace-pre-line break-words">
                       Address:
                       {position.address}
 
@@ -206,7 +206,7 @@
 
                 <hr class="my-2" />
 
-                <p class=" whitespace-pre-line">
+                <p class="whitespace-pre-line break-words">
                   Address:
                   {position.address}
 

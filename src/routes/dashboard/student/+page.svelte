@@ -509,7 +509,7 @@
 
             <hr class="my-2" />
 
-            <p class=" whitespace-pre-line">
+            <p class="whitespace-pre-line break-words">
               Address:
               {data.lotteryResult.address}
 
@@ -726,7 +726,7 @@
 
               <hr class="my-2" />
 
-              <p class=" whitespace-pre-line">
+              <p class="whitespace-pre-line break-words">
                 Address:
                 {position.address}
 
