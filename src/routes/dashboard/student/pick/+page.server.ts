@@ -1,5 +1,6 @@
 import { prisma } from '$lib/server/prisma';
 import { redirect, fail } from '@sveltejs/kit';
+import { MAX_PICKS } from '$lib/appconfig';
 import type { Actions, PageServerLoad } from './$types';
 import { generatePermissionSlipCode } from '$lib/server/auth';
 import { sendPermissionSlipEmail } from '$lib/server/email';
@@ -448,6 +449,9 @@ export const actions: Actions = {
         });
 
         if (!deleted) {
+            if (posIds.length >= MAX_PICKS) {
+                return fail(400, { message: `You may only select up to ${MAX_PICKS} positions.` });
+            }
             posIds.push({ positionId: posId });
         }
 

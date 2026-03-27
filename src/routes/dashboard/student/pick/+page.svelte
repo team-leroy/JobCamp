@@ -8,6 +8,7 @@
   import { Loader2 } from "lucide-svelte";
   import { goto } from "$app/navigation";
   import { formatTimeTo12h } from "$lib/timeUtils";
+  import { MAX_PICKS } from "$lib/appconfig";
 
   let { data, form } = $props();
 
@@ -92,13 +93,19 @@
     const fdata = new FormData();
     fdata.append("id", posID);
 
-    await fetch("/dashboard/student/pick?/togglePosition", {
+    const response = await fetch("/dashboard/student/pick?/togglePosition", {
       method: "POST",
       body: fdata,
       headers: {
         "x-sveltekit-action": "true",
       },
     });
+
+    if (!response.ok) {
+      // Server rejected the add (limit exceeded or other error).
+      // Don't mutate local state — the checkbox reverts automatically.
+      return;
+    }
 
     data.positionData.map((val: PositionData) => {
       if (val.id == posID) {
@@ -407,19 +414,19 @@
                       {/if}
                     {:else}
                       <label class="flex gap-2 text-lg my-3 items-center">
-                        {#if count < 10}
+                        {#if count < MAX_PICKS}
                           <input
                             type="checkbox"
                             name="selected"
                             class="w-4 h-4 rounded"
-                            disabled={count >= 10}
+                            disabled={count >= MAX_PICKS}
                             bind:checked={position.selected}
                             onchange={() => togglePosition(position.id)}
                           />
                           Add to My Favorite Jobs
                         {:else}
                           <span class="bg-red-200 px-1"
-                            >You have 10 Favorite Jobs selected. If you want to
+                            >You have {MAX_PICKS} Favorite Jobs selected. If you want to
                             add this one, you'll need to <a
                               href="/dashboard/student"
                               >delete one from your list.</a
@@ -553,19 +560,19 @@
                   {/if}
                 {:else}
                   <label class="flex gap-2 text-lg my-3 items-center">
-                    {#if count < 10}
+                    {#if count < MAX_PICKS}
                       <input
                         type="checkbox"
                         name="selected"
                         class="w-4 h-4 rounded"
-                        disabled={count >= 10}
+                        disabled={count >= MAX_PICKS}
                         bind:checked={position.selected}
                         onchange={() => togglePosition(position.id)}
                       />
                       Add to My Favorite Jobs
                     {:else}
                       <span class="bg-red-200 px-1"
-                        >You have 10 Favorite Jobs selected. If you want to add
+                        >You have {MAX_PICKS} Favorite Jobs selected. If you want to add
                         this one, you'll need to <a href="/dashboard/student"
                           >delete one from your list.</a
                         ></span

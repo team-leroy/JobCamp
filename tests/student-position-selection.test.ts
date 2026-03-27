@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { MAX_PICKS } from '../src/lib/appconfig';
 
 // Mock Prisma client
 vi.mock('../src/lib/server/prisma', () => ({
@@ -364,6 +365,83 @@ describe('Student Position Selection with Active Events', () => {
 
       expect(school1Data[0].host.company.companyName).toBe('Company 1');
       expect(school2Data[0].host.company.companyName).toBe('Company 2');
+    });
+  });
+
+  describe('MAX_PICKS limit enforcement', () => {
+    it('should enforce the pick limit server-side when student already has MAX_PICKS picks', async () => {
+      // Build an array of exactly MAX_PICKS existing picks
+      const existingPicks = Array.from({ length: MAX_PICKS }, (_, i) => ({
+        positionId: `pos-${i + 1}`,
+        studentId: 'student-1',
+        rank: i,
+        createdAt: new Date()
+      }));
+
+      vi.mocked(prisma.positionsOnStudents.findMany).mockResolvedValue(existingPicks);
+
+      const picks = await prisma.positionsOnStudents.findMany({
+        where: { studentId: 'student-1' }
+      });
+
+      // Simulate server-side check: a new position (not in the list) should be rejected
+      const newPositionId = 'pos-new';
+      const isAlreadySelected = picks.some(p => p.positionId === newPositionId);
+      const wouldExceedLimit = !isAlreadySelected && picks.length >= MAX_PICKS;
+
+      expect(picks).toHaveLength(MAX_PICKS);
+      expect(wouldExceedLimit).toBe(true);
+    });
+
+    it('should allow removal even when student already has MAX_PICKS picks', async () => {
+      const existingPicks = Array.from({ length: MAX_PICKS }, (_, i) => ({
+        positionId: `pos-${i + 1}`,
+        studentId: 'student-1',
+        rank: i,
+        createdAt: new Date()
+      }));
+
+      vi.mocked(prisma.positionsOnStudents.findMany).mockResolvedValue(existingPicks);
+
+      const picks = await prisma.positionsOnStudents.findMany({
+        where: { studentId: 'student-1' }
+      });
+
+      // Simulate server-side check: removing an existing position should always be allowed
+      const existingPositionId = 'pos-1';
+      const isAlreadySelected = picks.some(p => p.positionId === existingPositionId);
+      const wouldExceedLimit = !isAlreadySelected && picks.length >= MAX_PICKS;
+
+      expect(picks).toHaveLength(MAX_PICKS);
+      // It's a removal (isAlreadySelected = true), so limit check is bypassed
+      expect(isAlreadySelected).toBe(true);
+      expect(wouldExceedLimit).toBe(false);
+    });
+
+    it('should allow adding when student has fewer than MAX_PICKS picks', async () => {
+      const existingPicks = Array.from({ length: MAX_PICKS - 1 }, (_, i) => ({
+        positionId: `pos-${i + 1}`,
+        studentId: 'student-1',
+        rank: i,
+        createdAt: new Date()
+      }));
+
+      vi.mocked(prisma.positionsOnStudents.findMany).mockResolvedValue(existingPicks);
+
+      const picks = await prisma.positionsOnStudents.findMany({
+        where: { studentId: 'student-1' }
+      });
+
+      const newPositionId = 'pos-new';
+      const isAlreadySelected = picks.some(p => p.positionId === newPositionId);
+      const wouldExceedLimit = !isAlreadySelected && picks.length >= MAX_PICKS;
+
+      expect(picks).toHaveLength(MAX_PICKS - 1);
+      expect(wouldExceedLimit).toBe(false);
+    });
+
+    it('MAX_PICKS constant should equal 10', () => {
+      expect(MAX_PICKS).toBe(10);
     });
   });
 

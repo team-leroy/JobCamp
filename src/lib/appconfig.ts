@@ -1,3 +1,5 @@
+export const MAX_PICKS = 10;
+
 export const careers = [
     "Multiple Careers",
     "Creative Arts/Design",
