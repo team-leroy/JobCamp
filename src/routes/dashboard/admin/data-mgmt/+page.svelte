@@ -790,13 +790,13 @@
                   <!-- Status Information -->
                   <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4">
                     {#each [{ status: student.permissionSlipStatus, label: "Permission Slip" }, { status: student.lotteryStatus + (student.assignmentSource ? ` (${student.assignmentSource})` : ''), label: "Lottery" }] as statusInfo}
-                      {@const Icon = getStatusIcon(student.lotteryStatus)}
+                      {@const Icon = getStatusIcon(statusInfo.status)}
                       <div class="flex items-center space-x-2">
                         <Icon
-                          class="h-4 w-4 {getStatusColor(student.lotteryStatus)}"
+                          class="h-4 w-4 {getStatusColor(statusInfo.status)}"
                         />
                         <span
-                          class="text-sm {getStatusColor(student.lotteryStatus)}"
+                          class="text-sm {getStatusColor(statusInfo.status)}"
                         >
                           {statusInfo.label}: {statusInfo.status}
                         </span>
