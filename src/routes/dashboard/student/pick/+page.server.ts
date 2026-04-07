@@ -1,6 +1,6 @@
 import { prisma } from '$lib/server/prisma';
 import { redirect, fail } from '@sveltejs/kit';
-import { MAX_PICKS } from '$lib/appconfig';
+import { applyPickToggle, PickLimitExceededError } from '$lib/server/pickUtils';
 import type { Actions, PageServerLoad } from './$types';
 import { generatePermissionSlipCode } from '$lib/server/auth';
 import { sendPermissionSlipEmail } from '$lib/server/email';
@@ -431,51 +431,42 @@ export const actions: Actions = {
             return { success: false, message: "No active event found." };
         }
 
-        let posIds: Array<{ positionId: string }> = await prisma.positionsOnStudents.findMany({ 
-            where: { 
-                studentId: studentId,
-                position: {
-                    eventId: activeEventId
-                }
-            }
-        });
+        try {
+            await prisma.$transaction(async (tx) => {
+                const currentPicks = await tx.positionsOnStudents.findMany({
+                    where: {
+                        studentId: studentId,
+                        position: { eventId: activeEventId }
+                    },
+                    select: { positionId: true }
+                });
 
-        let deleted = false;
-        posIds = posIds.filter((val: { positionId: string }) => {
-            if (val.positionId == posId) {
-                deleted = true;
-            }
-            return val.positionId != posId;
-        });
+                const newPickIds = applyPickToggle(
+                    currentPicks.map(p => p.positionId),
+                    posId
+                );
 
-        if (!deleted) {
-            if (posIds.length >= MAX_PICKS) {
-                return fail(400, { message: `You may only select up to ${MAX_PICKS} positions.` });
-            }
-            posIds.push({ positionId: posId });
-        }
+                const positions = newPickIds.map((pid, i) => ({
+                    rank: i,
+                    studentId: student.id,
+                    positionId: pid,
+                }));
 
-        const positions = posIds.map((val: { positionId: string }, i: number) => {
-            return {
-                rank: i,
-                studentId: student.id,
-                positionId: val.positionId,
-            };
-        })
-
-        await prisma.$transaction([
-            prisma.positionsOnStudents.deleteMany({
-                where: { 
-                    studentId: studentId,
-                    position: {
-                        eventId: activeEventId
+                await tx.positionsOnStudents.deleteMany({
+                    where: {
+                        studentId: studentId,
+                        position: { eventId: activeEventId }
                     }
-                }
-            }),
-            prisma.positionsOnStudents.createMany({
-                data: positions
-            })
-        ]);
+                });
+
+                await tx.positionsOnStudents.createMany({ data: positions });
+            });
+        } catch (err) {
+            if (err instanceof PickLimitExceededError) {
+                return fail(400, { message: err.message });
+            }
+            return fail(500, { message: "An unexpected error occurred." });
+        }
 
         await trackStudentParticipation(studentId, activeEventId);
 
