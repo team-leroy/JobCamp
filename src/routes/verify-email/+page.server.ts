@@ -106,6 +106,7 @@ export const load: PageServerLoad = async (event) => {
                     const eventData: EventEmailData = {
                         eventName: activeEvent.name || 'JobCamp',
                         eventDate: formatEmailDate(activeEvent.date, activeEvent.timezone),
+                        eventTimezone: activeEvent.timezone,
                         schoolName: student.school?.name || 'School',
                         schoolId: student.schoolId
                     };

@@ -94,6 +94,7 @@ interface Position {
 export interface EventEmailData {
     eventName: string;
     eventDate: string; // Formatted date
+    eventTimezone: string;
     schoolName: string;
     schoolId: string;
 }
@@ -258,12 +259,12 @@ export async function sendPermissionSlipEmail(
 }
 
 export async function sendPositionUpdateEmail(
-    hostEmail: string, 
+    hostEmail: string,
     position: Position,
     eventData: EventEmailData,
     rawEventDate: Date
 ) {
-    const twoWeeksBefore = calculateRelativeDate(rawEventDate, 2);
+    const twoWeeksBefore = calculateRelativeDate(rawEventDate, 2, eventData.eventTimezone);
     
     const emailParams = {
         ...position,
