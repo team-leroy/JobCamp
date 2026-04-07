@@ -1,8 +1,13 @@
-import { createReadStream } from 'node:fs';
+import { createReadStream, mkdirSync } from 'node:fs';
 import { writeFile, unlink, access } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? '/app/uploads';
+try {
+    mkdirSync(UPLOAD_DIR, { recursive: true });
+} catch {
+    console.warn(`[storage] Warning: UPLOAD_DIR "${UPLOAD_DIR}" could not be created. File uploads will fail.`);
+}
 
 /**
  * Upload a new file to local storage
