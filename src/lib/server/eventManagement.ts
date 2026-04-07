@@ -405,6 +405,7 @@ export async function updateEvent(
     data: {
       ...(eventData.name !== undefined && { name: eventData.name }),
       ...(eventData.date !== undefined && { date: eventData.date }),
+      ...(eventData.timezone !== undefined && { timezone: eventData.timezone }),
       ...(eventData.displayLotteryResults !== undefined && {
         displayLotteryResults: eventData.displayLotteryResults
       })

@@ -663,6 +663,7 @@ describe('Event Management Functions', () => {
         id: testEventId,
         name: 'Updated Event Name',
         date: testDate,
+        timezone: 'America/Los_Angeles',
         isActive: false,
         isArchived: false,
         displayLotteryResults: false,
@@ -700,13 +701,14 @@ describe('Event Management Functions', () => {
     it('should only update provided fields', async () => {
       const updateData = {
         name: 'Updated Event Name'
-        // date and displayLotteryResults not provided
+        // date, timezone, and displayLotteryResults not provided
       };
 
       const mockUpdatedEvent = {
         id: testEventId,
         name: 'Updated Event Name',
         date: testDate,
+        timezone: 'America/Los_Angeles',
         isActive: false,
         isArchived: false,
         displayLotteryResults: true, // unchanged
@@ -736,6 +738,73 @@ describe('Event Management Functions', () => {
           }
         }
       });
+    });
+
+    it('should update timezone when provided', async () => {
+      const updateData = {
+        timezone: 'America/New_York'
+      };
+
+      const mockUpdatedEvent = {
+        id: testEventId,
+        name: 'Test Event',
+        date: testDate,
+        timezone: 'America/New_York',
+        isActive: false,
+        isArchived: false,
+        displayLotteryResults: false,
+        schoolId: testSchoolId,
+        positions: []
+      };
+
+      vi.mocked(prisma).event.update.mockResolvedValue(mockUpdatedEvent);
+
+      const result = await updateEvent(testEventId, updateData);
+
+      expect(vi.mocked(prisma).event.update).toHaveBeenCalledWith({
+        where: { id: testEventId },
+        data: {
+          timezone: 'America/New_York'
+        },
+        include: {
+          positions: {
+            select: {
+              id: true,
+              slots: true,
+              students: {
+                select: { studentId: true }
+              }
+            }
+          }
+        }
+      });
+
+      expect(result.timezone).toBe('America/New_York');
+    });
+
+    it('should not include timezone in update when not provided', async () => {
+      const updateData = {
+        name: 'Updated Event Name'
+      };
+
+      const mockUpdatedEvent = {
+        id: testEventId,
+        name: 'Updated Event Name',
+        date: testDate,
+        timezone: 'America/Los_Angeles',
+        isActive: false,
+        isArchived: false,
+        displayLotteryResults: false,
+        schoolId: testSchoolId,
+        positions: []
+      };
+
+      vi.mocked(prisma).event.update.mockResolvedValue(mockUpdatedEvent);
+
+      await updateEvent(testEventId, updateData);
+
+      const callArgs = vi.mocked(prisma).event.update.mock.calls[0][0];
+      expect(callArgs.data).not.toHaveProperty('timezone');
     });
   });
 
