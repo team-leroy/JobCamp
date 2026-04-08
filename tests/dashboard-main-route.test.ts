@@ -465,60 +465,89 @@ describe('Dashboard Main Route', () => {
         });
 
         describe('deletePosition Action', () => {
+            const mockLocalsVerified = { user: { ...mockUser, emailVerified: true } };
+
             it('should delete position with valid positionId', async () => {
                 const { actions } = await import('../src/routes/dashboard/+page.server');
-                
+
                 vi.mocked(prisma.position.delete).mockResolvedValue({} as never);
-                
+
                 const mockUrl = {
                     searchParams: {
                         get: vi.fn().mockReturnValue('pos-123')
                     }
                 };
-                
-                await actions.deletePosition({ url: mockUrl } as never);
-                
+
+                await actions.deletePosition({ url: mockUrl, locals: mockLocalsVerified } as never);
+
                 expect(prisma.position.delete).toHaveBeenCalledWith({ where: { id: 'pos-123' } });
             });
 
-        it('should redirect to about page when positionId is missing', async () => {
-            const { actions } = await import('../src/routes/dashboard/+page.server');
-            
-            const mockUrl = {
-                searchParams: {
-                    get: vi.fn().mockReturnValue(null)
+            it('should redirect to /login when user is not authenticated', async () => {
+                const { actions } = await import('../src/routes/dashboard/+page.server');
+
+                const mockUrl = { searchParams: { get: vi.fn().mockReturnValue('pos-123') } };
+
+                try {
+                    await actions.deletePosition({ url: mockUrl, locals: { user: null } } as never);
+                } catch {
+                    // Expected to throw redirect
                 }
-            };
-            
-            try {
-                await actions.deletePosition({ url: mockUrl } as never);
-            } catch {
-                // Expected to throw redirect
-            }
-            
-            expect(redirect).toHaveBeenCalledWith(302, '/about');
-            // Note: Due to a bug in the actual code, delete is still called even after redirect
-            expect(prisma.position.delete).toHaveBeenCalledWith({ where: { id: undefined } });
-        });
+
+                expect(redirect).toHaveBeenCalledWith(302, '/login');
+            });
+
+            it('should redirect to /verify-email when email is not verified', async () => {
+                const { actions } = await import('../src/routes/dashboard/+page.server');
+
+                const mockUrl = { searchParams: { get: vi.fn().mockReturnValue('pos-123') } };
+
+                try {
+                    await actions.deletePosition({
+                        url: mockUrl,
+                        locals: { user: { ...mockUser, emailVerified: false } }
+                    } as never);
+                } catch {
+                    // Expected to throw redirect
+                }
+
+                expect(redirect).toHaveBeenCalledWith(302, '/verify-email');
+            });
+
+            it('should redirect to about page when positionId is missing', async () => {
+                const { actions } = await import('../src/routes/dashboard/+page.server');
+
+                const mockUrl = {
+                    searchParams: {
+                        get: vi.fn().mockReturnValue(null)
+                    }
+                };
+
+                try {
+                    await actions.deletePosition({ url: mockUrl, locals: mockLocalsVerified } as never);
+                } catch {
+                    // Expected to throw redirect
+                }
+
+                expect(redirect).toHaveBeenCalledWith(302, '/about');
+            });
 
             it('should redirect to about page when positionId is empty string', async () => {
                 const { actions } = await import('../src/routes/dashboard/+page.server');
-                
+
                 const mockUrl = {
                     searchParams: {
                         get: vi.fn().mockReturnValue('')
                     }
                 };
-                
+
                 try {
-                    await actions.deletePosition({ url: mockUrl } as never);
+                    await actions.deletePosition({ url: mockUrl, locals: mockLocalsVerified } as never);
                 } catch {
                     // Expected to throw redirect
                 }
-                
+
                 expect(redirect).toHaveBeenCalledWith(302, '/about');
-                // Note: Due to a bug in the actual code, delete is still called even after redirect
-                expect(prisma.position.delete).toHaveBeenCalledWith({ where: { id: '' } });
             });
         });
     });

@@ -202,7 +202,13 @@ export const actions: Actions = {
     logout: async (event) => {
         return actions.logOut(event);
     },
-    deletePosition: async ({ url }) => {
+    deletePosition: async ({ url, locals }) => {
+        if (!locals.user) {
+            redirect(302, "/login");
+        }
+        if (!locals.user.emailVerified) {
+            redirect(302, "/verify-email");
+        }
         const positionId = url.searchParams.get("posId")?.toString();
         console.log(`DELETE POSITION: ${positionId}`)
         if (!positionId) {

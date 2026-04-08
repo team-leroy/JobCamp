@@ -12,6 +12,9 @@ export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
         redirect(302, "/login");
     }
+    if (!locals.user.emailVerified) {
+        redirect(302, "/verify-email");
+    }
     const schoolWebAddr = "lghs";
 
     const school = await prisma.school.findFirst({ where: { webAddr: schoolWebAddr } });
@@ -222,6 +225,9 @@ export const actions: Actions = {
         if (!locals.user) {
             redirect(302, "/login");
         }
+        if (!locals.user.emailVerified) {
+            return fail(400, { message: "Email verification required." });
+        }
 
         const student = await prisma.student.findFirst({ where: { userId: locals.user.id } });
         if (!student) {
@@ -322,15 +328,18 @@ export const actions: Actions = {
         if (!id) {
             redirect(302, "/login");
         }
+        if (!locals.user?.emailVerified) {
+            return { sent: false, err: true };
+        }
 
-        const user = await prisma.user.findFirst({ 
-            where: { id }, 
-            include: { 
+        const user = await prisma.user.findFirst({
+            where: { id },
+            include: {
                 student: {
                     include: {
                         school: true
                     }
-                } 
+                }
             }
         });
 
@@ -376,6 +385,9 @@ export const actions: Actions = {
         const id = locals.user?.id;
         if (!id) {
             redirect(302, "/login");
+        }
+        if (!locals.user?.emailVerified) {
+            return fail(400, { message: "Email verification required." });
         }
 
         // Check if event and student signups are enabled (hierarchical check)

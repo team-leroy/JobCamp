@@ -88,9 +88,12 @@ export const actions: Actions = {
         if (!locals.user) {
             redirect(302, "/login");
         }
+        if (!locals.user.emailVerified) {
+            redirect(302, "/verify-email");
+        }
 
         const host = await prisma.host.findFirst({
-            where: { userId: locals.user.id }, 
+            where: { userId: locals.user.id },
             include: { company: { include: { school: true } } }
         })
 

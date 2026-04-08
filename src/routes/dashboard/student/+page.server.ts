@@ -195,6 +195,9 @@ export const actions: Actions = {
         if (!id) {
             redirect(302, "/login");
         }
+        if (!locals.user?.emailVerified) {
+            return { sent: false, err: true };
+        }
 
         const user = await prisma.user.findFirst({
             where: { id },
@@ -283,6 +286,9 @@ export const actions: Actions = {
         if (!id) {
             redirect(302, "/login");
         }
+        if (!locals.user?.emailVerified) {
+            return { success: false };
+        }
 
         const student = await prisma.student.findFirst({where: {userId: id}});
         const studentId = student?.id;
@@ -334,9 +340,6 @@ export const actions: Actions = {
         }
     },
     deletePosition: async({ request, locals }) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7806/ingest/a0cc51e9-56f8-4cee-817e-1f613d95c3a2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9acb7a'},body:JSON.stringify({sessionId:'9acb7a',location:'+page.server.ts:deletePosition',message:'deletePosition started',data:{hasUser:!!locals.user?.id},timestamp:Date.now(),hypothesisId:'entry'})}).catch(()=>{});
-        // #endregion
         try {
             const data = await request.formData();
 
@@ -348,6 +351,9 @@ export const actions: Actions = {
             const id = locals.user?.id;
             if (!id) {
                 redirect(302, "/login");
+            }
+            if (!locals.user?.emailVerified) {
+                return { success: false };
             }
 
             const student = await prisma.student.findFirst({where: {userId: id}});
@@ -445,6 +451,9 @@ export const actions: Actions = {
         const id = locals.user?.id;
         if (!id) {
             redirect(302, "/login");
+        }
+        if (!locals.user?.emailVerified) {
+            return { success: false };
         }
 
         const student = await prisma.student.findFirst({where: {userId: id}});

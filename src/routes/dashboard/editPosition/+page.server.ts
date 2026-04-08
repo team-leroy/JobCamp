@@ -89,6 +89,9 @@ export const actions: Actions = {
         if (!locals.user) {
             redirect(302, "/host-tips");
         }
+        if (!locals.user.emailVerified) {
+            redirect(302, "/verify-email");
+        }
         console.log(form.data.slots)
 
         const positionOriginal = await prisma.position.findFirst({
@@ -242,6 +245,9 @@ export const actions: Actions = {
 
         if (!locals.user) {
             redirect(302, "/login");
+        }
+        if (!locals.user.emailVerified) {
+            redirect(302, "/verify-email");
         }
 
         // Verify user owns this position
