@@ -8,6 +8,7 @@ import { zod } from "sveltekit-superforms/adapters";
 import { createNewPositionSchema } from "./schema";
 import { sendPositionUpdateEmail, formatEmailDate, type EventEmailData } from "$lib/server/email";
 import { addNewFile } from "../storage";
+import { basename } from "node:path";
 
 const grabUserData = async (locals : App.Locals) => {
     if (!locals.user) {
@@ -146,12 +147,13 @@ export const actions: Actions = {
             try {
                 const bytes = await form.data.attachment1.bytes();
                 const originalFileName = form.data.attachment1.name;
-                // Create storage path: sanitize title and combine with original filename
+                const safeFileName = basename(originalFileName).replace(/[^a-zA-Z0-9._-]/g, "-");
+                // Create storage path: sanitize title and combine with sanitized filename
                 const sanitizedTitle = form.data.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
-                const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
-                
+                const storagePath = `${sanitizedTitle}-${Date.now()}-${safeFileName}`;
+
                 await addNewFile(storagePath, bytes);
-                attachments.push({ 
+                attachments.push({
                     fileName: originalFileName,
                     storagePath: storagePath
                 });
@@ -165,12 +167,13 @@ export const actions: Actions = {
             try {
                 const bytes = await form.data.attachment2.bytes();
                 const originalFileName = form.data.attachment2.name;
-                // Create storage path: sanitize title and combine with original filename
+                const safeFileName = basename(originalFileName).replace(/[^a-zA-Z0-9._-]/g, "-");
+                // Create storage path: sanitize title and combine with sanitized filename
                 const sanitizedTitle = form.data.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-");
-                const storagePath = `${sanitizedTitle}-${Date.now()}-${originalFileName}`;
-                
+                const storagePath = `${sanitizedTitle}-${Date.now()}-${safeFileName}`;
+
                 await addNewFile(storagePath, bytes);
-                attachments.push({ 
+                attachments.push({
                     fileName: originalFileName,
                     storagePath: storagePath
                 });
