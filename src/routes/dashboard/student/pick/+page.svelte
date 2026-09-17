@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import Button from "$lib/components/ui/button/button.svelte";
   import * as Accordion from "$lib/components/ui/accordion/index.js";
@@ -11,7 +12,7 @@
 
   let { data, form } = $props();
 
-  let parentEmail = $state(data.parentEmail);
+  let parentEmail = $state(untrack(() => data.parentEmail));
   let selected = $state("career");
   let selectedTerm = $state("");
 

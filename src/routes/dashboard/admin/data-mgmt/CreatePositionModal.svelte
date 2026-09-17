@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { enhance } from "$app/forms";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
@@ -34,7 +35,7 @@
     arrival: "",
     start: "",
     end: "",
-    hostId: targetHostId || "",
+    hostId: untrack(() => targetHostId) || "",
   });
 
   let message: string | null = $state(null);

@@ -9,12 +9,10 @@
 
   let { data, sf, formTitle, buttonName } = $props();
 
-  const {
-    form,
-    errors,
-    submitting,
-    enhance: formEnhance,
-  } = sf;
+  const form = $derived(sf.form);
+  const errors = $derived(sf.errors);
+  const submitting = $derived(sf.submitting);
+  const formEnhance = $derived(sf.enhance);
 
   function getPositionId(): string | null {
     return $form.positionId || null;

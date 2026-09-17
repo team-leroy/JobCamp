@@ -8,12 +8,15 @@
 
   let { data, form } = $props();
 
+  const hostName = untrack(() => data.hostName) ?? "";
+  const hostEmail = untrack(() => data.hostEmail) ?? "";
+
   const sf = superForm(untrack(() => form || data.form), {
     resetForm: false,
     invalidateAll: true,
     timeoutMs: 60000, // 60 seconds timeout for large uploads
     validators: zod(
-      createNewPositionSchema(data.hostName ?? "", data.hostEmail ?? "") as import("sveltekit-superforms/adapters").ZodObjectType
+      createNewPositionSchema(hostName, hostEmail) as import("sveltekit-superforms/adapters").ZodObjectType
     ),
     onError: ({ result }) => {
       console.error("Upload error:", result);

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
@@ -203,7 +204,9 @@
   let lotteryStatusFilter = $state("All");
   let assignmentSourceFilter = $state("All");
   let emailVerifiedFilter = $state("All");
-  let studentEventFilter = $state(data.activeEvent?.id || "All");
+  let studentEventFilter = $state(
+    untrack(() => data.activeEvent?.id) || "All",
+  );
 
   // Filter states for Company (Consolidated)
   let companyNameFilter = $state("");
@@ -211,7 +214,9 @@
   let positionTitleFilter = $state("");
   let companyEmailVerifiedFilter = $state("All");
   let positionStatusFilter = $state("All");
-  let companyEventFilter = $state(data.activeEvent?.id || "All");
+  let companyEventFilter = $state(
+    untrack(() => data.activeEvent?.id) || "All",
+  );
 
   // Global Filter for Internal Testers
   let showInternalTesters = $state(false);

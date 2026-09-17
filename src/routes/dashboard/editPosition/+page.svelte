@@ -8,14 +8,16 @@
 
   let { data, form } = $props();
 
+  const initialPosition = untrack(() => data.position);
+
   const sf = superForm(untrack(() => form || data.form), {
     resetForm: false,
     invalidateAll: true,
     timeoutMs: 60000, // 60 seconds timeout for large uploads
     validators:
-      data.position
+      initialPosition
         ? zod(
-            editPositionSchema(data.position) as import("sveltekit-superforms/adapters").ZodObjectType
+            editPositionSchema(initialPosition) as import("sveltekit-superforms/adapters").ZodObjectType
           )
         : undefined,
     onError: ({ result }) => {

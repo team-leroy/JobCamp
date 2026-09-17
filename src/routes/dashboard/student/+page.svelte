@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import Navbar from "$lib/components/navbar/Navbar.svelte";
   import * as Accordion from "$lib/components/ui/accordion/index.js";
   import { ArrowBigDown, ArrowBigUp, Trash2Icon, Loader2 } from "lucide-svelte";
@@ -11,7 +12,7 @@
 
   let { data, form } = $props();
 
-  let parentEmail = $state(data.parentEmail);
+  let parentEmail = $state(untrack(() => data.parentEmail));
 
   // Format date for display
   function formatDate(date: string | Date | null): string {
