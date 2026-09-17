@@ -64,7 +64,7 @@
     ]
   },
   "dependencies": {
-    "@google-cloud/storage": "^7.22.0",
+    "@google-cloud/storage": "^8.1.0",
     "@lucia-auth/adapter-prisma": "^4.0.1",
     "@node-rs/argon2": "^1.8.3",
     "@prisma/client": "^6.19.3",
