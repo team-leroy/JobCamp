@@ -69,7 +69,7 @@
     "@node-rs/argon2": "^1.8.3",
     "@prisma/client": "^6.19.3",
     "@tiptap/core": "^2.27.3",
-    "@tiptap/extension-bullet-list": "^2.27.3",
+    "@tiptap/extension-bullet-list": "^3.31.3",
     "@tiptap/extension-list-item": "^2.27.3",
     "@tiptap/pm": "^2.27.3",
     "@tiptap/starter-kit": "^2.27.3",
