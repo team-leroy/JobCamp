@@ -3,7 +3,7 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack disable
 RUN corepack enable
-RUN COREPACK_INTEGRITY_KEYS=0 corepack prepare pnpm@latest --activate
+RUN COREPACK_INTEGRITY_KEYS=0 corepack prepare pnpm@9.7.1 --activate
 
 # Set non-interactive frontend for apt-get
 ENV DEBIAN_FRONTEND=noninteractive
@@ -18,7 +18,7 @@ RUN chmod +x /cloud_sql_proxy
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copy package.json and pnpm-lock.yaml first to leverage Docker layer caching
 COPY package.json .
 COPY pnpm-lock.yaml .
 COPY tsconfig.json .
@@ -34,7 +34,7 @@ RUN pnpm install
 # Copy the rest of the app files
 COPY . .
 
-# Generate Prisma Client (ensure this runs after npm install)
+# Generate Prisma Client after dependencies are installed
 # Provide a placeholder DATABASE_URL for build time (real one comes from runtime env vars)
 ENV DATABASE_URL="mysql://placeholder:placeholder@localhost:3306/placeholder"
 RUN npx prisma generate
